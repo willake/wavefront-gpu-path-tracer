@@ -13,6 +13,13 @@ void Renderer::Init()
 	m_buildTime = scene.GetBuildTime();
 	m_triangleCount = scene.GetTriangleCount();
 	m_maxTreeDepth = scene.GetMaxTreeDepth();
+	kernelGeneratePrimaryRays = Kernel("../assets/cl/kernels.cl", "generatePrimaryRays");
+	kernelExtend = Kernel("../assets/cl/kernels.cl", "extend");
+	kernelShade = Kernel("../assets/cl/kernels.cl", "shade");
+	kernelConnect = Kernel("../assets/cl/kernels.cl", "connect");
+	kernelFinalize = Kernel("../assets/cl/kernels.cl", "finalize");
+	kernelGeneratePrimaryRays.SetArguments(rayBuffer);
+	/*rayBuffer = Buffer(SCRWIDTH * SCRHEIGHT * sizeof(Ray));*/
 }
 
 // -----------------------------------------------------------
@@ -35,8 +42,8 @@ float3 Renderer::Trace(Ray& ray, int depth)
 	/* visualize normal */ // return N; // return (N + 1) * 0.5f;
 	/* visualize distance */ // return 0.1f * float3( ray.t, ray.t, ray.t );
 	/* visualize albedo */ // return albedo;
-	if(m_inspectTraversal) return GetTraverseCountColor(ray.traversed, m_peakTraversal);
-	if(m_inspectIntersectionTest) return GetTraverseCountColor(ray.tested, m_peakTests);
+	if (m_inspectTraversal) return GetTraverseCountColor(ray.traversed, m_peakTraversal);
+	if (m_inspectIntersectionTest) return GetTraverseCountColor(ray.tested, m_peakTests);
 
 	if (material->isLight) return scene.GetLightColor();
 
@@ -47,7 +54,7 @@ float3 Renderer::Trace(Ray& ray, int depth)
 
 	if (reflectivity > 0.0f)
 	{
-		float3 R = reflect(ray.D , N);
+		float3 R = reflect(ray.D, N);
 		Ray r(I + R * EPSILON, R);
 		out_radiance += reflectivity * albedo * Trace(r, depth + 1);
 	}
