@@ -20,14 +20,21 @@ This renderer is based on the [template project](https://github.com/jbikker/tmpl
 Visual Studio 2022
 
 ## Whitted Style Ray Tracer
-![Whitted](./assets/readme/whitted-style.png)
+<img src="./assets/readme/whitted.JPG" width="600" height="400" alt="whitted style"/>
+<img src="./assets/readme/whitted-style.png" width="600" height="400" alt="whitted style"/>
+
 ## Path Tracer
-![Path](./assets/readme/path-tracer-2.JPG)
+<img src="./assets/readme/view-2-path.JPG" width="600" height="400" alt="path tracer"/>
+<img src="./assets/readme/view-1-path.JPG" width="600" height="400" alt="path tracer"/>
+<img src="./assets/readme/path-tracer-2.JPG" width="600" height="400" alt="path tracer"/>
+
 ## How to run
 Open `tmpl_2022-rt.sln` with Visual Studio. Select a project (either WhittedStyle or PathTracer). Build.
 ### Inspect traversal
 Toggle `Inspect Traversal` checkbox in the panel will turn into traversal debug mode.
-![Traversal](./assets/readme/traversal.jpg)
+<img src="./assets/readme/traversal.jpg" width="600" height="400" alt="path tracer"/>
+<img src="./assets/readme/view-2-bvhsah-traversal.JPG" width="600" height="400" alt="path tracer"/>
+
 ## How to configure
 
 ### Aceleration struture
