@@ -13,6 +13,21 @@ void Renderer::Init()
 	m_buildTime = scene.GetBuildTime();
 	m_triangleCount = scene.GetTriangleCount();
 	m_maxTreeDepth = scene.GetMaxTreeDepth();
+	kernelTestRayStructSize = new Kernel("../assets/cl/kernels.cl", "testRayStructSize");
+	kernelGeneratePrimaryRays = new Kernel("../assets/cl/kernels.cl", "generatePrimaryRays");
+	kernelExtend = new Kernel("../assets/cl/kernels.cl", "extend");
+	kernelShade = new Kernel("../assets/cl/kernels.cl", "shade");
+	kernelConnect = new Kernel("../assets/cl/kernels.cl", "connect");
+	kernelFinalize = new Kernel("../assets/cl/kernels.cl", "finalize");
+
+	/*tests = new Test[SCRWIDTH * SCRHEIGHT];
+	bvhBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(Test), tests);
+	bvhBuffer->CopyToDevice();
+	kernelTestRayStructSize->SetArguments(bvhBuffer);
+	kernelTestRayStructSize->Run(SCRWIDTH * SCRHEIGHT);
+	bvhBuffer->CopyFromDevice();*/
+	rays = new Ray[SCRWIDTH * SCRHEIGHT];
+	rayBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(Ray), rays);
 }
 
 // -----------------------------------------------------------
@@ -35,8 +50,8 @@ float3 Renderer::Trace(Ray& ray, int depth)
 	/* visualize normal */ // return N; // return (N + 1) * 0.5f;
 	/* visualize distance */ // return 0.1f * float3( ray.t, ray.t, ray.t );
 	/* visualize albedo */ // return albedo;
-	if(m_inspectTraversal) return GetTraverseCountColor(ray.traversed, m_peakTraversal);
-	if(m_inspectIntersectionTest) return GetTraverseCountColor(ray.tested, m_peakTests);
+	/*if (m_inspectTraversal) return GetTraverseCountColor(ray.traversed, m_peakTraversal);
+	if (m_inspectIntersectionTest) return GetTraverseCountColor(ray.tested, m_peakTests);*/
 
 	if (material->isLight) return scene.GetLightColor();
 
@@ -47,7 +62,7 @@ float3 Renderer::Trace(Ray& ray, int depth)
 
 	if (reflectivity > 0.0f)
 	{
-		float3 R = reflect(ray.D , N);
+		float3 R = reflect(ray.D, N);
 		Ray r(I + R * EPSILON, R);
 		out_radiance += reflectivity * albedo * Trace(r, depth + 1);
 	}
@@ -134,6 +149,13 @@ void Renderer::Tick(float deltaTime)
 	if (animating) scene.SetTime(anim_time += deltaTime * 0.002f);
 	// pixel loop
 	Timer t;
+	// GPGPU
+	kernelGeneratePrimaryRays->SetArguments(rayBuffer, SCRWIDTH,
+		SCRHEIGHT, camera.camPos, camera.topLeft,
+		camera.topRight, camera.bottomLeft);
+	rayBuffer->CopyToDevice(true);
+	kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
+	rayBuffer->CopyFromDevice(true);
 	// lines are executed as OpenMP parallel tasks (disabled in DEBUG)
 #pragma omp parallel for schedule(dynamic)
 	for (int y = 0; y < SCRHEIGHT; y++)
@@ -145,11 +167,11 @@ void Renderer::Tick(float deltaTime)
 			float4 pixel = float4(Trace(primaryRay, 0), 0);
 
 			// for metrics
-			if (primaryRay.traversed > 0) m_rayHitCount++;
-			if (primaryRay.traversed > m_peakTraversal) m_peakTraversal = primaryRay.traversed;
-			if (primaryRay.tested > m_peakTests) m_peakTests = primaryRay.tested;
-			m_totalTraversal += primaryRay.traversed;
-			m_totalTests += primaryRay.tested;
+			//if (primaryRay.traversed > 0) m_rayHitCount++;
+			//if (primaryRay.traversed > m_peakTraversal) m_peakTraversal = primaryRay.traversed;
+			//if (primaryRay.tested > m_peakTests) m_peakTests = primaryRay.tested;
+			//m_totalTraversal += primaryRay.traversed;
+			//m_totalTests += primaryRay.tested;
 			// translate accumulator contents to rgb32 pixels
 			screen->pixels[x + y * SCRWIDTH] = RGBF32_to_RGB8(&pixel);
 			accumulator[x + y * SCRWIDTH] = pixel;

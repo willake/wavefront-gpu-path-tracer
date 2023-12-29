@@ -18,12 +18,9 @@
 // if you plan to alter the scene in any way.
 // -----------------------------------------------------------
 
-#define SPEEDTRIX
-//#define FOURLIGHTS
-
-#define PLANE_X(o,i) {t=-(ray.O.x+o)*ray.rD.x;if(t<ray.t&&t>0)ray.t=t,ray.objIdx=i;}
-#define PLANE_Y(o,i) {t=-(ray.O.y+o)*ray.rD.y;if(t<ray.t&&t>0)ray.t=t,ray.objIdx=i;}
-#define PLANE_Z(o,i) {t=-(ray.O.z+o)*ray.rD.z;if(t<ray.t&&t>0)ray.t=t,ray.objIdx=i;}
+#define PLANE_X(o,i) { float t =-(ray.O.x+o) * ray.rD.x; if(t<ray.t&&t>0)ray.t=t,ray.objIdx=i;}
+#define PLANE_Y(o,i) { float t =-(ray.O.y+o) * ray.rD.y; if(t<ray.t&&t>0)ray.t=t,ray.objIdx=i;}
+#define PLANE_Z(o,i) { float t =-(ray.O.z+o) * ray.rD.z; if(t<ray.t&&t>0)ray.t=t,ray.objIdx=i;}
 
 namespace Tmpl8 {
 
@@ -172,87 +169,15 @@ namespace Tmpl8 {
 		void FindNearest(Ray& ray) const
 		{
 			// room walls - ugly shortcut for more speed
-#ifdef SPEEDTRIX
-	// prefetching
-			const float3 spos = sphere.pos;
-			const float3 ro = ray.O, rd = ray.D;
-			// TODO: the room is actually just an AABB; use slab test
-			static const __m128 x4min = _mm_setr_ps(3, 1, 3, 1e30f);
-			static const __m128 x4max = _mm_setr_ps(-2.99f, -2, -3.99f, 1e30f);
-			static const __m128 idmin = _mm_castsi128_ps(_mm_setr_epi32(4, 6, 8, -1));
-			static const __m128 idmax = _mm_castsi128_ps(_mm_setr_epi32(5, 7, 9, -1));
-			static const __m128 zero4 = _mm_setzero_ps();
-			const __m128 selmask = _mm_cmpge_ps(ray.D4, zero4);
-			const __m128i idx4 = _mm_castps_si128(_mm_blendv_ps(idmin, idmax, selmask));
-			const __m128 x4 = _mm_blendv_ps(x4min, x4max, selmask);
-			const __m128 d4 = _mm_sub_ps(zero4, _mm_mul_ps(_mm_add_ps(ray.O4, x4), ray.rD4));
-			const __m128 mask4 = _mm_cmple_ps(d4, zero4);
-			const __m128 t4 = _mm_blendv_ps(d4, _mm_set1_ps(1e34f), mask4);
-			/* first: unconditional */  ray.t = t4.m128_f32[0], ray.objIdx = idx4.m128i_i32[0];
-			if (t4.m128_f32[1] < ray.t) ray.t = t4.m128_f32[1], ray.objIdx = idx4.m128i_i32[1];
-			if (t4.m128_f32[2] < ray.t) ray.t = t4.m128_f32[2], ray.objIdx = idx4.m128i_i32[2];
-#else
 			if (ray.D.x < 0) PLANE_X(3, 4) else PLANE_X(-2.99f, 5);
 			if (ray.D.y < 0) PLANE_Y(1, 6) else PLANE_Y(-2, 7);
 			if (ray.D.z < 0) PLANE_Z(3, 8) else PLANE_Z(-3.99f, 9);
-#endif
-#ifdef FOURLIGHTS
-#ifdef SPEEDTRIX
-			// efficient four-quad intersection by Jesse Vrooman
-			const __m128 t = _mm_div_ps(_mm_add_ps(_mm_set1_ps(ray.O.y),
-				_mm_set1_ps(-1.5)), _mm_xor_ps(_mm_set1_ps(ray.D.y), _mm_set1_ps(-0.0)));
-			const __m128 Ix = _mm_add_ps(_mm_add_ps(_mm_set1_ps(ray.O.x),
-				_mm_set_ps(1, -1, -1, 1)), _mm_mul_ps(t, _mm_set1_ps(ray.D.x)));
-			const __m128 Iz = _mm_add_ps(_mm_add_ps(_mm_set1_ps(ray.O.z),
-				_mm_set_ps(1, 1, -1, -1)), _mm_mul_ps(t, _mm_set1_ps(ray.D.z)));
-			const static __m128 size = _mm_set1_ps(0.25f);
-			const static __m128 nsize = _mm_xor_ps(_mm_set1_ps(0.25f), _mm_set1_ps(-0.0));
-			const __m128 maskedT = _mm_and_ps(t, _mm_and_ps(
-				_mm_and_ps(_mm_cmpgt_ps(Ix, nsize), _mm_cmplt_ps(Ix, size)),
-				_mm_and_ps(_mm_cmpgt_ps(Iz, nsize), _mm_cmplt_ps(Iz, size))));
-			if (maskedT.m128_f32[3] > 0) ray.t = maskedT.m128_f32[3], ray.objIdx = 0;
-			if (maskedT.m128_f32[2] > 0) ray.t = maskedT.m128_f32[2], ray.objIdx = 0;
-			if (maskedT.m128_f32[1] > 0) ray.t = maskedT.m128_f32[1], ray.objIdx = 0;
-			if (maskedT.m128_f32[0] > 0) ray.t = maskedT.m128_f32[0], ray.objIdx = 0;
-#else
-			for (int i = 0; i < 4; i++) quad[i].Intersect(ray);
-#endif
-#else
 			quad.Intersect(ray);
-#endif
-#ifdef SPEEDTRIX // hardcoded spheres, a bit faster this way but very ugly
-			{
-				// SIMD sphere intersection code by Jesse Vrooman
-				const __m128 oc = _mm_sub_ps(ray.O4, sphere.pos4);
-				const float b = _mm_dp_ps(oc, ray.D4, 0x71).m128_f32[0];
-				const float d = b * b - (_mm_dp_ps(oc, oc, 0x71).m128_f32[0] - 0.36f);
-				if (d > 0)
-				{
-					const float t = -b - sqrtf(d);
-					const bool hit = t < ray.t && t > 0;
-					if (hit) { ray.t = t, ray.objIdx = 1; }
-		};
-		}
-			{
-				// SIMD sphere intersection code by Jesse Vrooman
-				const static __m128 s4 = _mm_setr_ps(0, 2.5f, -3.07f, 1);
-				const __m128 oc = _mm_sub_ps(ray.O4, s4);
-				const float b = _mm_dp_ps(oc, ray.D4, 0x71).m128_f32[0];
-				const float d = b * b - (_mm_dp_ps(oc, oc, 0x71).m128_f32[0] - 64.0f);
-				if (d > 0)
-				{
-					const float t = sqrtf(d) - b;
-					const bool hit = t < ray.t && t > 0;
-					if (hit) { ray.t = t, ray.objIdx = 2; }
-				};
-			}
-#else
 			sphere.Intersect(ray);
 			sphere2.Intersect(ray);
-#endif
 			cube.Intersect(ray);
 			torus.Intersect(ray);
-	}
+		}
 		bool IsOccluded(const Ray& ray) const
 		{
 			if (cube.IsOccluded(ray)) return true;
@@ -265,7 +190,7 @@ namespace Tmpl8 {
 				const float t = -b - sqrtf(d);
 				const bool hit = t < ray.t && t > 0;
 				if (hit) return true;
-		}
+			}
 #else
 			if (sphere.IsOccluded(ray)) return true;
 #endif
@@ -276,7 +201,7 @@ namespace Tmpl8 {
 #endif
 			if (torus.IsOccluded(ray)) return true;
 			return false; // skip planes and rounded corners
-}
+		}
 		float3 GetNormal(const int objIdx, const float3 I, const float3 wo) const
 		{
 			// we get the normal after finding the nearest intersection:
@@ -300,7 +225,7 @@ namespace Tmpl8 {
 			}
 			if (dot(N, wo) > 0) N = -N; // hit backside / inside
 			return N;
-			}
+		}
 		float3 GetAlbedo(int objIdx, float3 I) const
 		{
 			if (objIdx == -1) return float3(0); // or perhaps we should just crash
