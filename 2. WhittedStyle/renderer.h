@@ -15,6 +15,21 @@
 
 namespace Tmpl8
 {
+	struct Test
+	{
+		int sizeO;
+		int sizeD;
+		int sizerD;
+		int sizet;
+		int sizebary;
+		int sizeObjIdx;
+		int sizeTriIdx;
+		int sizeInside;
+		int sizePadding;
+		int sizeTotal;
+	};
+
+
 	class Renderer : public TheApp
 	{
 	private:
@@ -61,12 +76,15 @@ namespace Tmpl8
 		bool animating = false;
 		float anim_time = 0;
 		int depthLimit = 5;
-		Kernel kernelGeneratePrimaryRays;
-		Kernel kernelExtend;
-		Kernel kernelShade;
-		Kernel kernelConnect;
-		Kernel kernelFinalize;
-		Buffer bvhBuffer;
-		Buffer rayBuffer;
+		Kernel* kernelTestRayStructSize;
+		Kernel* kernelGeneratePrimaryRays;
+		Kernel* kernelExtend;
+		Kernel* kernelShade;
+		Kernel* kernelConnect;
+		Kernel* kernelFinalize;
+		Buffer* bvhBuffer;
+		Buffer* rayBuffer;
+		Test* tests;
+		Ray* rays;
 	};
 } // namespace Tmpl8

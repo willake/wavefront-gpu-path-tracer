@@ -19,7 +19,7 @@
 // if you plan to alter the scene in any way.
 // -----------------------------------------------------------
 
-#define SPEEDTRIX
+//#define SPEEDTRIX
 //#define FOURLIGHTS
 
 namespace Tmpl8 {
@@ -272,8 +272,8 @@ namespace Tmpl8 {
 			float tmin = max(vmin4.m128_f32[0], max(vmin4.m128_f32[1], vmin4.m128_f32[2]));
 			return tmax > 0 && tmin < tmax && tmin < ray.t;
 #else
-			float3 O = TransformPosition_SSE(ray.O4, invM);
-			float3 D = TransformVector_SSE(ray.D4, invM);
+			float3 O = TransformPosition(ray.O, invM);
+			float3 D = TransformVector(ray.D, invM);
 			float rDx = 1 / D.x, rDy = 1 / D.y, rDz = 1 / D.z;
 			float t1 = (b[0].x - O.x) * rDx, t2 = (b[1].x - O.x) * rDx;
 			float t3 = (b[0].y - O.y) * rDy, t4 = (b[1].y - O.y) * rDy;
@@ -390,8 +390,8 @@ namespace Tmpl8 {
 		void Intersect(Ray& ray) const
 		{
 			// via: https://www.shadertoy.com/view/4sBGDy
-			float3 O = TransformPosition_SSE(ray.O4, invT);
-			float3 D = TransformVector_SSE(ray.D4, invT);
+			float3 O = TransformPosition(ray.O, invT);
+			float3 D = TransformVector(ray.D, invT);
 			// extension rays need double precision for the quadratic solver!
 			double po = 1, m = dot(O, O), k3 = dot(O, D), k32 = k3 * k3;
 			// bounding sphere test
@@ -462,8 +462,8 @@ namespace Tmpl8 {
 		bool IsOccluded(const Ray& ray) const
 		{
 			// via: https://www.shadertoy.com/view/4sBGDy
-			float3 O = TransformPosition_SSE(ray.O4, invT);
-			float3 D = TransformVector_SSE(ray.D4, invT);
+			float3 O = TransformPosition(ray.O, invT);
+			float3 D = TransformVector(ray.D, invT);
 			float po = 1, m = dot(O, O), k3 = dot(O, D), k32 = k3 * k3;
 			// bounding sphere test
 			float v = k32 - m + r2;
