@@ -2,16 +2,10 @@
 
 #include "base_scene.h"
 #include "blas_bvh.h"
-#include "blas_grid.h"
-#include "blas_kdtree.h"
 #include "tlas_bvh.h"
-#include "tlas_grid.h"
-#include "tlas_kdtree.h"
 #include "rapidxml.hpp"
 
 #define TLAS_USE_BVH
-//#define TLAS_USE_Grid
-//#define TLAS_USE_KDTree
 
 namespace Tmpl8
 {
@@ -58,15 +52,7 @@ namespace Tmpl8
 		uint GetMaxTreeDepth() const;
 	public:
 		float animTime = 0;
-#ifdef TLAS_USE_BVH
 		TLASBVH tlas;
-#endif
-#ifdef TLAS_USE_Grid
-		TLASGrid tlas;
-#endif
-#ifdef TLAS_USE_KDTree
-		TLASKDTree tlas;
-#endif
 		string sceneName;
 		Texture skydome;
 		Plane floor;

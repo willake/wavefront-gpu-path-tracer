@@ -37,7 +37,6 @@ TLASFileScene::TLASFileScene(const string& filePath)
 			materials[i]->textureDiffuse = std::make_unique<Texture>(sceneData.materials[i].textureLocation);
 	}
 
-#ifdef TLAS_USE_BVH
 	std::vector<BLASBVH*> blas;
 	blas.resize(objCount);
 	for (int i = 0; i < objCount; i++)
@@ -53,41 +52,6 @@ TLASFileScene::TLASFileScene(const string& filePath)
 		objIdUsed++;
 	}
 	tlas = TLASBVH(blas);
-#endif // TLAS_USE_BVH
-#ifdef TLAS_USE_Grid
-	std::vector<BLASGrid*> blas;
-	blas.resize(objCount);
-	for (int i = 0; i < objCount; i++)
-	{
-		ObjectData& objectData = sceneData.objects[i];
-		mat4 T = mat4::Translate(objectData.position)
-			* mat4::RotateX(objectData.rotation.x * Deg2Red)
-			* mat4::RotateY(objectData.rotation.y * Deg2Red)
-			* mat4::RotateZ(objectData.rotation.z * Deg2Red);
-		mat4 S = mat4::Scale(objectData.scale);
-		blas[i] = new BLASGrid(objIdUsed, objectData.modelLocation, T, S);
-		blas[i]->matIdx = objectData.materialIdx;
-		objIdUsed++;
-	}
-	tlas = TLASGrid(blas);
-#endif // TLAS_USE_Grid
-#ifdef TLAS_USE_KDTree
-	std::vector<BLASKDTree*> blas;
-	blas.resize(objCount);
-	for (int i = 0; i < objCount; i++)
-	{
-		ObjectData& objectData = sceneData.objects[i];
-		mat4 T = mat4::Translate(objectData.position)
-			* mat4::RotateX(objectData.rotation.x * Deg2Red)
-			* mat4::RotateY(objectData.rotation.y * Deg2Red)
-			* mat4::RotateZ(objectData.rotation.z * Deg2Red);
-		mat4 S = mat4::Scale(objectData.scale);
-		blas[i] = new BLASKDTree(objIdUsed, objectData.modelLocation, T, S);
-		blas[i]->matIdx = objectData.materialIdx;
-		objIdUsed++;
-	}
-	tlas = TLASKDTree(blas);
-#endif // USE_KDTree
 
 	SetTime(0);
 }
@@ -117,19 +81,19 @@ SceneData TLASFileScene::LoadSceneFile(const string& filePath)
 	sceneData.skydomeLocation = root->first_node("skydome_location")->value();
 
 	// Extract object information
-	for (rapidxml::xml_node<>* objNode = root->first_node("objects")->first_node("object"); objNode; objNode = objNode->next_sibling()) 
+	for (rapidxml::xml_node<>* objNode = root->first_node("objects")->first_node("object"); objNode; objNode = objNode->next_sibling())
 	{
 		ObjectData obj;
 		obj.modelLocation = objNode->first_node("model_location")->value();
 		obj.materialIdx = std::stoi(objNode->first_node("material_idx")->value());
 
-		for (rapidxml::xml_node<>* posNode = objNode->first_node("position")->first_node(); posNode; posNode = posNode->next_sibling()) 
+		for (rapidxml::xml_node<>* posNode = objNode->first_node("position")->first_node(); posNode; posNode = posNode->next_sibling())
 		{
 			int index = posNode->name()[0] - 'x'; // 'x', 'y', 'z' map to 0, 1, 2
 			obj.position[index] = std::stof(posNode->value());
 		}
 
-		for (rapidxml::xml_node<>* rotNode = objNode->first_node("rotation")->first_node(); rotNode; rotNode = rotNode->next_sibling()) 
+		for (rapidxml::xml_node<>* rotNode = objNode->first_node("rotation")->first_node(); rotNode; rotNode = rotNode->next_sibling())
 		{
 			int index = rotNode->name()[0] - 'x'; // 'x', 'y', 'z' map to 0, 1, 2
 			obj.rotation[index] = std::stof(rotNode->value());
@@ -142,7 +106,7 @@ SceneData TLASFileScene::LoadSceneFile(const string& filePath)
 		}
 
 		sceneData.objects.push_back(obj);
-	}
+}
 
 	// Extract material information
 	for (rapidxml::xml_node<>* matNode = root->first_node("materials")->first_node("material"); matNode; matNode = matNode->next_sibling())
@@ -233,24 +197,10 @@ HitInfo TLASFileScene::GetHitInfo(const Ray& ray, const float3 I)
 		hitInfo.material = &primitiveMaterials[1];
 		break;
 	default:
-#ifdef TLAS_USE_BVH
 		BLASBVH* bvh = tlas.blas[ray.objIdx - 2];
 		hitInfo.normal = bvh->GetNormal(ray.triIdx, ray.barycentric);
 		hitInfo.uv = bvh->GetUV(ray.triIdx, ray.barycentric);
 		hitInfo.material = materials[bvh->matIdx];
-#endif // USE_BVH
-#ifdef TLAS_USE_Grid
-		BLASGrid* grid = tlas.blas[ray.objIdx - 2];
-		hitInfo.normal = grid->GetNormal(ray.triIdx, ray.barycentric);
-		hitInfo.uv = grid->GetUV(ray.triIdx, ray.barycentric);
-		hitInfo.material = materials[grid->matIdx];
-#endif // USE_Grid
-#ifdef TLAS_USE_KDTree
-		BLASKDTree* kdtree = tlas.blas[ray.objIdx - 2];
-		hitInfo.normal = kdtree->GetNormal(ray.triIdx, ray.barycentric);
-		hitInfo.uv = kdtree->GetUV(ray.triIdx, ray.barycentric);
-		hitInfo.material = materials[kdtree->matIdx];
-#endif // USE_KDTree
 		break;
 	}
 
@@ -288,20 +238,11 @@ std::chrono::microseconds TLASFileScene::GetBuildTime() const
 
 uint TLASFileScene::GetMaxTreeDepth() const
 {
-#ifdef TLAS_USE_BVH
 	uint maxDepth = 0;
 	for (int i = 0; i < objCount; i++)
 	{
 		if (tlas.blas[i]->maxDepth > maxDepth) maxDepth = tlas.blas[i]->maxDepth;
 	}
 	return maxDepth;
-#endif
-#ifdef TLAS_KDTree
-	for (int i = 0; i < objCount; i++)
-	{
-		if (tlas.blas[i]->maxDepth > maxDepth) maxDepth = tlas.blas[i]->maxDepth;
-	}
-	return maxDepth;
-#endif
 	return 0;
 }

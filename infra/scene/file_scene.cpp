@@ -236,11 +236,5 @@ std::chrono::microseconds FileScene::GetBuildTime() const
 
 uint FileScene::GetMaxTreeDepth() const
 {
-#ifdef USE_BVH
 	return acc.maxDepth;
-#endif
-#ifdef USE_KDTree
-	return acc.maxDepth;
-#endif
-	return 0;
 }

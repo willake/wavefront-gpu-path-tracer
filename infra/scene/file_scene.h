@@ -2,14 +2,10 @@
 
 #include "base_scene.h"
 #include "bvh.h"
-#include "grid.h"
 #include "model.h"
-#include "kdtree.h"
 #include "rapidxml.hpp"
 
-//#define USE_BVH
-//#define USE_Grid
-#define USE_KDTree
+#define USE_BVH
 
 #include "tlas_file_scene.h"
 
@@ -33,15 +29,7 @@ namespace Tmpl8
 		uint GetMaxTreeDepth() const;
 	public:
 		float animTime = 0;
-#ifdef USE_BVH
 		BVH acc;
-#endif
-#ifdef USE_Grid
-		Grid acc;
-#endif
-#ifdef USE_KDTree
-		KDTree acc;
-#endif
 		std::vector<Model*> models;
 		string sceneName;
 		Texture skydome;
