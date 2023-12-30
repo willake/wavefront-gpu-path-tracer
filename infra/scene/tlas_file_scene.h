@@ -63,5 +63,13 @@ namespace Tmpl8
 		Material errorMaterial;
 		Material primitiveMaterials[3];
 		std::vector<Material*> materials;
+		// GPU buffers
+		Tri* triangles;
+		Buffer triBuffer;
+		Buffer triExBuffer;
+		Buffer triIdxBuffer;
+		Buffer bvhInsBuffer;
+		Buffer blasBuffer;
+		Buffer tlasBuffer;
 	};
 }

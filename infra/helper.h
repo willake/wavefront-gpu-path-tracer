@@ -6,18 +6,11 @@
 struct Tri
 {
 	Tri() {};
-	Tri(float3 v0, float3 v1, float3 v2, float3 n0, float3 n1, float3 n2, float2 u0, float2 u1, float2 u2, float3 c, int idx)
-		: vertex0(v0), vertex1(v1), vertex2(v2), normal0(n0), normal1(n1), normal2(n2), uv0(u0), uv1(u1), uv2(u2), centroid(c), objIdx(idx)
+	Tri(float3 v0, float3 v1, float3 v2, float3 c)
+		: vertex0(v0), vertex1(v1), vertex2(v2), centroid(c)
 	{};
-	union { struct { float3 vertex0; float d0; }; __m128 vertex04; };
-	union { struct { float3 vertex1; float d1; }; __m128 vertex14; };
-	union { struct { float3 vertex2; float d2; }; __m128 vertex24; };
-	union { struct { float4 normal0; float d3; }; __m128 normal04; };
-	union { struct { float4 normal1; float d4; }; __m128 normal14; };
-	union { struct { float4 normal2; float d5; }; __m128 normal24; };
-	float2 uv0, uv1, uv2;
-	union { struct { float4 centroid; float d6; }; __m128 centroid4; };
-	int objIdx; // 140 in total
+	float3 vertex0, vertex1, vertex2; // 36 bytes
+	float3 centroid; // 12 bytes
 
 	aabb GetBounds()
 	{
@@ -27,6 +20,17 @@ struct Tri
 		bounds.Grow(vertex2);
 		return bounds;
 	}
+};
+
+struct TriEx
+{
+	TriEx() {};
+	TriEx(float3 n0, float3 n1, float3 n2, float2 u0, float2 u1, float2 u2, int idx)
+		: normal0(n0), normal1(n1), normal2(n2), uv0(u0), uv1(u1), uv2(u2), objIdx(idx)
+	{};
+	float3 normal0, normal1, normal2; // 36 bytes
+	float2 uv0, uv1, uv2; // 24 bytes
+	int objIdx; // 4 bytes 140 in total
 };
 
 struct Vertex

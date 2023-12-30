@@ -106,7 +106,7 @@ SceneData TLASFileScene::LoadSceneFile(const string& filePath)
 		}
 
 		sceneData.objects.push_back(obj);
-}
+	}
 
 	// Extract material information
 	for (rapidxml::xml_node<>* matNode = root->first_node("materials")->first_node("material"); matNode; matNode = matNode->next_sibling())
@@ -244,5 +244,4 @@ uint TLASFileScene::GetMaxTreeDepth() const
 		if (tlas.blas[i]->maxDepth > maxDepth) maxDepth = tlas.blas[i]->maxDepth;
 	}
 	return maxDepth;
-	return 0;
 }

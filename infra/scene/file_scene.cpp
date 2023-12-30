@@ -53,7 +53,7 @@ FileScene::FileScene(const string& filePath)
 
 	for (int i = 0; i < objCount; i++)
 	{
-		models[i]->AppendTriangles(acc.triangles);
+		models[i]->AppendTriangles(acc.triangles, acc.triangleExs);
 	}
 
 	acc.Build();
@@ -204,7 +204,7 @@ HitInfo FileScene::GetHitInfo(const Ray& ray, const float3 I)
 	default:
 		hitInfo.normal = acc.GetNormal(ray.triIdx, ray.barycentric);
 		hitInfo.uv = acc.GetUV(ray.triIdx, ray.barycentric);
-		hitInfo.material = materials[models[acc.triangles[ray.triIdx].objIdx - 2]->matIdx];
+		hitInfo.material = materials[models[acc.triangleExs[ray.triIdx].objIdx - 2]->matIdx];
 		break;
 	}
 

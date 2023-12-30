@@ -37,6 +37,7 @@ namespace Tmpl8
 		int objIdx = -1;
 		std::vector<BVHNode> bvhNodes;
 		std::vector<Tri> triangles;
+		std::vector<TriEx> triangleExs;
 		std::vector<uint> triangleIndices;
 		uint rootNodeIdx = 0, nodesUsed = 1;
 		std::chrono::microseconds buildTime;
