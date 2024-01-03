@@ -19,6 +19,15 @@ namespace Tmpl8
 		bool isLeaf() { return triCount > 0; }
 	};
 
+	struct BVHInstance
+	{
+		uint dummy1, dummy2;
+		uint idx; // objIdx
+		mat4 T;
+		mat4 invT; // inverse transform
+		uint dummy[6];
+	};
+
 	class BLASBVH
 	{
 	private:

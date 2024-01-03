@@ -66,7 +66,9 @@ namespace Tmpl8
 		// GPU buffers
 		Tri* triangles;
 		Buffer triBuffer;
+		TriEx* triangleExs;
 		Buffer triExBuffer;
+		uint* triangleIdx;
 		Buffer triIdxBuffer;
 		Buffer bvhInsBuffer;
 		Buffer blasBuffer;
