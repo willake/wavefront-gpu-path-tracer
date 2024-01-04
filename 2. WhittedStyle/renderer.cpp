@@ -150,12 +150,12 @@ void Renderer::Tick(float deltaTime)
 	// pixel loop
 	Timer t;
 	// GPGPU
-	kernelGeneratePrimaryRays->SetArguments(rayBuffer, SCRWIDTH,
-		SCRHEIGHT, camera.camPos, camera.topLeft,
-		camera.topRight, camera.bottomLeft);
-	rayBuffer->CopyToDevice(true);
-	kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
-	rayBuffer->CopyFromDevice(true);
+	//kernelGeneratePrimaryRays->SetArguments(rayBuffer, SCRWIDTH,
+	//	SCRHEIGHT, camera.camPos, camera.topLeft,
+	//	camera.topRight, camera.bottomLeft);
+	//rayBuffer->CopyToDevice(true);
+	//kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
+	//rayBuffer->CopyFromDevice(true);
 	// lines are executed as OpenMP parallel tasks (disabled in DEBUG)
 #pragma omp parallel for schedule(dynamic)
 	for (int y = 0; y < SCRHEIGHT; y++)

@@ -50,14 +50,8 @@
     <ClCompile Include="..\infra\scene\tlas_file_scene.cpp">
       <Filter>infra\scene</Filter>
     </ClCompile>
-    <ClCompile Include="..\infra\model.cpp">
+    <ClCompile Include="..\infra\mesh.cpp">
       <Filter>infra</Filter>
-    </ClCompile>
-    <ClCompile Include="..\infra\scene\file_scene.cpp">
-      <Filter>infra\scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\infra\bvh.cpp">
-      <Filter>infra\bvh</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -146,14 +140,8 @@
     <ClInclude Include="..\infra\scene\tlas_file_scene.h">
       <Filter>infra\scene</Filter>
     </ClInclude>
-    <ClInclude Include="..\infra\model.h">
+    <ClInclude Include="..\infra\mesh.h">
       <Filter>infra</Filter>
-    </ClInclude>
-    <ClInclude Include="..\infra\scene\file_scene.h">
-      <Filter>infra\scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\infra\bvh.h">
-      <Filter>infra\bvh</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -15,11 +15,16 @@ namespace Tmpl8
 		float3 absorption;
 		std::string textureLocation;
 	};
+
 	struct ObjectData {
-		std::string modelLocation;
+		int meshIdx;
 		int materialIdx;
 		float3 position;
 		float3 rotation;
+	};
+
+	struct MeshData {
+		std::string modelLocation;
 		float3 scale;
 	};
 
@@ -30,6 +35,7 @@ namespace Tmpl8
 		std::string planeTextureLocation;
 		std::string skydomeLocation;
 		std::vector<ObjectData> objects;
+		std::vector<MeshData> meshes;
 		std::vector<MaterialData> materials;
 	};
 
@@ -60,8 +66,10 @@ namespace Tmpl8
 		int objIdUsed = 2;
 		int objCount = 0;
 		int materialCount = 0;
+		int meshCount = 0;
 		Material errorMaterial;
 		Material primitiveMaterials[3];
+		std::vector<Mesh*> meshes;
 		std::vector<Material*> materials;
 		// GPU buffers
 		Tri* triangles;

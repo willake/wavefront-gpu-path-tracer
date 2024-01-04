@@ -14,7 +14,7 @@
     <objects>
         <!-- Object 1 -->
         <object>
-            <model_location>../assets/urna.obj</model_location>
+            <mesh_idx>0</mesh_idx>
             <material_idx>0</material_idx>
             <position>
                 <x>0.0</x>
@@ -35,9 +35,25 @@
 
         <!-- Add more objects as needed -->
     </objects>
+	<!-- Mesh List -->
+    <meshes>
+        <!-- Mesh 0 -->
+        <mesh>
+			<id>0</id>
+            <model_location>../assets/urna.obj</model_location>
+			<scale>
+                <x>0.005</x>
+                <y>0.005</y>
+                <z>0.005</z>
+            </scale>
+        </mesh>
+
+        <!-- Add more objects as needed -->
+    </meshes>
 	<materials>
 		<!-- Material 0 -->
 		<material>
+			<id>0</id>
 			<reflectivity>0.0</reflectivity>
 			<refractivity>0.0</refractivity>
 			<absorption>

@@ -27,6 +27,10 @@ TLASFileScene::TLASFileScene(const string& filePath)
 
 	materials.resize(materialCount);
 
+	meshCount = sceneData.meshes.size();
+
+	meshes.resize(meshCount);
+
 	for (int i = 0; i < materialCount; i++)
 	{
 		materials[i] = new Material();
@@ -35,6 +39,13 @@ TLASFileScene::TLASFileScene(const string& filePath)
 		materials[i]->absorption = sceneData.materials[i].absorption;
 		if (!sceneData.materials[i].textureLocation.empty())
 			materials[i]->textureDiffuse = std::make_unique<Texture>(sceneData.materials[i].textureLocation);
+	}
+
+	for (int i = 0; i < meshCount; i++)
+	{
+		MeshData& meshData = sceneData.meshes[i];
+		mat4 S = mat4::Scale(meshData.scale);
+		meshes[i] = new Mesh(i, meshData.modelLocation, S);
 	}
 
 	std::vector<BLASBVH*> blas;
@@ -46,8 +57,7 @@ TLASFileScene::TLASFileScene(const string& filePath)
 			* mat4::RotateX(objectData.rotation.x * Deg2Red)
 			* mat4::RotateY(objectData.rotation.y * Deg2Red)
 			* mat4::RotateZ(objectData.rotation.z * Deg2Red);
-		mat4 S = mat4::Scale(objectData.scale);
-		blas[i] = new BLASBVH(objIdUsed, objectData.modelLocation, T, S);
+		blas[i] = new BLASBVH(objIdUsed, &meshes[i]->triangles, &meshes[i]->triangleExs, T);
 		blas[i]->matIdx = objectData.materialIdx;
 		objIdUsed++;
 	}
@@ -84,7 +94,7 @@ SceneData TLASFileScene::LoadSceneFile(const string& filePath)
 	for (rapidxml::xml_node<>* objNode = root->first_node("objects")->first_node("object"); objNode; objNode = objNode->next_sibling())
 	{
 		ObjectData obj;
-		obj.modelLocation = objNode->first_node("model_location")->value();
+		obj.meshIdx = std::stoi(objNode->first_node("mesh_idx")->value());
 		obj.materialIdx = std::stoi(objNode->first_node("material_idx")->value());
 
 		for (rapidxml::xml_node<>* posNode = objNode->first_node("position")->first_node(); posNode; posNode = posNode->next_sibling())
@@ -99,13 +109,21 @@ SceneData TLASFileScene::LoadSceneFile(const string& filePath)
 			obj.rotation[index] = std::stof(rotNode->value());
 		}
 
-		for (rapidxml::xml_node<>* scaleNode = objNode->first_node("scale")->first_node(); scaleNode; scaleNode = scaleNode->next_sibling())
+		sceneData.objects.push_back(obj);
+	}
+
+	// Extract mesh information
+	for (rapidxml::xml_node<>* meshNode = root->first_node("meshes")->first_node("mesh"); meshNode; meshNode = meshNode->next_sibling())
+	{
+		MeshData mesh;
+		mesh.modelLocation = meshNode->first_node("model_location")->value();
+		for (rapidxml::xml_node<>* scaleNode = meshNode->first_node("scale")->first_node(); scaleNode; scaleNode = scaleNode->next_sibling())
 		{
 			int index = scaleNode->name()[0] - 'x'; // 'x', 'y', 'z' map to 0, 1, 2
-			obj.scale[index] = std::stof(scaleNode->value());
+			mesh.scale[index] = std::stof(scaleNode->value());
 		}
 
-		sceneData.objects.push_back(obj);
+		sceneData.meshes.push_back(mesh);
 	}
 
 	// Extract material information

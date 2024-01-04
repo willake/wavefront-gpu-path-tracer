@@ -1,7 +1,5 @@
 #pragma once
 
-#define BLAS_BVH_SAH
-#define BLAS_BVH_FASTER_RAY
 #define BLAS_BVH_BINS 8
 
 // reference: https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
@@ -33,18 +31,14 @@ namespace Tmpl8
 	private:
 		void UpdateNodeBounds(uint nodeIdx);
 		void Subdivide(uint nodeIdx, uint depth);
-#ifdef BLAS_BVH_FASTER_RAY
 		float IntersectAABB(const Ray& ray, const float3 bmin, const float3 bmax);
-#else
-		bool IntersectAABB(const Ray& ray, const float3 bmin, const float3 bmax);
-#endif
 		void IntersectTri(Ray& ray, const Tri& tri, const uint triIdx);
 		void IntersectBVH(Ray& ray, const uint nodeIdx);
 		float FindBestSplitPlane(BVHNode& node, int& axis, float& splitPos);
 		float CalculateNodeCost(BVHNode& node);
 	public:
 		BLASBVH() = default;
-		BLASBVH(const int idx, const std::string& modelPath, const mat4 transform, const mat4 scaleMat);
+		BLASBVH(const int idx, std::vector<Tri>* tris, std::vector<TriEx>* triExs, const mat4 transform);
 		void Build();
 		void Refit();
 		void Intersect(Ray& ray);
@@ -55,10 +49,11 @@ namespace Tmpl8
 	private:
 	public:
 		int objIdx = -1;
+		int meshIdx = -1;
 		int matIdx = -1;
 		std::vector<BVHNode> bvhNodes;
-		std::vector<Tri> triangles;
-		std::vector<TriEx> triangleExs;
+		std::vector<Tri>* triangles;
+		std::vector<TriEx>* triangleExs;
 		std::vector<uint> triangleIndices;
 		uint rootNodeIdx = 0, nodesUsed = 1;
 		aabb worldBounds;
