@@ -66,11 +66,12 @@ namespace Tmpl8
 		Plane floor;
 		Quad light;
 		int objIdUsed = 2;
-		int objCount = 0;
-		int materialCount = 0;
-		int meshCount = 0;
-		int totalTriangleCount = 0;
-		int totalBVHNodeCount = 0;
+		uint objCount = 0;
+		uint materialCount = 0;
+		uint meshCount = 0;
+		uint totalTriangleCount = 0;
+		uint totalBVHNodeCount = 0;
+		uint totalPixelCount = 0;
 		Material errorMaterial;
 		Material primitiveMaterials[3];
 		std::vector<Mesh> meshes;
@@ -79,8 +80,7 @@ namespace Tmpl8
 		Material* materials;
 		// GPU buffers
 		Buffer* skydomeBuffer;
-		TextureInfo skydomeInfo;
-		Buffer* skydomeInfoBuffer;
+		Buffer* floorBuffer;
 		Tri* triangles;
 		Buffer* triBuffer;
 		TriEx* triangleExs;
@@ -96,5 +96,11 @@ namespace Tmpl8
 		GPUBLAS* gpublases;
 		Buffer* blasBuffer;
 		Buffer* tlasNodeBuffer;
+		uint* texturePixels;
+		Buffer* texturePixelBuffer;
+		GPUTexture* gputextures;
+		Buffer* textureBuffer;
+		GPUMaterial* gpuMats;
+		Buffer* materialBuffer;
 	};
 }

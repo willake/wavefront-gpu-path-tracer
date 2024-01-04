@@ -13,7 +13,7 @@ void Renderer::Init()
 
 	kernelTestRayStructSize = new Kernel("../cl/kernels.cl", "testRayStructSize");
 	kernelGeneratePrimaryRays = new Kernel("../cl/kernels.cl", "generatePrimaryRays");
-	kernelExtend = new Kernel("../cl/kernels.cl", "extend");
+	kernelExtend = new Kernel("../cl/extend.cl", "extend");
 	kernelShade = new Kernel("../cl/shade.cl", "shade");
 	kernelConnect = new Kernel("../cl/kernels.cl", "connect");
 
@@ -165,8 +165,10 @@ void Renderer::Tick(float deltaTime)
 		camera.topRight, camera.bottomLeft);
 	rayBuffer->CopyToDevice(true);
 	kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
+	kernelExtend->SetArguments(rayBuffer);
+	kernelExtend->Run(SCRWIDTH * SCRHEIGHT);
 	accumulatorBuffer->CopyToDevice(true);
-	kernelShade->SetArguments(accumulatorBuffer, rayBuffer, scene.skydomeBuffer, scene.skydome.width, scene.skydome.height);
+	kernelShade->SetArguments(accumulatorBuffer, rayBuffer, scene.skydomeBuffer, scene.skydome.width, scene.skydome.height, scene.floorBuffer);
 	kernelShade->Run(SCRWIDTH * SCRHEIGHT);
 	accumulatorBuffer->CopyFromDevice(true);
 
