@@ -9,12 +9,13 @@
 
 namespace Tmpl8
 {
-	struct TextureInfo
+	struct GPUTexture
 	{
-		TextureInfo() {};
-		TextureInfo(int w, int h) : width(w), height(h) {};
-		int width = 0;
-		int height = 0;
+		GPUTexture() {};
+		GPUTexture(uint w, uint h) : width(w), height(h) {};
+		uint width = 0;
+		uint height = 0;
+		uint startIdx = 0;
 	};
 	class Texture
 	{

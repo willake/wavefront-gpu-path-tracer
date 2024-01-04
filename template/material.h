@@ -3,6 +3,15 @@
 
 namespace Tmpl8
 {
+	struct GPUMaterial
+	{
+		GPUMaterial() {};
+		float3 albedo = float3(1.0f); // 12 bytes
+		float reflectivity = 0.0f; // 4 bytes
+		float refractivity = 0.0f; // 4 bytes
+		float3 absorption = float3(0.0f); // 12 bytes
+		// 32 bytes in total
+	};
 	struct Material
 	{
 	public:

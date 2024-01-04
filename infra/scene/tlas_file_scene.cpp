@@ -21,29 +21,59 @@ TLASFileScene::TLASFileScene(const string& filePath)
 
 	sceneName = sceneData.name;
 	skydome = Texture(sceneData.skydomeLocation);
-	skydomeInfo = TextureInfo(skydome.width, skydome.height);
 
 	objCount = sceneData.objects.size();
 
 	materialCount = sceneData.materials.size();
 
 	materials = new Material[materialCount];
+	gpuMats = new GPUMaterial[materialCount];
 
 	meshCount = sceneData.meshes.size();
 
 	// Setup materials 
-
 	for (int i = 0; i < materialCount; i++)
 	{
 		materials[i] = Material();
 		materials[i].reflectivity = sceneData.materials[i].reflectivity;
 		materials[i].refractivity = sceneData.materials[i].refractivity;
 		materials[i].absorption = sceneData.materials[i].absorption;
+
+		gpuMats[i] = GPUMaterial();
+		gpuMats[i].reflectivity = sceneData.materials[i].reflectivity;
+		gpuMats[i].refractivity = sceneData.materials[i].refractivity;
+		gpuMats[i].absorption = sceneData.materials[i].absorption;
+
 		if (!sceneData.materials[i].textureLocation.empty())
 			materials[i].textureDiffuse = Texture(sceneData.materials[i].textureLocation);
 		//materials[i].textureDiffuse = std::make_unique<Texture>(sceneData.materials[i].textureLocation);
 	}
 
+	// Setup texturePixels
+
+	gputextures = new GPUTexture[materialCount];
+	totalPixelCount = 0;
+	for (int i = 0; i < materialCount; i++)
+	{
+		Texture& texture = materials[i].textureDiffuse;
+		gputextures[i].width = texture.width;
+		gputextures[i].height = texture.height;
+		gputextures[i].startIdx = totalPixelCount;
+		totalPixelCount += texture.width * texture.height;
+	}
+
+	texturePixels = new uint[totalPixelCount];
+
+	for (int i = 0; i < materialCount; i++)
+	{
+		Texture& texture = materials[i].textureDiffuse;
+		uint pixelCount = texture.width * texture.height;
+
+		for (int pI = 0; pI < pixelCount; pI++)
+		{
+			texturePixels[gputextures[i].startIdx + pI] = texture.pixels[pI];
+		}
+	}
 	// Setup meshes 
 
 	meshes.resize(meshCount);
@@ -226,26 +256,31 @@ void TLASFileScene::PrepareBuffers()
 {
 	// skydome
 	skydomeBuffer = new Buffer(skydome.width * skydome.height * sizeof(uint), skydome.pixels);
-	skydomeBuffer->CopyToDevice();
-	skydomeInfoBuffer = new Buffer(sizeof(TextureInfo), &skydomeInfo);
-	skydomeInfoBuffer->CopyToDevice();
+	skydomeBuffer->CopyToDevice(true);
+	// materials
+	materialBuffer = new Buffer(materialCount * sizeof(GPUMaterial), gpuMats);
+	materialBuffer->CopyToDevice(true);
+	texturePixelBuffer = new Buffer(totalPixelCount * sizeof(uint), texturePixels);
+	texturePixelBuffer->CopyToDevice(true);
+	textureBuffer = new Buffer(materialCount * sizeof(GPUTexture), gputextures);
+	textureBuffer->CopyToDevice(true);
 	// scene data
 	triBuffer = new Buffer(totalTriangleCount * sizeof(Tri), triangles);
-	triBuffer->CopyToDevice();
+	triBuffer->CopyToDevice(true);
 	triExBuffer = new Buffer(totalTriangleCount * sizeof(TriEx), triangleExs);
-	triExBuffer->CopyToDevice();
+	triExBuffer->CopyToDevice(true);
 	triIdxBuffer = new Buffer(totalTriangleCount * sizeof(uint), triangleIndices);
-	triIdxBuffer->CopyToDevice();
+	triIdxBuffer->CopyToDevice(true);
 	meshInsBuffer = new Buffer(meshCount * sizeof(MeshInstance), meshInstances);
-	meshInsBuffer->CopyToDevice();
+	meshInsBuffer->CopyToDevice(true);
 	bvhNodeBuffer = new Buffer(totalBVHNodeCount * sizeof(BVHNode), bvhNodes);
-	bvhNodeBuffer->CopyToDevice();
+	bvhNodeBuffer->CopyToDevice(true);
 	bvhBuffer = new Buffer(meshCount * sizeof(GPUBVH), gpubvhs);
-	bvhBuffer->CopyToDevice();
+	bvhBuffer->CopyToDevice(true);
 	blasBuffer = new Buffer(objCount * sizeof(GPUBLAS), gpublases);
-	blasBuffer->CopyToDevice();
+	blasBuffer->CopyToDevice(true);
 	tlasNodeBuffer = new Buffer(objCount * 2 * sizeof(TLASNode), tlas.tlasNode);
-	tlasNodeBuffer->CopyToDevice();
+	tlasNodeBuffer->CopyToDevice(true);
 }
 
 void TLASFileScene::SetTime(float t)
