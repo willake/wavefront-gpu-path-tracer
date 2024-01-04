@@ -71,12 +71,6 @@ __kernel void generatePrimaryRays(__global Ray *rayBuffer, int width,
   rayBuffer[index] = ray;
 }
 
-__kernel void extend(__global Ray *rayBuffer) {
-  const int index = get_global_id(0);
-
-  Ray ray = rayBuffer[index];
-}
-
 __kernel void connect() {}
 
 __kernel void finalize() {}

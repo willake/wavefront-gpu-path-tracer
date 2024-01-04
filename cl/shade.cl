@@ -51,6 +51,12 @@ __kernel void shade(__global uint *accumulator, __global Ray *rayBuffer,
 
   Ray ray = rayBuffer[index];
 
-  accumulator[index] =
-      getSkyColor(&ray, skydomePixels, skydomeWidth, skydomeHeight);
+  if (ray.objIdx == -1) {
+    accumulator[index] =
+        getSkyColor(&ray, skydomePixels, skydomeWidth, skydomeHeight);
+  }
+
+  if (ray.objIdx == 1) {
+    accumulator[index] = 9527;
+  }
 }
