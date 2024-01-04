@@ -75,15 +75,15 @@ namespace Tmpl8
 		std::vector<Material*> materials;
 		// GPU buffers
 		Tri* triangles;
-		Buffer triBuffer;
+		Buffer* triBuffer;
 		TriEx* triangleExs;
-		Buffer triExBuffer;
+		Buffer* triExBuffer;
 		uint* triangleIdx;
-		Buffer triIdxBuffer;
+		Buffer* triIdxBuffer;
 		MeshInstance* meshInstances;
-		Buffer meshInsBuffer;
-		Buffer bvhInsBuffer;
-		Buffer blasBuffer;
-		Buffer tlasBuffer;
+		Buffer* meshInsBuffer;
+		Buffer* bvhInsBuffer;
+		Buffer* blasBuffer;
+		Buffer* tlasBuffer;
 	};
 }

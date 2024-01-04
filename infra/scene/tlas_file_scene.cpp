@@ -90,6 +90,7 @@ TLASFileScene::TLASFileScene(const string& filePath)
 	}
 	tlas = TLASBVH(blas);
 
+	PrepareBuffers();
 	SetTime(0);
 }
 
@@ -176,6 +177,12 @@ SceneData TLASFileScene::LoadSceneFile(const string& filePath)
 
 void TLASFileScene::PrepareBuffers()
 {
+	triBuffer = new Buffer(totalTriangleCount * sizeof(Tri), triangles);
+	triBuffer->CopyToDevice();
+	triExBuffer = new Buffer(totalTriangleCount * sizeof(TriEx), triangleExs);
+	triExBuffer->CopyToDevice();
+	meshInsBuffer = new Buffer(meshCount * sizeof(MeshInstance), meshInstances);
+	meshInsBuffer->CopyToDevice();
 }
 
 void TLASFileScene::SetTime(float t)
