@@ -78,6 +78,9 @@ namespace Tmpl8
 		BLAS* blases;
 		Material* materials;
 		// GPU buffers
+		Buffer* skydomeBuffer;
+		TextureInfo skydomeInfo;
+		Buffer* skydomeInfoBuffer;
 		Tri* triangles;
 		Buffer* triBuffer;
 		TriEx* triangleExs;

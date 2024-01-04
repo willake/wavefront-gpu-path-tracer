@@ -9,6 +9,13 @@
 
 namespace Tmpl8
 {
+	struct TextureInfo
+	{
+		TextureInfo() {};
+		TextureInfo(int w, int h) : width(w), height(h) {};
+		int width = 0;
+		int height = 0;
+	};
 	class Texture
 	{
 	private:
@@ -100,9 +107,9 @@ namespace Tmpl8
 		}
 
 	private:
-		uint* pixels = 0;
 		bool ownBuffer = false;
 	public:
+		uint* pixels = 0;
 		int width = 0, height = 0;
 	};
 }

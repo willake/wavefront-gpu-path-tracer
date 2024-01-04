@@ -21,6 +21,7 @@ TLASFileScene::TLASFileScene(const string& filePath)
 
 	sceneName = sceneData.name;
 	skydome = Texture(sceneData.skydomeLocation);
+	skydomeInfo = TextureInfo(skydome.width, skydome.height);
 
 	objCount = sceneData.objects.size();
 
@@ -223,6 +224,12 @@ SceneData TLASFileScene::LoadSceneFile(const string& filePath)
 
 void TLASFileScene::PrepareBuffers()
 {
+	// skydome
+	skydomeBuffer = new Buffer(skydome.width * skydome.height * sizeof(uint), skydome.pixels);
+	skydomeBuffer->CopyToDevice();
+	skydomeInfoBuffer = new Buffer(sizeof(TextureInfo), &skydomeInfo);
+	skydomeInfoBuffer->CopyToDevice();
+	// scene data
 	triBuffer = new Buffer(totalTriangleCount * sizeof(Tri), triangles);
 	triBuffer->CopyToDevice();
 	triExBuffer = new Buffer(totalTriangleCount * sizeof(TriEx), triangleExs);
