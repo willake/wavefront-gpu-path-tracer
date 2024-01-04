@@ -92,6 +92,6 @@ namespace Tmpl8
 		Buffer* bvhBuffer;
 		GPUBLAS* gpublases;
 		Buffer* blasBuffer;
-		Buffer* tlasBuffer;
+		Buffer* tlasNodeBuffer;
 	};
 }

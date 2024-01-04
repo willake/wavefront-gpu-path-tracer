@@ -19,8 +19,8 @@ void TLAS::Build()
 	for (uint i = 0; i < blasCount; i++)
 	{
 		nodeIdx[i] = nodesUsed;
-		tlasNode[nodesUsed].aabbMin = blases[i].worldBounds.bmin3;
-		tlasNode[nodesUsed].aabbMax = blases[i].worldBounds.bmax3;
+		tlasNode[nodesUsed].aabbMin = blases[i].aabbMin;
+		tlasNode[nodesUsed].aabbMax = blases[i].aabbMax;
 		tlasNode[nodesUsed].BLAS = i;
 		tlasNode[nodesUsed++].leftRight = 0; // makes it a leaf
 	}

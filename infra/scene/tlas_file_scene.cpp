@@ -89,7 +89,7 @@ TLASFileScene::TLASFileScene(const string& filePath)
 	{
 		bvhs[i] = BVH(meshInstances[i], triangles, triangleExs);
 		objIdUsed++;
-		totalBVHNodeCount = bvhs[i].triangleCount * 2 - 1;
+		totalBVHNodeCount += bvhs[i].triangleCount * 2 - 1;
 	}
 
 	bvhNodes = new BVHNode[totalBVHNodeCount];
@@ -100,14 +100,14 @@ TLASFileScene::TLASFileScene(const string& filePath)
 	{
 		// put all nodes
 		int nodeCount = bvhs[i].triangleCount * 2 - 1;
-		for (int bI; bI < nodeCount; bI++)
+		for (int bI = 0; bI < nodeCount; bI++)
 		{
 			bvhNodes[tmpBVHNodeIdx + bI] = bvhs[i].bvhNodes[bI];
 		}
 
 		MeshInstance& meshIns = meshInstances[i];
 		// put all indices
-		for (int tI; tI < bvhs[i].triangleCount; tI++)
+		for (int tI = 0; tI < bvhs[i].triangleCount; tI++)
 		{
 			triangleIndices[meshIns.triStartIdx + tI] = bvhs[i].triangleIndices[tI];
 		}
@@ -117,7 +117,6 @@ TLASFileScene::TLASFileScene(const string& filePath)
 	}
 
 	// Setup BLASes
-
 	blases = new BLAS[objCount];
 	gpublases = new GPUBLAS[objCount];
 
@@ -129,7 +128,7 @@ TLASFileScene::TLASFileScene(const string& filePath)
 			* mat4::RotateY(objectData.rotation.y * Deg2Red)
 			* mat4::RotateZ(objectData.rotation.z * Deg2Red);
 		blases[i] = BLAS(objIdUsed, &bvhs[objectData.meshIdx], objectData.materialIdx, T);
-		gpublases[i] = GPUBLAS(objIdUsed, objectData.meshIdx, T);
+		gpublases[i] = GPUBLAS(objIdUsed, objectData.materialIdx, objectData.meshIdx, T, blases[i].aabbMin, blases[i].aabbMax);
 		objIdUsed++;
 	}
 

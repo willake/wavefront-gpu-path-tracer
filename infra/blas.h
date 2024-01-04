@@ -7,17 +7,17 @@ namespace Tmpl8
 	struct GPUBLAS
 	{
 		GPUBLAS() {};
-		GPUBLAS(int idx, int bindedBVHIdx, mat4 transform) : objIdx(idx), bvhIdx(bindedBVHIdx)
+		GPUBLAS(int idx, int bindedBVHIdx, int materialIdx, mat4 transform, float3 boundMin, float3 boundMax)
+			: objIdx(idx), matIdx(materialIdx), bvhIdx(bindedBVHIdx), aabbMin(boundMin), aabbMax(boundMax)
 		{
 			T = transform;
 			invT = transform.FastInvertedTransformNoScale();
 		};
-		uint objIdx = -1, bvhIdx = -1; // 8 bytes
-		uint dummy = 0; // 4 bytes
+		uint objIdx = -1, matIdx = -1, bvhIdx = -1; // 8 bytes
 		mat4 T = mat4::Identity(); // 64 bytes
 		mat4 invT = mat4::Identity(); // 64 bytes
-		uint dummy[6]; // 24 bytes
-		// 164 bytes in total
+		float3 aabbMin = float3(0), aabbMax = float3(0);
+		// 180 bytes in total
 	};
 
 	// bvh instance
@@ -35,6 +35,6 @@ namespace Tmpl8
 		int matIdx = -1;
 		BVH* bvh = nullptr;
 		mat4 T = mat4::Identity(), invT = mat4::Identity();
-		aabb worldBounds;
+		float3 aabbMin = float3(0), aabbMax = float3(0);
 	};
 }
