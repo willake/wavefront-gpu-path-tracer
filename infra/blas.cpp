@@ -1,9 +1,9 @@
 #include "precomp.h"
 #include "blas.h"
 
-BLAS::BLAS(int objIdx, BVH* binded, int materialIdx, mat4 transform)
+BLAS::BLAS(int idx, BVH* binded, int materialIdx, mat4 transform)
 {
-	objIdx = objIdx;
+	objIdx = idx;
 	bvh = binded;
 	matIdx = materialIdx;
 	SetTransform(transform);

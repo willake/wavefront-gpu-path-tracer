@@ -88,7 +88,6 @@ TLASFileScene::TLASFileScene(const string& filePath)
 	for (int i = 0; i < meshCount; i++)
 	{
 		bvhs[i] = BVH(meshInstances[i], triangles, triangleExs);
-		objIdUsed++;
 		totalBVHNodeCount += bvhs[i].triangleCount * 2 - 1;
 	}
 
