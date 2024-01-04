@@ -50,6 +50,12 @@
     <ClCompile Include="..\infra\blas_bvh.cpp">
       <Filter>infra\bvh</Filter>
     </ClCompile>
+    <ClCompile Include="..\infra\blas.cpp">
+      <Filter>infra\bvh</Filter>
+    </ClCompile>
+    <ClCompile Include="..\infra\mesh.cpp">
+      <Filter>infra</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.h" />
@@ -136,6 +142,12 @@
     </ClInclude>
     <ClInclude Include="..\infra\blas_bvh.h">
       <Filter>infra\bvh</Filter>
+    </ClInclude>
+    <ClInclude Include="..\infra\blas.h">
+      <Filter>infra\bvh</Filter>
+    </ClInclude>
+    <ClInclude Include="..\infra\mesh.h">
+      <Filter>infra</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

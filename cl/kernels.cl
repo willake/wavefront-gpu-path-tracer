@@ -71,9 +71,11 @@ __kernel void generatePrimaryRays(__global Ray *rayBuffer, int width,
   rayBuffer[index] = ray;
 }
 
-__kernel void extend() {}
+__kernel void extend(__global Ray *rayBuffer) {
+  const int index = get_global_id(0);
 
-__kernel void shade() {}
+  Ray ray = rayBuffer[index];
+}
 
 __kernel void connect() {}
 
