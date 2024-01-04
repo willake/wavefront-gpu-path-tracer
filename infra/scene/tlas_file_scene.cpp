@@ -27,6 +27,10 @@ TLASFileScene::TLASFileScene(const string& filePath)
 
 	materials.resize(materialCount);
 
+	meshCount = sceneData.meshes.size();
+
+	// Setup materials 
+
 	for (int i = 0; i < materialCount; i++)
 	{
 		materials[i] = new Material();
@@ -37,58 +41,100 @@ TLASFileScene::TLASFileScene(const string& filePath)
 			materials[i]->textureDiffuse = std::make_unique<Texture>(sceneData.materials[i].textureLocation);
 	}
 
-#ifdef TLAS_USE_BVH
-	std::vector<BLASBVH*> blas;
-	blas.resize(objCount);
-	for (int i = 0; i < objCount; i++)
-	{
-		ObjectData& objectData = sceneData.objects[i];
-		mat4 T = mat4::Translate(objectData.position)
-			* mat4::RotateX(objectData.rotation.x * Deg2Red)
-			* mat4::RotateY(objectData.rotation.y * Deg2Red)
-			* mat4::RotateZ(objectData.rotation.z * Deg2Red);
-		mat4 S = mat4::Scale(objectData.scale);
-		blas[i] = new BLASBVH(objIdUsed, objectData.modelLocation, T, S);
-		blas[i]->matIdx = objectData.materialIdx;
-		objIdUsed++;
-	}
-	tlas = TLASBVH(blas);
-#endif // TLAS_USE_BVH
-#ifdef TLAS_USE_Grid
-	std::vector<BLASGrid*> blas;
-	blas.resize(objCount);
-	for (int i = 0; i < objCount; i++)
-	{
-		ObjectData& objectData = sceneData.objects[i];
-		mat4 T = mat4::Translate(objectData.position)
-			* mat4::RotateX(objectData.rotation.x * Deg2Red)
-			* mat4::RotateY(objectData.rotation.y * Deg2Red)
-			* mat4::RotateZ(objectData.rotation.z * Deg2Red);
-		mat4 S = mat4::Scale(objectData.scale);
-		blas[i] = new BLASGrid(objIdUsed, objectData.modelLocation, T, S);
-		blas[i]->matIdx = objectData.materialIdx;
-		objIdUsed++;
-	}
-	tlas = TLASGrid(blas);
-#endif // TLAS_USE_Grid
-#ifdef TLAS_USE_KDTree
-	std::vector<BLASKDTree*> blas;
-	blas.resize(objCount);
-	for (int i = 0; i < objCount; i++)
-	{
-		ObjectData& objectData = sceneData.objects[i];
-		mat4 T = mat4::Translate(objectData.position)
-			* mat4::RotateX(objectData.rotation.x * Deg2Red)
-			* mat4::RotateY(objectData.rotation.y * Deg2Red)
-			* mat4::RotateZ(objectData.rotation.z * Deg2Red);
-		mat4 S = mat4::Scale(objectData.scale);
-		blas[i] = new BLASKDTree(objIdUsed, objectData.modelLocation, T, S);
-		blas[i]->matIdx = objectData.materialIdx;
-		objIdUsed++;
-	}
-	tlas = TLASKDTree(blas);
-#endif // USE_KDTree
+	// Setup meshes 
 
+	meshes.resize(meshCount);
+	meshInstances = new MeshInstance[meshCount];
+
+	// prepare for the huge triangle array
+	totalTriangleCount = 0;
+
+	for (int i = 0; i < meshCount; i++)
+	{
+		MeshData& meshData = sceneData.meshes[i];
+		mat4 S = mat4::Scale(meshData.scale);
+		meshes[i] = Mesh(i, meshData.modelLocation, S);
+		totalTriangleCount += meshes[i].triCount;
+	}
+
+	triangles = new Tri[totalTriangleCount];
+	triangleExs = new TriEx[totalTriangleCount];
+
+	int tmpTriangleIndx = 0;
+	for (int i = 0; i < meshCount; i++)
+	{
+		Mesh& mesh = meshes[i];
+
+		for (int tI = 0; tI < mesh.triCount; tI++)
+		{
+			triangles[tmpTriangleIndx + tI] = mesh.triangles[tI];
+			triangleExs[tmpTriangleIndx + tI] = mesh.triangleExs[tI];
+		}
+
+		meshInstances[i].meshIdx = mesh.meshIdx;
+		meshInstances[i].triStartIdx = tmpTriangleIndx;
+		meshInstances[i].triCount = mesh.triCount;
+
+		tmpTriangleIndx += mesh.triCount;
+	}
+
+	// Setup BVHs
+
+	totalBVHNodeCount = 0;
+	// prepare for bvh nodes
+	bvhs = new BVH[meshCount];
+	gpubvhs = new GPUBVH[meshCount];
+
+	for (int i = 0; i < meshCount; i++)
+	{
+		bvhs[i] = BVH(meshInstances[i], triangles, triangleExs);
+		totalBVHNodeCount += bvhs[i].triangleCount * 2 - 1;
+	}
+
+	bvhNodes = new BVHNode[totalBVHNodeCount];
+	triangleIndices = new uint[totalTriangleCount];
+
+	int tmpBVHNodeIdx = 0;
+	for (int i = 0; i < meshCount; i++)
+	{
+		// put all nodes
+		int nodeCount = bvhs[i].triangleCount * 2 - 1;
+		for (int bI = 0; bI < nodeCount; bI++)
+		{
+			bvhNodes[tmpBVHNodeIdx + bI] = bvhs[i].bvhNodes[bI];
+		}
+
+		MeshInstance& meshIns = meshInstances[i];
+		// put all indices
+		for (int tI = 0; tI < bvhs[i].triangleCount; tI++)
+		{
+			triangleIndices[meshIns.triStartIdx + tI] = bvhs[i].triangleIndices[tI];
+		}
+
+		gpubvhs[i] = GPUBVH(i, tmpBVHNodeIdx, nodeCount);
+		tmpBVHNodeIdx += gpubvhs[i].nodeCount;
+	}
+
+	// Setup BLASes
+	blases = new BLAS[objCount];
+	gpublases = new GPUBLAS[objCount];
+
+	for (int i = 0; i < objCount; i++)
+	{
+		ObjectData& objectData = sceneData.objects[i];
+		mat4 T = mat4::Translate(objectData.position)
+			* mat4::RotateX(objectData.rotation.x * Deg2Red)
+			* mat4::RotateY(objectData.rotation.y * Deg2Red)
+			* mat4::RotateZ(objectData.rotation.z * Deg2Red);
+		blases[i] = BLAS(objIdUsed, &bvhs[objectData.meshIdx], objectData.materialIdx, T);
+		gpublases[i] = GPUBLAS(objIdUsed, objectData.materialIdx, objectData.meshIdx, T, blases[i].aabbMin, blases[i].aabbMax);
+		objIdUsed++;
+	}
+
+	// setup tlas
+	tlas = TLAS(blases, objCount);
+
+	PrepareBuffers();
 	SetTime(0);
 }
 
@@ -117,31 +163,39 @@ SceneData TLASFileScene::LoadSceneFile(const string& filePath)
 	sceneData.skydomeLocation = root->first_node("skydome_location")->value();
 
 	// Extract object information
-	for (rapidxml::xml_node<>* objNode = root->first_node("objects")->first_node("object"); objNode; objNode = objNode->next_sibling()) 
+	for (rapidxml::xml_node<>* objNode = root->first_node("objects")->first_node("object"); objNode; objNode = objNode->next_sibling())
 	{
 		ObjectData obj;
-		obj.modelLocation = objNode->first_node("model_location")->value();
+		obj.meshIdx = std::stoi(objNode->first_node("mesh_idx")->value());
 		obj.materialIdx = std::stoi(objNode->first_node("material_idx")->value());
 
-		for (rapidxml::xml_node<>* posNode = objNode->first_node("position")->first_node(); posNode; posNode = posNode->next_sibling()) 
+		for (rapidxml::xml_node<>* posNode = objNode->first_node("position")->first_node(); posNode; posNode = posNode->next_sibling())
 		{
 			int index = posNode->name()[0] - 'x'; // 'x', 'y', 'z' map to 0, 1, 2
 			obj.position[index] = std::stof(posNode->value());
 		}
 
-		for (rapidxml::xml_node<>* rotNode = objNode->first_node("rotation")->first_node(); rotNode; rotNode = rotNode->next_sibling()) 
+		for (rapidxml::xml_node<>* rotNode = objNode->first_node("rotation")->first_node(); rotNode; rotNode = rotNode->next_sibling())
 		{
 			int index = rotNode->name()[0] - 'x'; // 'x', 'y', 'z' map to 0, 1, 2
 			obj.rotation[index] = std::stof(rotNode->value());
 		}
 
-		for (rapidxml::xml_node<>* scaleNode = objNode->first_node("scale")->first_node(); scaleNode; scaleNode = scaleNode->next_sibling())
+		sceneData.objects.push_back(obj);
+	}
+
+	// Extract mesh information
+	for (rapidxml::xml_node<>* meshNode = root->first_node("meshes")->first_node("mesh"); meshNode; meshNode = meshNode->next_sibling())
+	{
+		MeshData mesh;
+		mesh.modelLocation = meshNode->first_node("model_location")->value();
+		for (rapidxml::xml_node<>* scaleNode = meshNode->first_node("scale")->first_node(); scaleNode; scaleNode = scaleNode->next_sibling())
 		{
 			int index = scaleNode->name()[0] - 'x'; // 'x', 'y', 'z' map to 0, 1, 2
-			obj.scale[index] = std::stof(scaleNode->value());
+			mesh.scale[index] = std::stof(scaleNode->value());
 		}
 
-		sceneData.objects.push_back(obj);
+		sceneData.meshes.push_back(mesh);
 	}
 
 	// Extract material information
@@ -163,6 +217,26 @@ SceneData TLASFileScene::LoadSceneFile(const string& filePath)
 	}
 
 	return sceneData;
+}
+
+void TLASFileScene::PrepareBuffers()
+{
+	triBuffer = new Buffer(totalTriangleCount * sizeof(Tri), triangles);
+	triBuffer->CopyToDevice();
+	triExBuffer = new Buffer(totalTriangleCount * sizeof(TriEx), triangleExs);
+	triExBuffer->CopyToDevice();
+	triIdxBuffer = new Buffer(totalTriangleCount * sizeof(uint), triangleIndices);
+	triIdxBuffer->CopyToDevice();
+	meshInsBuffer = new Buffer(meshCount * sizeof(MeshInstance), meshInstances);
+	meshInsBuffer->CopyToDevice();
+	bvhNodeBuffer = new Buffer(totalBVHNodeCount * sizeof(BVHNode), bvhNodes);
+	bvhNodeBuffer->CopyToDevice();
+	bvhBuffer = new Buffer(meshCount * sizeof(GPUBVH), gpubvhs);
+	bvhBuffer->CopyToDevice();
+	blasBuffer = new Buffer(objCount * sizeof(GPUBLAS), gpublases);
+	blasBuffer->CopyToDevice();
+	tlasNodeBuffer = new Buffer(objCount * 2 * sizeof(TLASNode), tlas.tlasNode);
+	tlasNodeBuffer->CopyToDevice();
 }
 
 void TLASFileScene::SetTime(float t)
@@ -233,24 +307,10 @@ HitInfo TLASFileScene::GetHitInfo(const Ray& ray, const float3 I)
 		hitInfo.material = &primitiveMaterials[1];
 		break;
 	default:
-#ifdef TLAS_USE_BVH
-		BLASBVH* bvh = tlas.blas[ray.objIdx - 2];
-		hitInfo.normal = bvh->GetNormal(ray.triIdx, ray.barycentric);
-		hitInfo.uv = bvh->GetUV(ray.triIdx, ray.barycentric);
-		hitInfo.material = materials[bvh->matIdx];
-#endif // USE_BVH
-#ifdef TLAS_USE_Grid
-		BLASGrid* grid = tlas.blas[ray.objIdx - 2];
-		hitInfo.normal = grid->GetNormal(ray.triIdx, ray.barycentric);
-		hitInfo.uv = grid->GetUV(ray.triIdx, ray.barycentric);
-		hitInfo.material = materials[grid->matIdx];
-#endif // USE_Grid
-#ifdef TLAS_USE_KDTree
-		BLASKDTree* kdtree = tlas.blas[ray.objIdx - 2];
-		hitInfo.normal = kdtree->GetNormal(ray.triIdx, ray.barycentric);
-		hitInfo.uv = kdtree->GetUV(ray.triIdx, ray.barycentric);
-		hitInfo.material = materials[kdtree->matIdx];
-#endif // USE_KDTree
+		BLAS& blas = tlas.blases[ray.objIdx - 2];
+		hitInfo.normal = blas.GetNormal(ray.triIdx, ray.barycentric);
+		hitInfo.uv = blas.GetUV(ray.triIdx, ray.barycentric);
+		hitInfo.material = materials[blas.matIdx];
 		break;
 	}
 
@@ -267,20 +327,15 @@ float3 TLASFileScene::GetAlbedo(int objIdx, float3 I) const
 
 int TLASFileScene::GetTriangleCount() const
 {
-	int count = 0;
-	for (int i = 0; i < objCount; i++)
-	{
-		count += tlas.blas[i]->GetTriangleCount();
-	}
-	return count;
+	return totalTriangleCount;
 }
 
 std::chrono::microseconds TLASFileScene::GetBuildTime() const
 {
 	std::chrono::microseconds time(0);
-	for (int i = 0; i < objCount; i++)
+	for (int i = 0; i < meshCount; i++)
 	{
-		time += tlas.blas[i]->buildTime;
+		time += bvhs[i].buildTime;
 	}
 	time += tlas.buildTime;
 	return time;
@@ -288,20 +343,10 @@ std::chrono::microseconds TLASFileScene::GetBuildTime() const
 
 uint TLASFileScene::GetMaxTreeDepth() const
 {
-#ifdef TLAS_USE_BVH
 	uint maxDepth = 0;
-	for (int i = 0; i < objCount; i++)
+	for (int i = 0; i < meshCount; i++)
 	{
-		if (tlas.blas[i]->maxDepth > maxDepth) maxDepth = tlas.blas[i]->maxDepth;
+		if (bvhs[i].maxDepth > maxDepth) maxDepth = bvhs[i].maxDepth;
 	}
 	return maxDepth;
-#endif
-#ifdef TLAS_KDTree
-	for (int i = 0; i < objCount; i++)
-	{
-		if (tlas.blas[i]->maxDepth > maxDepth) maxDepth = tlas.blas[i]->maxDepth;
-	}
-	return maxDepth;
-#endif
-	return 0;
 }

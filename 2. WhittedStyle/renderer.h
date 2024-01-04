@@ -3,10 +3,10 @@
 #include "helper.h"
 #include "texture.h"
 #include "material.h"
+#include "mesh.h"
 #include "hit_info.h"
 #include "base_scene.h"
 #include "primitive_scene.h"
-#include "file_scene.h"
 #include "tlas_file_scene.h"
 
 #define EPSILON	0.001f
@@ -71,7 +71,7 @@ namespace Tmpl8
 		// data members
 		int2 mousePos;
 		float4* accumulator;
-		FileScene scene = FileScene("../assets/scenes/inside_scene.xml");
+		TLASFileScene scene = TLASFileScene("../assets/scenes/base_scene.xml");
 		Camera camera;
 		bool animating = false;
 		float anim_time = 0;

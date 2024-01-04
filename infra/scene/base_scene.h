@@ -2,7 +2,6 @@
 
 #include "texture.h"
 #include "material.h"
-#include "bvh.h"
 
 namespace Tmpl8
 {

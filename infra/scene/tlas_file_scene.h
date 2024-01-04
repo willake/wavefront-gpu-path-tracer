@@ -2,16 +2,11 @@
 
 #include "base_scene.h"
 #include "blas_bvh.h"
-#include "blas_grid.h"
-#include "blas_kdtree.h"
+#include "blas.h"
 #include "tlas_bvh.h"
-#include "tlas_grid.h"
-#include "tlas_kdtree.h"
 #include "rapidxml.hpp"
 
 #define TLAS_USE_BVH
-//#define TLAS_USE_Grid
-//#define TLAS_USE_KDTree
 
 namespace Tmpl8
 {
@@ -21,11 +16,16 @@ namespace Tmpl8
 		float3 absorption;
 		std::string textureLocation;
 	};
+
 	struct ObjectData {
-		std::string modelLocation;
+		int meshIdx;
 		int materialIdx;
 		float3 position;
 		float3 rotation;
+	};
+
+	struct MeshData {
+		std::string modelLocation;
 		float3 scale;
 	};
 
@@ -36,6 +36,7 @@ namespace Tmpl8
 		std::string planeTextureLocation;
 		std::string skydomeLocation;
 		std::vector<ObjectData> objects;
+		std::vector<MeshData> meshes;
 		std::vector<MaterialData> materials;
 	};
 
@@ -45,6 +46,7 @@ namespace Tmpl8
 	public:
 		TLASFileScene(const string& filePath);
 		SceneData LoadSceneFile(const string& filePath);
+		void PrepareBuffers();
 		void SetTime(float t);
 		float3 GetSkyColor(const Ray& ray) const;
 		float3 GetLightPos() const;
@@ -58,15 +60,7 @@ namespace Tmpl8
 		uint GetMaxTreeDepth() const;
 	public:
 		float animTime = 0;
-#ifdef TLAS_USE_BVH
-		TLASBVH tlas;
-#endif
-#ifdef TLAS_USE_Grid
-		TLASGrid tlas;
-#endif
-#ifdef TLAS_USE_KDTree
-		TLASKDTree tlas;
-#endif
+		TLAS tlas;
 		string sceneName;
 		Texture skydome;
 		Plane floor;
@@ -74,8 +68,30 @@ namespace Tmpl8
 		int objIdUsed = 2;
 		int objCount = 0;
 		int materialCount = 0;
+		int meshCount = 0;
+		int totalTriangleCount = 0;
+		int totalBVHNodeCount = 0;
 		Material errorMaterial;
 		Material primitiveMaterials[3];
+		std::vector<Mesh> meshes;
+		BVH* bvhs;
+		BLAS* blases;
 		std::vector<Material*> materials;
+		// GPU buffers
+		Tri* triangles;
+		Buffer* triBuffer;
+		TriEx* triangleExs;
+		Buffer* triExBuffer;
+		uint* triangleIndices;
+		Buffer* triIdxBuffer;
+		MeshInstance* meshInstances;
+		Buffer* meshInsBuffer;
+		BVHNode* bvhNodes;
+		Buffer* bvhNodeBuffer;
+		GPUBVH* gpubvhs;
+		Buffer* bvhBuffer;
+		GPUBLAS* gpublases;
+		Buffer* blasBuffer;
+		Buffer* tlasNodeBuffer;
 	};
 }
