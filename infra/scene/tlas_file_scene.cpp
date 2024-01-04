@@ -30,6 +30,7 @@ TLASFileScene::TLASFileScene(const string& filePath)
 	meshCount = sceneData.meshes.size();
 
 	meshes.resize(meshCount);
+	meshInstances = new MeshInstance[meshCount];
 
 	for (int i = 0; i < materialCount; i++)
 	{
@@ -41,13 +42,39 @@ TLASFileScene::TLASFileScene(const string& filePath)
 			materials[i]->textureDiffuse = std::make_unique<Texture>(sceneData.materials[i].textureLocation);
 	}
 
+	// prepare for the huge triangle array
+	totalTriangleCount = 0;
+
 	for (int i = 0; i < meshCount; i++)
 	{
 		MeshData& meshData = sceneData.meshes[i];
 		mat4 S = mat4::Scale(meshData.scale);
-		meshes[i] = new Mesh(i, meshData.modelLocation, S);
+		meshes[i] = Mesh(i, meshData.modelLocation, S);
+		totalTriangleCount += meshes[i].triCount;
 	}
 
+	triangles = new Tri[totalTriangleCount];
+	triangleExs = new TriEx[totalTriangleCount];
+
+	int tmpTriangleIndx = 0;
+	for (int i = 0; i < meshCount; i++)
+	{
+		Mesh& mesh = meshes[i];
+
+		for (int tI = 0; tI < mesh.triCount; tI++)
+		{
+			triangles[tmpTriangleIndx + tI] = mesh.triangles[tI];
+			triangleExs[tmpTriangleIndx + tI] = mesh.triangleExs[tI];
+		}
+
+		meshInstances[i].meshIdx = mesh.meshIdx;
+		meshInstances[i].triStartIdx = tmpTriangleIndx;
+		meshInstances[i].triCount = mesh.triCount;
+
+		tmpTriangleIndx += mesh.triCount;
+	}
+
+	// prepare for bvh nodes
 	std::vector<BLASBVH*> blas;
 	blas.resize(objCount);
 	for (int i = 0; i < objCount; i++)
@@ -57,7 +84,7 @@ TLASFileScene::TLASFileScene(const string& filePath)
 			* mat4::RotateX(objectData.rotation.x * Deg2Red)
 			* mat4::RotateY(objectData.rotation.y * Deg2Red)
 			* mat4::RotateZ(objectData.rotation.z * Deg2Red);
-		blas[i] = new BLASBVH(objIdUsed, &meshes[i]->triangles, &meshes[i]->triangleExs, T);
+		blas[i] = new BLASBVH(objIdUsed, meshInstances[objectData.meshIdx], triangles, triangleExs, T);
 		blas[i]->matIdx = objectData.materialIdx;
 		objIdUsed++;
 	}
@@ -145,6 +172,10 @@ SceneData TLASFileScene::LoadSceneFile(const string& filePath)
 	}
 
 	return sceneData;
+}
+
+void TLASFileScene::PrepareBuffers()
+{
 }
 
 void TLASFileScene::SetTime(float t)

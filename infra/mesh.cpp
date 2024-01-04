@@ -58,7 +58,12 @@ Tmpl8::Mesh::Mesh(const int idx, const std::string& modelPath, mat4 scaleMat)
 
 	meshIdx = idx;
 
-	for (int i = 0; i < indices.size(); i += 3)
+	triCount = indices.size();
+
+	triangles = new Tri[triCount];
+	triangleExs = new TriEx[triCount];
+
+	for (int i = 0; i < triCount; i += 3)
 	{
 		Tri tri(
 			TransformPosition(vertices[indices[i]].position, scaleMat),
@@ -75,7 +80,7 @@ Tmpl8::Mesh::Mesh(const int idx, const std::string& modelPath, mat4 scaleMat)
 			-1
 		);
 		tri.centroid = (tri.vertex0 + tri.vertex1 + tri.vertex2) * 0.3333f;
-		triangles.push_back(tri);
-		triangleExs.push_back(triEx);
+		triangles[i] = tri;
+		triangleExs[i] = triEx;
 	}
 }

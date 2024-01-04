@@ -1,10 +1,19 @@
 #include "precomp.h"
 #include "blas_bvh.h"
 
-BLASBVH::BLASBVH(const int idx, std::vector<Tri>* tris, std::vector<TriEx>* triExs, const mat4 transform)
+BLASBVH::BLASBVH(const int idx, MeshInstance& meshIns, Tri* tris, TriEx* triExs, const mat4 transform)
 {
+	triangleCount = meshIns.triCount;
 	triangles = tris;
 	triangleExs = triExs;
+
+	triangleIndices = new uint[triangleCount];
+	// populate triangle index array
+	for (int i = 0; i < triangleCount; i++)
+	{
+		// setup indices
+		triangleIndices[i] = meshIns.triStartIdx + i;
+	}
 
 	objIdx = idx;
 	Build();
@@ -14,18 +23,12 @@ BLASBVH::BLASBVH(const int idx, std::vector<Tri>* tris, std::vector<TriEx>* triE
 void BLASBVH::Build()
 {
 	auto startTime = std::chrono::high_resolution_clock::now();
-	triangleIndices.resize(triangles->size());
-	// populate triangle index array
-	for (int i = 0; i < triangles->size(); i++)
-	{
-		// setup indices
-		triangleIndices[i] = i;
-	}
+
 	// assign all triangles to root node
-	bvhNodes.resize(triangles->size() * 2 - 1);
+	bvhNodes.resize(triangleCount * 2 - 1);
 	BVHNode& root = bvhNodes[rootNodeIdx];
 	root.leftFirst = 0;
-	root.triCount = triangles->size();
+	root.triCount = triangleCount;
 	UpdateNodeBounds(rootNodeIdx);
 	// subdivide recursively
 	Subdivide(rootNodeIdx, 0);
@@ -60,7 +63,7 @@ void BLASBVH::UpdateNodeBounds(uint nodeIdx)
 	for (uint first = node.leftFirst, i = 0; i < node.triCount; i++)
 	{
 		uint leafTriIdx = triangleIndices[first + i];
-		Tri& leafTri = triangles->at(leafTriIdx);
+		Tri& leafTri = triangles[leafTriIdx];
 		node.aabbMin = fminf(node.aabbMin, leafTri.vertex0);
 		node.aabbMin = fminf(node.aabbMin, leafTri.vertex1);
 		node.aabbMin = fminf(node.aabbMin, leafTri.vertex2);
@@ -89,7 +92,7 @@ void BLASBVH::Subdivide(uint nodeIdx, uint depth)
 	int j = i + node.triCount - 1;
 	while (i <= j)
 	{
-		if (triangles->at(triangleIndices[i]).centroid[axis] < splitPos)
+		if (triangles[triangleIndices[i]].centroid[axis] < splitPos)
 			i++;
 		else
 			swap(triangleIndices[i], triangleIndices[j--]);
@@ -131,7 +134,7 @@ float BLASBVH::FindBestSplitPlane(BVHNode& node, int& axis, float& splitPos)
 		float boundsMin = 1e30f, boundsMax = -1e30f;
 		for (int i = 0; i < node.triCount; i++)
 		{
-			Tri& triangle = triangles->at(triangleIndices[node.leftFirst + i]);
+			Tri& triangle = triangles[triangleIndices[node.leftFirst + i]];
 			boundsMin = min(boundsMin, triangle.centroid[a]);
 			boundsMax = max(boundsMax, triangle.centroid[a]);
 		}
@@ -141,7 +144,7 @@ float BLASBVH::FindBestSplitPlane(BVHNode& node, int& axis, float& splitPos)
 		float scale = BLAS_BVH_BINS / (boundsMax - boundsMin);
 		for (uint i = 0; i < node.triCount; i++)
 		{
-			Tri& triangle = triangles->at(triangleIndices[node.leftFirst + i]);
+			Tri& triangle = triangles[triangleIndices[node.leftFirst + i]];
 			int binIdx = min(BLAS_BVH_BINS - 1,
 				(int)((triangle.centroid[a] - boundsMin) * scale));
 			bin[binIdx].triCount++;
@@ -224,7 +227,7 @@ void BLASBVH::IntersectBVH(Ray& ray, const uint nodeIdx)
 			{
 				uint triIdx = triangleIndices[node->leftFirst + i];
 				ray.tested++;
-				IntersectTri(ray, triangles->at(triIdx), triIdx);
+				IntersectTri(ray, triangles[triIdx], triIdx);
 			}
 			if (stackPtr == 0) break; else node = stack[--stackPtr];
 
@@ -249,7 +252,7 @@ void BLASBVH::IntersectBVH(Ray& ray, const uint nodeIdx)
 
 int BLASBVH::GetTriangleCount() const
 {
-	return triangles->size();
+	return triangleCount;
 }
 
 void BLASBVH::SetTransform(mat4 transform)
@@ -282,17 +285,17 @@ void BLASBVH::Intersect(Ray& ray)
 
 float3 BLASBVH::GetNormal(const uint triIdx, const float2 barycentric) const
 {
-	float3 n0 = triangleExs->at(triIdx).normal0;
-	float3 n1 = triangleExs->at(triIdx).normal1;
-	float3 n2 = triangleExs->at(triIdx).normal2;
+	float3 n0 = triangleExs[triIdx].normal0;
+	float3 n1 = triangleExs[triIdx].normal1;
+	float3 n2 = triangleExs[triIdx].normal2;
 	float3 N = (1 - barycentric.x - barycentric.y) * n0 + barycentric.x * n1 + barycentric.y * n2;
 	return normalize(TransformVector(N, T));
 }
 
 float2 BLASBVH::GetUV(const uint triIdx, const float2 barycentric) const
 {
-	float2 uv0 = triangleExs->at(triIdx).uv0;
-	float2 uv1 = triangleExs->at(triIdx).uv1;
-	float2 uv2 = triangleExs->at(triIdx).uv2;
+	float2 uv0 = triangleExs[triIdx].uv0;
+	float2 uv1 = triangleExs[triIdx].uv1;
+	float2 uv2 = triangleExs[triIdx].uv2;
 	return (1 - barycentric.x - barycentric.y) * uv0 + barycentric.x * uv1 + barycentric.y * uv2;
 }

@@ -45,6 +45,7 @@ namespace Tmpl8
 	public:
 		TLASFileScene(const string& filePath);
 		SceneData LoadSceneFile(const string& filePath);
+		void PrepareBuffers();
 		void SetTime(float t);
 		float3 GetSkyColor(const Ray& ray) const;
 		float3 GetLightPos() const;
@@ -67,9 +68,10 @@ namespace Tmpl8
 		int objCount = 0;
 		int materialCount = 0;
 		int meshCount = 0;
+		int totalTriangleCount = 0;
 		Material errorMaterial;
 		Material primitiveMaterials[3];
-		std::vector<Mesh*> meshes;
+		std::vector<Mesh> meshes;
 		std::vector<Material*> materials;
 		// GPU buffers
 		Tri* triangles;
@@ -78,6 +80,8 @@ namespace Tmpl8
 		Buffer triExBuffer;
 		uint* triangleIdx;
 		Buffer triIdxBuffer;
+		MeshInstance* meshInstances;
+		Buffer meshInsBuffer;
 		Buffer bvhInsBuffer;
 		Buffer blasBuffer;
 		Buffer tlasBuffer;

@@ -5,7 +5,10 @@
 
 struct Tri
 {
-	Tri() {};
+	Tri() {
+		vertex0 = float3(0), vertex1 = float3(0), vertex2 = float3(0);
+		centroid = float3(0);
+	};
 	Tri(float3 v0, float3 v1, float3 v2, float3 c)
 		: vertex0(v0), vertex1(v1), vertex2(v2), centroid(c)
 	{};
@@ -24,13 +27,18 @@ struct Tri
 
 struct TriEx
 {
-	TriEx() {};
+	TriEx()
+	{
+		normal0 = float3(0), normal1 = float3(0), normal2 = float3(0);
+		uv0 = float2(0), uv1 = float2(0), uv2 = float2(0);
+		objIdx = -1;
+	};
 	TriEx(float3 n0, float3 n1, float3 n2, float2 u0, float2 u1, float2 u2, int idx)
 		: normal0(n0), normal1(n1), normal2(n2), uv0(u0), uv1(u1), uv2(u2), objIdx(idx)
 	{};
 	float3 normal0, normal1, normal2; // 36 bytes
 	float2 uv0, uv1, uv2; // 24 bytes
-	int objIdx; // 4 bytes 140 in total
+	int objIdx; // 4 bytes 64 in total
 };
 
 struct Vertex

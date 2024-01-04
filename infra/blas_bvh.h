@@ -38,7 +38,7 @@ namespace Tmpl8
 		float CalculateNodeCost(BVHNode& node);
 	public:
 		BLASBVH() = default;
-		BLASBVH(const int idx, std::vector<Tri>* tris, std::vector<TriEx>* triExs, const mat4 transform);
+		BLASBVH(const int idx, MeshInstance& meshIns, Tri* tri, TriEx* triExs, const mat4 transform);
 		void Build();
 		void Refit();
 		void Intersect(Ray& ray);
@@ -52,9 +52,10 @@ namespace Tmpl8
 		int meshIdx = -1;
 		int matIdx = -1;
 		std::vector<BVHNode> bvhNodes;
-		std::vector<Tri>* triangles;
-		std::vector<TriEx>* triangleExs;
-		std::vector<uint> triangleIndices;
+		int triangleCount;
+		Tri* triangles;
+		TriEx* triangleExs;
+		uint* triangleIndices;
 		uint rootNodeIdx = 0, nodesUsed = 1;
 		aabb worldBounds;
 		mat4 T, invT;
