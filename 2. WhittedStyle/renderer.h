@@ -82,7 +82,6 @@ namespace Tmpl8
 		Kernel* kernelShade;
 		Kernel* kernelConnect;
 		Kernel* kernelFinalize;
-		Buffer* bvhBuffer;
 		Buffer* rayBuffer;
 		Test* tests;
 		Ray* rays;

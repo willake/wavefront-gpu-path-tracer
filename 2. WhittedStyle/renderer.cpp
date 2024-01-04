@@ -47,7 +47,7 @@ float3 Renderer::Trace(Ray& ray, int depth)
 	float3 albedo = material->isAlbedoOverridden ? scene.GetAlbedo(ray.objIdx, I) : material->GetAlbedo(uv);
 
 	/* visualize edges */ // return GetEdgeDebugColor(ray.barycentric);
-	/* visualize normal */ // return N; // return (N + 1) * 0.5f;
+	/* visualize normal */ // return (N + 1) * 0.5f;
 	/* visualize distance */ // return 0.1f * float3( ray.t, ray.t, ray.t );
 	/* visualize albedo */ // return albedo;
 	/*if (m_inspectTraversal) return GetTraverseCountColor(ray.traversed, m_peakTraversal);
@@ -150,12 +150,14 @@ void Renderer::Tick(float deltaTime)
 	// pixel loop
 	Timer t;
 	// GPGPU
-	//kernelGeneratePrimaryRays->SetArguments(rayBuffer, SCRWIDTH,
-	//	SCRHEIGHT, camera.camPos, camera.topLeft,
-	//	camera.topRight, camera.bottomLeft);
-	//rayBuffer->CopyToDevice(true);
-	//kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
-	//rayBuffer->CopyFromDevice(true);
+	kernelGeneratePrimaryRays->SetArguments(rayBuffer, SCRWIDTH,
+		SCRHEIGHT, camera.camPos, camera.topLeft,
+		camera.topRight, camera.bottomLeft);
+	rayBuffer->CopyToDevice(true);
+	kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
+	kernelExtend->Run(SCRWIDTH * SCRHEIGHT);
+	kernelConnect->Run(SCRWIDTH * SCRHEIGHT);
+	rayBuffer->CopyFromDevice(true);
 	// lines are executed as OpenMP parallel tasks (disabled in DEBUG)
 #pragma omp parallel for schedule(dynamic)
 	for (int y = 0; y < SCRHEIGHT; y++)

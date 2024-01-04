@@ -10,6 +10,17 @@ void Renderer::Init()
 	// create fp32 rgb pixel buffer to render to
 	accumulator = (float4*)MALLOC64(SCRWIDTH * SCRHEIGHT * 16);
 	ClearAccumulator();
+
+	kernelTestRayStructSize = new Kernel("../cl/kernels.cl", "testRayStructSize");
+	kernelGeneratePrimaryRays = new Kernel("../cl/kernels.cl", "generatePrimaryRays");
+	kernelExtend = new Kernel("../cl/kernels.cl", "extend");
+	kernelShade = new Kernel("../cl/shade.cl", "shade");
+	kernelConnect = new Kernel("../cl/kernels.cl", "connect");
+
+	rays = new Ray[SCRWIDTH * SCRHEIGHT];
+	rayBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(Ray), rays);
+	gpuaccumulator = new uint[SCRWIDTH * SCRHEIGHT];
+	accumulatorBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(uint), gpuaccumulator);
 }
 
 void Renderer::ClearAccumulator()
@@ -147,20 +158,41 @@ void Renderer::Tick(float deltaTime)
 	if (animating) scene.SetTime(anim_time += deltaTime * 0.002f), ClearAccumulator();
 	// pixel loop
 	Timer t;
+
+	// GPGPU
+	kernelGeneratePrimaryRays->SetArguments(rayBuffer, SCRWIDTH,
+		SCRHEIGHT, camera.camPos, camera.topLeft,
+		camera.topRight, camera.bottomLeft);
+	rayBuffer->CopyToDevice(true);
+	kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
+	accumulatorBuffer->CopyToDevice(true);
+	kernelShade->SetArguments(accumulatorBuffer, rayBuffer, scene.skydomeBuffer, scene.skydome.width, scene.skydome.height);
+	kernelShade->Run(SCRWIDTH * SCRHEIGHT);
+	accumulatorBuffer->CopyFromDevice(true);
+
+	for (int y = 0; y < SCRHEIGHT; y++) for (int x = 0; x < SCRWIDTH; x++)
+	{
+		screen->pixels[x + y * SCRWIDTH] = gpuaccumulator[x + y * SCRWIDTH];
+	}
+
+	//kernelExtend->Run(SCRWIDTH * SCRHEIGHT);
+	//kernelConnect->Run(SCRWIDTH * SCRHEIGHT);
+	//rayBuffer->CopyFromDevice(true);
+
 	// render tiles using a simple job system
-	for (int jobIdx = 0, y = 0; y < SCRHEIGHT / 16; y++) for (int x = 0; x < SCRWIDTH / 16; x++)
-		jm->AddJob2(tileJob[jobIdx++].Init(this, x, y));
-	jm->RunJobs();
-	// gather energy received on tiles
-	energy = 0;
-	for (int tiles = (SCRWIDTH / 16) * (SCRHEIGHT / 16), i = 0; i < tiles; i++)
-		energy += tileJob[i].sum;
-	// performance report - running average - ms, MRays/s
-	m_avg = (1 - m_alpha) * m_avg + m_alpha * t.elapsed() * 1000;
-	if (m_alpha > 0.05f) m_alpha *= 0.75f;
-	m_fps = 1000.0f / m_avg, m_rps = (SCRWIDTH * SCRHEIGHT) / m_avg;
+	//for (int jobIdx = 0, y = 0; y < SCRHEIGHT / 16; y++) for (int x = 0; x < SCRWIDTH / 16; x++)
+	//	jm->AddJob2(tileJob[jobIdx++].Init(this, x, y));
+	//jm->RunJobs();
+	//// gather energy received on tiles
+	//energy = 0;
+	//for (int tiles = (SCRWIDTH / 16) * (SCRHEIGHT / 16), i = 0; i < tiles; i++)
+	//	energy += tileJob[i].sum;
+	//// performance report - running average - ms, MRays/s
+	//m_avg = (1 - m_alpha) * m_avg + m_alpha * t.elapsed() * 1000;
+	//if (m_alpha > 0.05f) m_alpha *= 0.75f;
+	//m_fps = 1000.0f / m_avg, m_rps = (SCRWIDTH * SCRHEIGHT) / m_avg;
 	// handle user input
-	if (camera.HandleInput(deltaTime)) 
+	if (camera.HandleInput(deltaTime))
 	{
 		ClearAccumulator();
 	}

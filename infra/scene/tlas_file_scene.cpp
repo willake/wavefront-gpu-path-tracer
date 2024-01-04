@@ -9,23 +9,25 @@ TLASFileScene::TLASFileScene(const string& filePath)
 
 	primitiveMaterials[0].isLight = true;
 	//materials[1].isAlbedoOverridden = true;
-	primitiveMaterials[1].textureDiffuse = std::make_unique<Texture>(sceneData.planeTextureLocation);
+	//primitiveMaterials[1].textureDiffuse = std::make_unique<Texture>(sceneData.planeTextureLocation);
+	primitiveMaterials[1].textureDiffuse = Texture(sceneData.planeTextureLocation);
 	objIdUsed = 2;
 
 	light = Quad(0, 1);
-	floor = Plane(1, float3(0, 1, 0), 1, primitiveMaterials[1].textureDiffuse.get()->width / 100);
+	floor = Plane(1, float3(0, 1, 0), 1, primitiveMaterials[1].textureDiffuse.width / 100);
 
 	mat4 M1base = mat4::Translate(sceneData.lightPos);// *mat4::RotateZ(sinf(animTime * 0.6f) * 0.1f);
 	light.T = M1base, light.invT = M1base.FastInvertedTransformNoScale();
 
 	sceneName = sceneData.name;
 	skydome = Texture(sceneData.skydomeLocation);
+	skydomeInfo = TextureInfo(skydome.width, skydome.height);
 
 	objCount = sceneData.objects.size();
 
 	materialCount = sceneData.materials.size();
 
-	materials.resize(materialCount);
+	materials = new Material[materialCount];
 
 	meshCount = sceneData.meshes.size();
 
@@ -33,12 +35,13 @@ TLASFileScene::TLASFileScene(const string& filePath)
 
 	for (int i = 0; i < materialCount; i++)
 	{
-		materials[i] = new Material();
-		materials[i]->reflectivity = sceneData.materials[i].reflectivity;
-		materials[i]->refractivity = sceneData.materials[i].refractivity;
-		materials[i]->absorption = sceneData.materials[i].absorption;
+		materials[i] = Material();
+		materials[i].reflectivity = sceneData.materials[i].reflectivity;
+		materials[i].refractivity = sceneData.materials[i].refractivity;
+		materials[i].absorption = sceneData.materials[i].absorption;
 		if (!sceneData.materials[i].textureLocation.empty())
-			materials[i]->textureDiffuse = std::make_unique<Texture>(sceneData.materials[i].textureLocation);
+			materials[i].textureDiffuse = Texture(sceneData.materials[i].textureLocation);
+		//materials[i].textureDiffuse = std::make_unique<Texture>(sceneData.materials[i].textureLocation);
 	}
 
 	// Setup meshes 
@@ -221,6 +224,12 @@ SceneData TLASFileScene::LoadSceneFile(const string& filePath)
 
 void TLASFileScene::PrepareBuffers()
 {
+	// skydome
+	skydomeBuffer = new Buffer(skydome.width * skydome.height * sizeof(uint), skydome.pixels);
+	skydomeBuffer->CopyToDevice();
+	skydomeInfoBuffer = new Buffer(sizeof(TextureInfo), &skydomeInfo);
+	skydomeInfoBuffer->CopyToDevice();
+	// scene data
 	triBuffer = new Buffer(totalTriangleCount * sizeof(Tri), triangles);
 	triBuffer->CopyToDevice();
 	triExBuffer = new Buffer(totalTriangleCount * sizeof(TriEx), triangleExs);
@@ -310,7 +319,7 @@ HitInfo TLASFileScene::GetHitInfo(const Ray& ray, const float3 I)
 		BLAS& blas = tlas.blases[ray.objIdx - 2];
 		hitInfo.normal = blas.GetNormal(ray.triIdx, ray.barycentric);
 		hitInfo.uv = blas.GetUV(ray.triIdx, ray.barycentric);
-		hitInfo.material = materials[blas.matIdx];
+		hitInfo.material = &materials[blas.matIdx];
 		break;
 	}
 

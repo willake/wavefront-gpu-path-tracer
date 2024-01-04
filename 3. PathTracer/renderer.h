@@ -3,6 +3,7 @@
 #include "helper.h"
 #include "texture.h"
 #include "material.h"
+#include "mesh.h"
 #include "hit_info.h"
 #include "base_scene.h"
 #include "primitive_scene.h"
@@ -44,11 +45,22 @@ namespace Tmpl8
 		// data members
 		int2 mousePos;
 		float4* accumulator;
-		TLASFileScene scene = TLASFileScene("../assets/scenes/inside_scene.xml");
+		TLASFileScene scene = TLASFileScene("../assets/scenes/base_scene.xml");
 		Camera camera;
 		int spp = 1, passes = 1;
 		bool animating = false;
 		float energy, anim_time = 0;
 		int depthLimit = 5;
+
+		Kernel* kernelTestRayStructSize;
+		Kernel* kernelGeneratePrimaryRays;
+		Kernel* kernelExtend;
+		Kernel* kernelShade;
+		Kernel* kernelConnect;
+
+		Ray* rays;
+		Buffer* rayBuffer;
+		uint* gpuaccumulator;
+		Buffer* accumulatorBuffer;
 	};
 } // namespace Tmpl8

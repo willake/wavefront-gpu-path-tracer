@@ -76,8 +76,11 @@ namespace Tmpl8
 		std::vector<Mesh> meshes;
 		BVH* bvhs;
 		BLAS* blases;
-		std::vector<Material*> materials;
+		Material* materials;
 		// GPU buffers
+		Buffer* skydomeBuffer;
+		TextureInfo skydomeInfo;
+		Buffer* skydomeInfoBuffer;
 		Tri* triangles;
 		Buffer* triBuffer;
 		TriEx* triangleExs;
