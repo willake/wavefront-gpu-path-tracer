@@ -17,16 +17,23 @@ namespace Tmpl8
 		bool isLeaf() { return triCount > 0; }
 	};
 
+	//struct BVH // for GPU
+	//{
+	//	int meshIdx = -1; // 4 bytes
+	//	uint startNodeIdx; // 4 bytes
+	//	uint nodeCount; // 4 bytes
+	//};
+
 	struct BVHInstance
 	{
-		uint dummy1, dummy2;
-		uint idx; // objIdx
+		uint objIdx, bvhIdx; // objIdx
+		uint dummy;
 		mat4 T;
 		mat4 invT; // inverse transform
 		uint dummy[6];
 	};
 
-	class BLASBVH
+	class BVH
 	{
 	private:
 		void UpdateNodeBounds(uint nodeIdx);
@@ -37,8 +44,8 @@ namespace Tmpl8
 		float FindBestSplitPlane(BVHNode& node, int& axis, float& splitPos);
 		float CalculateNodeCost(BVHNode& node);
 	public:
-		BLASBVH() = default;
-		BLASBVH(const int idx, MeshInstance& meshIns, Tri* tri, TriEx* triExs, const mat4 transform);
+		BVH() = default;
+		BVH(const int idx, MeshInstance& meshIns, Tri* tri, TriEx* triExs, const mat4 transform);
 		void Build();
 		void Refit();
 		void Intersect(Ray& ray);
@@ -51,7 +58,7 @@ namespace Tmpl8
 		int objIdx = -1;
 		int meshIdx = -1;
 		int matIdx = -1;
-		std::vector<BVHNode> bvhNodes;
+		BVHNode* bvhNodes;
 		int triangleCount;
 		Tri* triangles;
 		TriEx* triangleExs;

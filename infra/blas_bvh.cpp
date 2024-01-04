@@ -1,7 +1,7 @@
 #include "precomp.h"
 #include "blas_bvh.h"
 
-BLASBVH::BLASBVH(const int idx, MeshInstance& meshIns, Tri* tris, TriEx* triExs, const mat4 transform)
+BVH::BVH(const int idx, MeshInstance& meshIns, Tri* tris, TriEx* triExs, const mat4 transform)
 {
 	triangleCount = meshIns.triCount;
 	triangles = tris;
@@ -20,12 +20,12 @@ BLASBVH::BLASBVH(const int idx, MeshInstance& meshIns, Tri* tris, TriEx* triExs,
 	SetTransform(transform);
 }
 
-void BLASBVH::Build()
+void BVH::Build()
 {
 	auto startTime = std::chrono::high_resolution_clock::now();
 
 	// assign all triangles to root node
-	bvhNodes.resize(triangleCount * 2 - 1);
+	bvhNodes = new BVHNode[triangleCount * 2 - 1];
 	BVHNode& root = bvhNodes[rootNodeIdx];
 	root.leftFirst = 0;
 	root.triCount = triangleCount;
@@ -36,7 +36,7 @@ void BLASBVH::Build()
 	buildTime = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
 }
 
-void BLASBVH::Refit()
+void BVH::Refit()
 {
 	for (int i = nodesUsed - 1; i >= 0; i--) if (i != 1)
 	{
@@ -55,7 +55,7 @@ void BLASBVH::Refit()
 	}
 }
 
-void BLASBVH::UpdateNodeBounds(uint nodeIdx)
+void BVH::UpdateNodeBounds(uint nodeIdx)
 {
 	BVHNode& node = bvhNodes[nodeIdx];
 	node.aabbMin = float3(1e30f);
@@ -73,7 +73,7 @@ void BLASBVH::UpdateNodeBounds(uint nodeIdx)
 	}
 }
 
-void BLASBVH::Subdivide(uint nodeIdx, uint depth)
+void BVH::Subdivide(uint nodeIdx, uint depth)
 {
 	// terminate recursion
 	BVHNode& node = bvhNodes[nodeIdx];
@@ -119,14 +119,14 @@ void BLASBVH::Subdivide(uint nodeIdx, uint depth)
 	Subdivide(rightChildIdx, depth + 1);
 }
 
-float BLASBVH::CalculateNodeCost(BVHNode& node)
+float BVH::CalculateNodeCost(BVHNode& node)
 {
 	float3 e = node.aabbMax - node.aabbMin; // extent of the node
 	float surfaceArea = e.x * e.y + e.y * e.z + e.z * e.x;
 	return node.triCount * surfaceArea;
 }
 
-float BLASBVH::FindBestSplitPlane(BVHNode& node, int& axis, float& splitPos)
+float BVH::FindBestSplitPlane(BVHNode& node, int& axis, float& splitPos)
 {
 	float bestCost = 1e30f;
 	for (int a = 0; a < 3; a++)
@@ -182,7 +182,7 @@ float BLASBVH::FindBestSplitPlane(BVHNode& node, int& axis, float& splitPos)
 	return bestCost;
 }
 
-float BLASBVH::IntersectAABB(const Ray& ray, const float3 bmin, const float3 bmax)
+float BVH::IntersectAABB(const Ray& ray, const float3 bmin, const float3 bmax)
 {
 	float tx1 = (bmin.x - ray.O.x) * ray.rD.x, tx2 = (bmax.x - ray.O.x) * ray.rD.x;
 	float tmin = min(tx1, tx2), tmax = max(tx1, tx2);
@@ -193,7 +193,7 @@ float BLASBVH::IntersectAABB(const Ray& ray, const float3 bmin, const float3 bma
 	if (tmax >= tmin && tmin < ray.t && tmax > 0) return tmin; else return 1e30f;
 }
 
-void BLASBVH::IntersectTri(Ray& ray, const Tri& tri, const uint triIdx)
+void BVH::IntersectTri(Ray& ray, const Tri& tri, const uint triIdx)
 {
 	const float3 edge1 = tri.vertex1 - tri.vertex0;
 	const float3 edge2 = tri.vertex2 - tri.vertex0;
@@ -214,7 +214,7 @@ void BLASBVH::IntersectTri(Ray& ray, const Tri& tri, const uint triIdx)
 	}
 }
 
-void BLASBVH::IntersectBVH(Ray& ray, const uint nodeIdx)
+void BVH::IntersectBVH(Ray& ray, const uint nodeIdx)
 {
 	BVHNode* node = &bvhNodes[rootNodeIdx], * stack[64];
 	uint stackPtr = 0;
@@ -250,12 +250,12 @@ void BLASBVH::IntersectBVH(Ray& ray, const uint nodeIdx)
 	}
 }
 
-int BLASBVH::GetTriangleCount() const
+int BVH::GetTriangleCount() const
 {
 	return triangleCount;
 }
 
-void BLASBVH::SetTransform(mat4 transform)
+void BVH::SetTransform(mat4 transform)
 {
 	T = transform;
 	invT = transform.FastInvertedTransformNoScale();
@@ -268,7 +268,7 @@ void BLASBVH::SetTransform(mat4 transform)
 			i & 2 ? bmax.y : bmin.y, i & 4 ? bmax.z : bmin.z), transform));
 }
 
-void BLASBVH::Intersect(Ray& ray)
+void BVH::Intersect(Ray& ray)
 {
 	Ray tRay = Ray(ray);
 	tRay.O = TransformPosition_SSE(ray.O4, invT);
@@ -283,7 +283,7 @@ void BLASBVH::Intersect(Ray& ray)
 	ray = tRay;
 }
 
-float3 BLASBVH::GetNormal(const uint triIdx, const float2 barycentric) const
+float3 BVH::GetNormal(const uint triIdx, const float2 barycentric) const
 {
 	float3 n0 = triangleExs[triIdx].normal0;
 	float3 n1 = triangleExs[triIdx].normal1;
@@ -292,7 +292,7 @@ float3 BLASBVH::GetNormal(const uint triIdx, const float2 barycentric) const
 	return normalize(TransformVector(N, T));
 }
 
-float2 BLASBVH::GetUV(const uint triIdx, const float2 barycentric) const
+float2 BVH::GetUV(const uint triIdx, const float2 barycentric) const
 {
 	float2 uv0 = triangleExs[triIdx].uv0;
 	float2 uv1 = triangleExs[triIdx].uv1;

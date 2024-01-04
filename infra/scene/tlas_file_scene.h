@@ -69,6 +69,7 @@ namespace Tmpl8
 		int materialCount = 0;
 		int meshCount = 0;
 		int totalTriangleCount = 0;
+		int totalBVHNodeCount = 0;
 		Material errorMaterial;
 		Material primitiveMaterials[3];
 		std::vector<Mesh> meshes;
@@ -82,8 +83,12 @@ namespace Tmpl8
 		Buffer* triIdxBuffer;
 		MeshInstance* meshInstances;
 		Buffer* meshInsBuffer;
-		Buffer* bvhInsBuffer;
+		BVHNode* bvhNodes;
 		Buffer* blasBuffer;
+		BVH* bvhs;
+		Buffer* bvhBuffer;
+		BVHInstance* bvhInstances;
+		Buffer* bvhInsBuffer;
 		Buffer* tlasBuffer;
 	};
 }

@@ -74,8 +74,9 @@ TLASFileScene::TLASFileScene(const string& filePath)
 		tmpTriangleIndx += mesh.triCount;
 	}
 
+	totalBVHNodeCount = 0;
 	// prepare for bvh nodes
-	std::vector<BLASBVH*> blas;
+	std::vector<BVH*> blas;
 	blas.resize(objCount);
 	for (int i = 0; i < objCount; i++)
 	{
@@ -84,10 +85,25 @@ TLASFileScene::TLASFileScene(const string& filePath)
 			* mat4::RotateX(objectData.rotation.x * Deg2Red)
 			* mat4::RotateY(objectData.rotation.y * Deg2Red)
 			* mat4::RotateZ(objectData.rotation.z * Deg2Red);
-		blas[i] = new BLASBVH(objIdUsed, meshInstances[objectData.meshIdx], triangles, triangleExs, T);
+		blas[i] = new BVH(objIdUsed, meshInstances[objectData.meshIdx], triangles, triangleExs, T);
 		blas[i]->matIdx = objectData.materialIdx;
 		objIdUsed++;
+		totalBVHNodeCount = blas[i]->triangleCount * 2 - 1;
 	}
+
+	bvhNodes = new BVHNode[totalBVHNodeCount];
+	bvhInstances = new BVHInstance[objCount];
+
+	int tmpBVHNodeIdx = 0;
+	for (int i = 0; i < objCount; i++)
+	{
+		int nodeCount = blas[i]->triangleCount * 2 - 1;
+		for (int bI; bI < nodeCount; bI++)
+		{
+
+		}
+	}
+
 	tlas = TLASBVH(blas);
 
 	PrepareBuffers();
@@ -253,7 +269,7 @@ HitInfo TLASFileScene::GetHitInfo(const Ray& ray, const float3 I)
 		hitInfo.material = &primitiveMaterials[1];
 		break;
 	default:
-		BLASBVH* bvh = tlas.blas[ray.objIdx - 2];
+		BVH* bvh = tlas.blas[ray.objIdx - 2];
 		hitInfo.normal = bvh->GetNormal(ray.triIdx, ray.barycentric);
 		hitInfo.uv = bvh->GetUV(ray.triIdx, ray.barycentric);
 		hitInfo.material = materials[bvh->matIdx];

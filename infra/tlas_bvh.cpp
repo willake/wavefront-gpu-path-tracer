@@ -1,7 +1,7 @@
 #include "precomp.h"
 #include "tlas_bvh.h"
 
-TLASBVH::TLASBVH(std::vector<BLASBVH*> bvhList)
+TLASBVH::TLASBVH(std::vector<BVH*> bvhList)
 {
 	blasCount = bvhList.size();
 	// copy a pointer to the array of bottom level accstructs
