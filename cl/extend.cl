@@ -63,7 +63,11 @@ void intersectFloor(Ray *ray) {
     ray->t = t, ray->objIdx = 1;
 }
 
-__kernel void extend(__global Ray *rayBuffer) {
+__kernel void extend(__global Ray *rayBuffer, __global Tri *triBuffer,
+                     __global TriEx *triExBuffer, __global uint *triIdxBuffer,
+                     __global MeshInstance *meshInstances,
+                     __global BVHNode *bvhNodes, __global BVH *bvhes,
+                     __global BLAS *blases, __global TLASNode *tlasNodes) {
   const int index = get_global_id(0);
 
   Ray ray = rayBuffer[index];

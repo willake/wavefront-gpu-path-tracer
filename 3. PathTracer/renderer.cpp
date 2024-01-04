@@ -165,7 +165,9 @@ void Renderer::Tick(float deltaTime)
 		camera.topRight, camera.bottomLeft);
 	rayBuffer->CopyToDevice(true);
 	kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
-	kernelExtend->SetArguments(rayBuffer);
+	kernelExtend->SetArguments(
+		rayBuffer, scene.triBuffer, scene.triExBuffer, scene.triIdxBuffer,
+		scene.meshInsBuffer, scene.bvhNodeBuffer, scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer);
 	kernelExtend->Run(SCRWIDTH * SCRHEIGHT);
 	accumulatorBuffer->CopyToDevice(true);
 	kernelShade->SetArguments(accumulatorBuffer, rayBuffer, scene.skydomeBuffer, scene.skydome.width, scene.skydome.height, scene.floorBuffer);
