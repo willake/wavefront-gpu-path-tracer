@@ -4,30 +4,31 @@
 
 namespace Tmpl8
 {
-	struct TLASBVHNode
+	struct TLASNode
 	{
-		float3 aabbMin = float3(0);
-		uint leftRight = 0; // 2x16 bits
-		float3 aabbMax = float3(0);
-		uint BLAS = 0;
+		float3 aabbMin = float3(0); // 12 bytes
+		uint leftRight = 0; // 4 bytes
+		float3 aabbMax = float3(0); // 12 bytes
+		uint BLAS = 0; // 4 bytes
+		// 32 bytes in total
 		bool isLeaf() { return leftRight == 0; }
 	};
 
-	class TLASBVH
+	class TLAS
 	{
 	private:
 		float IntersectAABB(const Ray& ray, const float3 bmin, const float3 bmax);
 		int FindBestMatch(int* list, int N, int A);
 	public:
-		TLASBVH() = default;
-		TLASBVH(std::vector<BVH*> bvhList);
+		TLAS() = default;
+		TLAS(BLAS* blasList, uint count);
 		void Build();
 		void Intersect(Ray& ray);
 	private:
-		TLASBVHNode* tlasNode;
-		uint nodesUsed = 0, blasCount;
 	public:
-		std::vector<BVH*> blas;
+		TLASNode* tlasNode;
+		BLAS* blases;
+		uint nodesUsed = 0, blasCount;
 		std::chrono::microseconds buildTime;
 	};
 }

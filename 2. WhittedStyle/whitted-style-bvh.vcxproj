@@ -126,6 +126,7 @@
   </ItemDefinitionGroup>
   <!-- END Custom section -->
   <ItemGroup>
+    <ClCompile Include="..\infra\blas.cpp" />
     <ClCompile Include="..\infra\blas_bvh.cpp" />
     <ClCompile Include="..\infra\mesh.cpp" />
     <ClCompile Include="..\infra\scene\tlas_file_scene.cpp" />
@@ -152,6 +153,7 @@
     <ClCompile Include="renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\infra\blas.h" />
     <ClInclude Include="..\infra\blas_bvh.h" />
     <ClInclude Include="..\infra\helper.h" />
     <ClInclude Include="..\infra\hit_info.h" />

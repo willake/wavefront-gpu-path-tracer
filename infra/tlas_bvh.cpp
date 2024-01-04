@@ -1,20 +1,16 @@
 #include "precomp.h"
 #include "tlas_bvh.h"
 
-TLASBVH::TLASBVH(std::vector<BVH*> bvhList)
+TLAS::TLAS(BLAS* blasList, uint count)
 {
-	blasCount = bvhList.size();
-	// copy a pointer to the array of bottom level accstructs
-	for (int i = 0; i < blasCount; i++)
-	{
-		blas.push_back(bvhList[i]);
-	}
+	blases = blasList;
+	blasCount = count;
 	// allocate TLAS nodes
-	tlasNode = (TLASBVHNode*)_aligned_malloc(sizeof(TLASBVHNode) * 2 * blasCount, 64);
+	tlasNode = (TLASNode*)_aligned_malloc(sizeof(TLASNode) * 2 * blasCount, 64);
 	Build();
 }
 
-void TLASBVH::Build()
+void TLAS::Build()
 {
 	auto startTime = std::chrono::high_resolution_clock::now();
 	// assign a TLASleaf node to each BLAS
@@ -23,8 +19,8 @@ void TLASBVH::Build()
 	for (uint i = 0; i < blasCount; i++)
 	{
 		nodeIdx[i] = nodesUsed;
-		tlasNode[nodesUsed].aabbMin = blas[i]->worldBounds.bmin3;
-		tlasNode[nodesUsed].aabbMax = blas[i]->worldBounds.bmax3;
+		tlasNode[nodesUsed].aabbMin = blases[i].worldBounds.bmin3;
+		tlasNode[nodesUsed].aabbMax = blases[i].worldBounds.bmax3;
 		tlasNode[nodesUsed].BLAS = i;
 		tlasNode[nodesUsed++].leftRight = 0; // makes it a leaf
 	}
@@ -37,9 +33,9 @@ void TLASBVH::Build()
 		if (A == C)
 		{
 			int nodeIdxA = nodeIdx[A], nodeIdxB = nodeIdx[B];
-			TLASBVHNode& nodeA = tlasNode[nodeIdxA];
-			TLASBVHNode& nodeB = tlasNode[nodeIdxB];
-			TLASBVHNode& newNode = tlasNode[nodesUsed];
+			TLASNode& nodeA = tlasNode[nodeIdxA];
+			TLASNode& nodeB = tlasNode[nodeIdxB];
+			TLASNode& newNode = tlasNode[nodesUsed];
 			newNode.leftRight = nodeIdxA + (nodeIdxB << 16);
 			newNode.aabbMin = fminf(nodeA.aabbMin, nodeB.aabbMin);
 			newNode.aabbMax = fmaxf(nodeA.aabbMax, nodeB.aabbMax);
@@ -54,7 +50,7 @@ void TLASBVH::Build()
 	buildTime = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
 }
 
-int TLASBVH::FindBestMatch(int* list, int N, int A)
+int TLAS::FindBestMatch(int* list, int N, int A)
 {
 	float smallest = 1e30f;
 	int bestB = -1;
@@ -69,7 +65,7 @@ int TLASBVH::FindBestMatch(int* list, int N, int A)
 	return bestB;
 }
 
-float TLASBVH::IntersectAABB(const Ray& ray, const float3 bmin, const float3 bmax)
+float TLAS::IntersectAABB(const Ray& ray, const float3 bmin, const float3 bmax)
 {
 	float tx1 = (bmin.x - ray.O.x) * ray.rD.x, tx2 = (bmax.x - ray.O.x) * ray.rD.x;
 	float tmin = min(tx1, tx2), tmax = max(tx1, tx2);
@@ -80,21 +76,21 @@ float TLASBVH::IntersectAABB(const Ray& ray, const float3 bmin, const float3 bma
 	if (tmax >= tmin && tmin < ray.t && tmax > 0) return tmin; else return 1e30f;
 }
 
-void TLASBVH::Intersect(Ray& ray)
+void TLAS::Intersect(Ray& ray)
 {
-	TLASBVHNode* node = &tlasNode[0], * stack[64];
+	TLASNode* node = &tlasNode[0], * stack[64];
 	uint stackPtr = 0;
 	while (1)
 	{
 		ray.traversed++;
 		if (node->isLeaf())
 		{
-			blas[node->BLAS]->Intersect(ray);
+			blases[node->BLAS].Intersect(ray);
 			if (stackPtr == 0) break; else node = stack[--stackPtr];
 			continue;
 		}
-		TLASBVHNode* child1 = &tlasNode[node->leftRight & 0xffff];
-		TLASBVHNode* child2 = &tlasNode[node->leftRight >> 16];
+		TLASNode* child1 = &tlasNode[node->leftRight & 0xffff];
+		TLASNode* child2 = &tlasNode[node->leftRight >> 16];
 		float dist1 = IntersectAABB(ray, child1->aabbMin, child1->aabbMax);
 		float dist2 = IntersectAABB(ray, child2->aabbMin, child2->aabbMax);
 		if (dist1 > dist2) { swap(dist1, dist2); swap(child1, child2); }

@@ -6,7 +6,8 @@ namespace Tmpl8
 	{
 		int meshIdx = -1; // 4 bytes
 		int triStartIdx = -1; // 4 bytes
-		int triCount = 0;
+		int triCount = 0; // 4 bytes 
+		// 12 bytes in total
 	};
 
 	class Mesh

@@ -17,20 +17,14 @@ namespace Tmpl8
 		bool isLeaf() { return triCount > 0; }
 	};
 
-	//struct BVH // for GPU
-	//{
-	//	int meshIdx = -1; // 4 bytes
-	//	uint startNodeIdx; // 4 bytes
-	//	uint nodeCount; // 4 bytes
-	//};
-
-	struct BVHInstance
+	struct GPUBVH // for GPU
 	{
-		uint objIdx, bvhIdx; // objIdx
-		uint dummy;
-		mat4 T;
-		mat4 invT; // inverse transform
-		uint dummy[6];
+		GPUBVH() {};
+		GPUBVH(int meshId, int startIdx, uint count) : meshIdx(meshId), startNodeIdx(startIdx), nodeCount(count) {};
+		int meshIdx = -1; // 4 bytes
+		int startNodeIdx = -1; // 4 bytes
+		uint nodeCount = 0; // 4 bytes
+		// 12 bytes in total
 	};
 
 	class BVH
@@ -39,33 +33,25 @@ namespace Tmpl8
 		void UpdateNodeBounds(uint nodeIdx);
 		void Subdivide(uint nodeIdx, uint depth);
 		float IntersectAABB(const Ray& ray, const float3 bmin, const float3 bmax);
-		void IntersectTri(Ray& ray, const Tri& tri, const uint triIdx);
-		void IntersectBVH(Ray& ray, const uint nodeIdx);
+		void IntersectTri(Ray& ray, const Tri& tri, const int objIdx, const uint triIdx);
 		float FindBestSplitPlane(BVHNode& node, int& axis, float& splitPos);
 		float CalculateNodeCost(BVHNode& node);
 	public:
 		BVH() = default;
-		BVH(const int idx, MeshInstance& meshIns, Tri* tri, TriEx* triExs, const mat4 transform);
+		BVH(MeshInstance& meshIns, Tri* tri, TriEx* triExs);
 		void Build();
-		void Refit();
-		void Intersect(Ray& ray);
-		void SetTransform(mat4 transform);
+		void IntersectBVH(Ray& ray, const int objIdx, const uint nodeIdx);
 		float3 GetNormal(const uint triIdx, const float2 barycentric) const;
 		float2 GetUV(const uint triIdx, const float2 barycentric) const;
 		int GetTriangleCount() const;
 	private:
 	public:
-		int objIdx = -1;
-		int meshIdx = -1;
-		int matIdx = -1;
 		BVHNode* bvhNodes;
 		int triangleCount;
 		Tri* triangles;
 		TriEx* triangleExs;
 		uint* triangleIndices;
 		uint rootNodeIdx = 0, nodesUsed = 1;
-		aabb worldBounds;
-		mat4 T, invT;
 		std::chrono::microseconds buildTime;
 		uint maxDepth = 0;
 	};

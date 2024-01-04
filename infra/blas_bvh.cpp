@@ -1,7 +1,7 @@
 #include "precomp.h"
 #include "blas_bvh.h"
 
-BVH::BVH(const int idx, MeshInstance& meshIns, Tri* tris, TriEx* triExs, const mat4 transform)
+BVH::BVH(MeshInstance& meshIns, Tri* tris, TriEx* triExs)
 {
 	triangleCount = meshIns.triCount;
 	triangles = tris;
@@ -15,9 +15,7 @@ BVH::BVH(const int idx, MeshInstance& meshIns, Tri* tris, TriEx* triExs, const m
 		triangleIndices[i] = meshIns.triStartIdx + i;
 	}
 
-	objIdx = idx;
 	Build();
-	SetTransform(transform);
 }
 
 void BVH::Build()
@@ -34,25 +32,6 @@ void BVH::Build()
 	Subdivide(rootNodeIdx, 0);
 	auto endTime = std::chrono::high_resolution_clock::now();
 	buildTime = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
-}
-
-void BVH::Refit()
-{
-	for (int i = nodesUsed - 1; i >= 0; i--) if (i != 1)
-	{
-		BVHNode& node = bvhNodes[i];
-		if (node.isLeaf())
-		{
-			// leaf node: adjust bounds to contained triangles
-			UpdateNodeBounds(i);
-			continue;
-		}
-		// interior node: adjust bounds to child node bounds
-		BVHNode& leftChild = bvhNodes[node.leftFirst];
-		BVHNode& rightChild = bvhNodes[node.leftFirst + 1];
-		node.aabbMin = fminf(leftChild.aabbMin, rightChild.aabbMin);
-		node.aabbMax = fmaxf(leftChild.aabbMax, rightChild.aabbMax);
-	}
 }
 
 void BVH::UpdateNodeBounds(uint nodeIdx)
@@ -193,7 +172,7 @@ float BVH::IntersectAABB(const Ray& ray, const float3 bmin, const float3 bmax)
 	if (tmax >= tmin && tmin < ray.t && tmax > 0) return tmin; else return 1e30f;
 }
 
-void BVH::IntersectTri(Ray& ray, const Tri& tri, const uint triIdx)
+void BVH::IntersectTri(Ray& ray, const Tri& tri, const int objIdx, const uint triIdx)
 {
 	const float3 edge1 = tri.vertex1 - tri.vertex0;
 	const float3 edge2 = tri.vertex2 - tri.vertex0;
@@ -214,7 +193,7 @@ void BVH::IntersectTri(Ray& ray, const Tri& tri, const uint triIdx)
 	}
 }
 
-void BVH::IntersectBVH(Ray& ray, const uint nodeIdx)
+void BVH::IntersectBVH(Ray& ray, const int objIdx, const uint nodeIdx)
 {
 	BVHNode* node = &bvhNodes[rootNodeIdx], * stack[64];
 	uint stackPtr = 0;
@@ -227,7 +206,7 @@ void BVH::IntersectBVH(Ray& ray, const uint nodeIdx)
 			{
 				uint triIdx = triangleIndices[node->leftFirst + i];
 				ray.tested++;
-				IntersectTri(ray, triangles[triIdx], triIdx);
+				IntersectTri(ray, triangles[triIdx], objIdx, triIdx);
 			}
 			if (stackPtr == 0) break; else node = stack[--stackPtr];
 
@@ -255,41 +234,12 @@ int BVH::GetTriangleCount() const
 	return triangleCount;
 }
 
-void BVH::SetTransform(mat4 transform)
-{
-	T = transform;
-	invT = transform.FastInvertedTransformNoScale();
-	// update bvh bound
-	// calculate world-space bounds using the new matrix
-	float3 bmin = bvhNodes[0].aabbMin, bmax = bvhNodes[0].aabbMax;
-	worldBounds = aabb();
-	for (int i = 0; i < 8; i++)
-		worldBounds.Grow(TransformPosition(float3(i & 1 ? bmax.x : bmin.x,
-			i & 2 ? bmax.y : bmin.y, i & 4 ? bmax.z : bmin.z), transform));
-}
-
-void BVH::Intersect(Ray& ray)
-{
-	Ray tRay = Ray(ray);
-	tRay.O = TransformPosition_SSE(ray.O4, invT);
-	tRay.D = TransformVector_SSE(ray.D4, invT);
-	tRay.rD = float3(1 / tRay.D.x, 1 / tRay.D.y, 1 / tRay.D.z);
-
-	IntersectBVH(tRay, rootNodeIdx);
-
-	tRay.O = ray.O;
-	tRay.D = ray.D;
-	tRay.rD = ray.rD;
-	ray = tRay;
-}
-
 float3 BVH::GetNormal(const uint triIdx, const float2 barycentric) const
 {
 	float3 n0 = triangleExs[triIdx].normal0;
 	float3 n1 = triangleExs[triIdx].normal1;
 	float3 n2 = triangleExs[triIdx].normal2;
-	float3 N = (1 - barycentric.x - barycentric.y) * n0 + barycentric.x * n1 + barycentric.y * n2;
-	return normalize(TransformVector(N, T));
+	return (1 - barycentric.x - barycentric.y) * n0 + barycentric.x * n1 + barycentric.y * n2;
 }
 
 float2 BVH::GetUV(const uint triIdx, const float2 barycentric) const

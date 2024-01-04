@@ -29,8 +29,7 @@ TLASFileScene::TLASFileScene(const string& filePath)
 
 	meshCount = sceneData.meshes.size();
 
-	meshes.resize(meshCount);
-	meshInstances = new MeshInstance[meshCount];
+	// Setup materials 
 
 	for (int i = 0; i < materialCount; i++)
 	{
@@ -41,6 +40,11 @@ TLASFileScene::TLASFileScene(const string& filePath)
 		if (!sceneData.materials[i].textureLocation.empty())
 			materials[i]->textureDiffuse = std::make_unique<Texture>(sceneData.materials[i].textureLocation);
 	}
+
+	// Setup meshes 
+
+	meshes.resize(meshCount);
+	meshInstances = new MeshInstance[meshCount];
 
 	// prepare for the huge triangle array
 	totalTriangleCount = 0;
@@ -74,10 +78,49 @@ TLASFileScene::TLASFileScene(const string& filePath)
 		tmpTriangleIndx += mesh.triCount;
 	}
 
+	// Setup BVHs
+
 	totalBVHNodeCount = 0;
 	// prepare for bvh nodes
-	std::vector<BVH*> blas;
-	blas.resize(objCount);
+	bvhs = new BVH[meshCount];
+	gpubvhs = new GPUBVH[meshCount];
+
+	for (int i = 0; i < meshCount; i++)
+	{
+		bvhs[i] = BVH(meshInstances[i], triangles, triangleExs);
+		objIdUsed++;
+		totalBVHNodeCount = bvhs[i].triangleCount * 2 - 1;
+	}
+
+	bvhNodes = new BVHNode[totalBVHNodeCount];
+	triangleIndices = new uint[totalTriangleCount];
+
+	int tmpBVHNodeIdx = 0;
+	for (int i = 0; i < meshCount; i++)
+	{
+		// put all nodes
+		int nodeCount = bvhs[i].triangleCount * 2 - 1;
+		for (int bI; bI < nodeCount; bI++)
+		{
+			bvhNodes[tmpBVHNodeIdx + bI] = bvhs[i].bvhNodes[bI];
+		}
+
+		MeshInstance& meshIns = meshInstances[i];
+		// put all indices
+		for (int tI; tI < bvhs[i].triangleCount; tI++)
+		{
+			triangleIndices[meshIns.triStartIdx + tI] = bvhs[i].triangleIndices[tI];
+		}
+
+		gpubvhs[i] = GPUBVH(i, tmpBVHNodeIdx, nodeCount);
+		tmpBVHNodeIdx += gpubvhs[i].nodeCount;
+	}
+
+	// Setup BLASes
+
+	blases = new BLAS[objCount];
+	gpublases = new GPUBLAS[objCount];
+
 	for (int i = 0; i < objCount; i++)
 	{
 		ObjectData& objectData = sceneData.objects[i];
@@ -85,26 +128,13 @@ TLASFileScene::TLASFileScene(const string& filePath)
 			* mat4::RotateX(objectData.rotation.x * Deg2Red)
 			* mat4::RotateY(objectData.rotation.y * Deg2Red)
 			* mat4::RotateZ(objectData.rotation.z * Deg2Red);
-		blas[i] = new BVH(objIdUsed, meshInstances[objectData.meshIdx], triangles, triangleExs, T);
-		blas[i]->matIdx = objectData.materialIdx;
+		blases[i] = BLAS(objIdUsed, &bvhs[objectData.meshIdx], objectData.materialIdx, T);
+		gpublases[i] = GPUBLAS(objIdUsed, objectData.meshIdx, T);
 		objIdUsed++;
-		totalBVHNodeCount = blas[i]->triangleCount * 2 - 1;
 	}
 
-	bvhNodes = new BVHNode[totalBVHNodeCount];
-	bvhInstances = new BVHInstance[objCount];
-
-	int tmpBVHNodeIdx = 0;
-	for (int i = 0; i < objCount; i++)
-	{
-		int nodeCount = blas[i]->triangleCount * 2 - 1;
-		for (int bI; bI < nodeCount; bI++)
-		{
-
-		}
-	}
-
-	tlas = TLASBVH(blas);
+	// setup tlas
+	tlas = TLAS(blases, objCount);
 
 	PrepareBuffers();
 	SetTime(0);
@@ -197,8 +227,18 @@ void TLASFileScene::PrepareBuffers()
 	triBuffer->CopyToDevice();
 	triExBuffer = new Buffer(totalTriangleCount * sizeof(TriEx), triangleExs);
 	triExBuffer->CopyToDevice();
+	triIdxBuffer = new Buffer(totalTriangleCount * sizeof(uint), triangleIndices);
+	triIdxBuffer->CopyToDevice();
 	meshInsBuffer = new Buffer(meshCount * sizeof(MeshInstance), meshInstances);
 	meshInsBuffer->CopyToDevice();
+	bvhNodeBuffer = new Buffer(totalBVHNodeCount * sizeof(BVHNode), bvhNodes);
+	bvhNodeBuffer->CopyToDevice();
+	bvhBuffer = new Buffer(meshCount * sizeof(GPUBVH), gpubvhs);
+	bvhBuffer->CopyToDevice();
+	blasBuffer = new Buffer(objCount * sizeof(GPUBLAS), gpublases);
+	blasBuffer->CopyToDevice();
+	tlasNodeBuffer = new Buffer(objCount * 2 * sizeof(TLASNode), tlas.tlasNode);
+	tlasNodeBuffer->CopyToDevice();
 }
 
 void TLASFileScene::SetTime(float t)
@@ -269,10 +309,10 @@ HitInfo TLASFileScene::GetHitInfo(const Ray& ray, const float3 I)
 		hitInfo.material = &primitiveMaterials[1];
 		break;
 	default:
-		BVH* bvh = tlas.blas[ray.objIdx - 2];
-		hitInfo.normal = bvh->GetNormal(ray.triIdx, ray.barycentric);
-		hitInfo.uv = bvh->GetUV(ray.triIdx, ray.barycentric);
-		hitInfo.material = materials[bvh->matIdx];
+		BLAS& blas = tlas.blases[ray.objIdx - 2];
+		hitInfo.normal = blas.GetNormal(ray.triIdx, ray.barycentric);
+		hitInfo.uv = blas.GetUV(ray.triIdx, ray.barycentric);
+		hitInfo.material = materials[blas.matIdx];
 		break;
 	}
 
@@ -289,20 +329,15 @@ float3 TLASFileScene::GetAlbedo(int objIdx, float3 I) const
 
 int TLASFileScene::GetTriangleCount() const
 {
-	int count = 0;
-	for (int i = 0; i < objCount; i++)
-	{
-		count += tlas.blas[i]->GetTriangleCount();
-	}
-	return count;
+	return totalTriangleCount;
 }
 
 std::chrono::microseconds TLASFileScene::GetBuildTime() const
 {
 	std::chrono::microseconds time(0);
-	for (int i = 0; i < objCount; i++)
+	for (int i = 0; i < meshCount; i++)
 	{
-		time += tlas.blas[i]->buildTime;
+		time += bvhs[i].buildTime;
 	}
 	time += tlas.buildTime;
 	return time;
@@ -311,9 +346,9 @@ std::chrono::microseconds TLASFileScene::GetBuildTime() const
 uint TLASFileScene::GetMaxTreeDepth() const
 {
 	uint maxDepth = 0;
-	for (int i = 0; i < objCount; i++)
+	for (int i = 0; i < meshCount; i++)
 	{
-		if (tlas.blas[i]->maxDepth > maxDepth) maxDepth = tlas.blas[i]->maxDepth;
+		if (bvhs[i].maxDepth > maxDepth) maxDepth = bvhs[i].maxDepth;
 	}
 	return maxDepth;
 }

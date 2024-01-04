@@ -2,6 +2,7 @@
 
 #include "base_scene.h"
 #include "blas_bvh.h"
+#include "blas.h"
 #include "tlas_bvh.h"
 #include "rapidxml.hpp"
 
@@ -59,7 +60,7 @@ namespace Tmpl8
 		uint GetMaxTreeDepth() const;
 	public:
 		float animTime = 0;
-		TLASBVH tlas;
+		TLAS tlas;
 		string sceneName;
 		Texture skydome;
 		Plane floor;
@@ -73,22 +74,24 @@ namespace Tmpl8
 		Material errorMaterial;
 		Material primitiveMaterials[3];
 		std::vector<Mesh> meshes;
+		BVH* bvhs;
+		BLAS* blases;
 		std::vector<Material*> materials;
 		// GPU buffers
 		Tri* triangles;
 		Buffer* triBuffer;
 		TriEx* triangleExs;
 		Buffer* triExBuffer;
-		uint* triangleIdx;
+		uint* triangleIndices;
 		Buffer* triIdxBuffer;
 		MeshInstance* meshInstances;
 		Buffer* meshInsBuffer;
 		BVHNode* bvhNodes;
-		Buffer* blasBuffer;
-		BVH* bvhs;
+		Buffer* bvhNodeBuffer;
+		GPUBVH* gpubvhs;
 		Buffer* bvhBuffer;
-		BVHInstance* bvhInstances;
-		Buffer* bvhInsBuffer;
+		GPUBLAS* gpublases;
+		Buffer* blasBuffer;
 		Buffer* tlasBuffer;
 	};
 }
