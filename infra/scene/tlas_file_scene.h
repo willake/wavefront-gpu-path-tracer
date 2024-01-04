@@ -80,7 +80,7 @@ namespace Tmpl8
 		Material* materials;
 		// GPU buffers
 		Buffer* skydomeBuffer;
-		Buffer* skydomeInfoBuffer;
+		Buffer* floorBuffer;
 		Tri* triangles;
 		Buffer* triBuffer;
 		TriEx* triangleExs;

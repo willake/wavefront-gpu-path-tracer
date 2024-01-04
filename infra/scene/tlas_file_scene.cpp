@@ -257,6 +257,10 @@ void TLASFileScene::PrepareBuffers()
 	// skydome
 	skydomeBuffer = new Buffer(skydome.width * skydome.height * sizeof(uint), skydome.pixels);
 	skydomeBuffer->CopyToDevice(true);
+	// floor
+	Texture& floorTex = primitiveMaterials[1].textureDiffuse;
+	floorBuffer = new Buffer(floorTex.width * floorTex.height * sizeof(uint), floorTex.pixels);
+	floorBuffer->CopyToDevice(true);
 	// materials
 	materialBuffer = new Buffer(materialCount * sizeof(GPUMaterial), gpuMats);
 	materialBuffer->CopyToDevice(true);

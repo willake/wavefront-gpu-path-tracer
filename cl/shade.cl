@@ -22,7 +22,7 @@ float2 getFloorUV(const float3 I) {
   float u = I.x;
   float v = I.z;
 
-  const float invto = 1.0f / 51.2f;
+  const float invto = 1.0f / 5.12f;
 
   u *= invto;
   v *= invto;
@@ -47,17 +47,35 @@ uint getSkyColor(Ray *ray, uint *pixels, uint width, uint height) {
   return pixels[skyIdx];
 }
 
+uint sample(uint *pixels, float2 uv, uint width, uint height) {
+
+  float u = clamp(uv.x, 0.0f, 1.0f);
+  float v = 1 - clamp(uv.y, 0.0f, 1.0f);
+
+  uint x = (uint)(u * width);
+  uint y = (uint)(v * height);
+
+  x = clamp(x, (uint)0, width - 1);
+  y = clamp(y, (uint)0, height - 1);
+
+  uint index = x + y * width;
+
+  return pixels[index];
+}
+
 HitInfo getHitInfo(const Ray *ray, const float3 I) {
   HitInfo hitInfo;
   if (ray->objIdx == 1) {
     hitInfo.normal = getFloorNormal();
     hitInfo.uv = getFloorUV(I);
   }
+
+  return hitInfo;
 }
 
 __kernel void shade(__global uint *accumulator, __global Ray *rayBuffer,
                     __global uint *skydomePixels, uint skydomeWidth,
-                    uint skydomeHeight) {
+                    uint skydomeHeight, __global uint *floorPixels) {
   // get ray id
   const int index = get_global_id(0);
 
@@ -72,6 +90,6 @@ __kernel void shade(__global uint *accumulator, __global Ray *rayBuffer,
   }
 
   if (ray.objIdx == 1) {
-    accumulator[index] = 9527;
+    accumulator[index] = sample(floorPixels, hitInfo.uv, 512, 512);
   }
 }
