@@ -27,7 +27,23 @@ typedef struct
     float16 T, invT;                    // 128 bytes
     float aabbMinx, aabbMiny, aabbMinz; // 12 bytes
     float aabbMaxx, aabbMaxy, aabbMaxz; // 12 bytes
-} BLAS;                                 // 164 bytes
+} BLAS;
+
+typedef struct __attribute__((aligned(32)))
+{
+    float albedox, albedoy, albedoz;             // 12 bytes
+    float absorptionx, absorptiony, absorptionz; // 12 bytes
+    float reflectivity;                          // 4 bytes
+    float refractivity;                          // 4 bytes
+} Material;                                      // 32 bytes
+
+typedef struct __attribute__((aligned(16)))
+{
+    uint width;
+    uint height;
+    uint startIdx;
+    uint dummy;
+} Texture;
 
 typedef struct
 {
@@ -42,6 +58,15 @@ uint RGB32FtoRGB8(float3 c)
     int g = (int)(min(c.y, 1.f) * 255);
     int b = (int)(min(c.z, 1.f) * 255);
     return (r << 16) + (g << 8) + b;
+}
+
+float3 RGB8toRGB32F(uint c)
+{
+    float s = 1 / 256.0f;
+    int r = (c >> 16) & 255;
+    int g = (c >> 8) & 255;
+    int b = c & 255;
+    return (float3)(r * s, g * s, b * s);
 }
 
 float3 transformVector(float3 *V, float16 *T)
@@ -117,7 +142,7 @@ uint getSkyColor(Ray *ray, uint *pixels, uint width, uint height)
     return pixels[skyIdx];
 }
 
-uint sample(uint *pixels, float2 uv, uint width, uint height)
+float3 sample(uint *pixels, uint startIdx, float2 uv, uint width, uint height)
 {
 
     float u = clamp(uv.x, 0.0f, 1.0f);
@@ -131,7 +156,7 @@ uint sample(uint *pixels, float2 uv, uint width, uint height)
 
     uint index = x + y * width;
 
-    return pixels[index];
+    return RGB8toRGB32F(pixels[startIdx + index]);
 }
 
 HitInfo getHitInfo(const Ray *ray, TriEx *triExs, BLAS *blases, const float3 I)
@@ -156,9 +181,25 @@ HitInfo getHitInfo(const Ray *ray, TriEx *triExs, BLAS *blases, const float3 I)
     return hitInfo;
 }
 
+float3 getAlbedo(__global uint *floorPixels, __global BLAS *blases, __global uint *texturePixels,
+                 __global Texture *textures, int objIdx, float2 uv)
+{
+    if (objIdx == 1)
+    {
+        return sample(floorPixels, 0, uv, 512, 512);
+    }
+    else
+    {
+        BLAS *blas = &blases[objIdx - 2];
+        Texture *texture = &textures[blas->matIdx];
+        return sample(texturePixels, texture->startIdx, uv, texture->width, texture->height);
+    }
+}
+
 __kernel void shade(__global uint *accumulator, __global Ray *rayBuffer, __global uint *skydomePixels,
                     uint skydomeWidth, uint skydomeHeight, __global uint *floorPixels, __global TriEx *triExs,
-                    __global BLAS *blases)
+                    __global BLAS *blases, __global Material *materials, __global uint *texturePixels,
+                    __global Texture *textures)
 {
     // get ray id
     const int index = get_global_id(0);
@@ -175,33 +216,15 @@ __kernel void shade(__global uint *accumulator, __global Ray *rayBuffer, __globa
     HitInfo hitInfo = getHitInfo(&ray, triExs, blases, I);
     float3 N = hitInfo.normal;
     float2 uv = hitInfo.uv;
+    float3 albedo = getAlbedo(floorPixels, blases, texturePixels, textures, ray.objIdx, uv);
 
     /* visualize triangle */
     // accumulator[index] = ray.triIdx * 10;
     // return;
-    /* visualize normal */ float3 color = (N + 1) * 0.5f;
+    /* visualize normal */                   // float3 color = (N + 1) * 0.5f;
     /* visualize uv */                       // float3 color = (float3)(uv.x, uv.y, 0);
     /* visualize visualize triangle edges */ // float3 color = getEdgeColor(ray.barycentric);
-    /* debug */ accumulator[index] = RGB32FtoRGB8(color);
-    return;
+    /* debug */                              // accumulator[index] = RGB32FtoRGB8(color); return;
 
-    if (ray.objIdx == 1)
-    {
-        accumulator[index] = sample(floorPixels, hitInfo.uv, 512, 512);
-    }
-
-    if (ray.traversed > 2)
-    {
-        accumulator[index] = 9527;
-    }
-
-    if (ray.traversed > 4)
-    {
-        accumulator[index] = 24601;
-    }
-
-    if (ray.traversed > 5)
-    {
-        accumulator[index] = 24601496;
-    }
+    accumulator[index] = RGB32FtoRGB8(albedo);
 }
