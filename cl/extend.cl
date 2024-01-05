@@ -63,6 +63,33 @@ void intersectFloor(Ray *ray) {
     ray->t = t, ray->objIdx = 1;
 }
 
+void intersectTri(Ray *ray, const Tri *tri, const int objIdx, uint triIdx) {
+  const float3 vertex0 = (float3)(tri->v0x, tri->v0y, tri->v0z);
+  const float3 vertex1 = (float3)(tri->v1x, tri->v1y, tri->v1z);
+  const float3 vertex2 = (float3)(tri->v2x, tri->v2y, tri->v2z);
+  const float3 edge1 = vertex1 - vertex0;
+  const float3 edge2 = vertex2 - vertex0;
+  const float3 h = cross(ray->D, edge2);
+  const float a = dot(edge1, h);
+  if (a > -0.0001f && a < 0.0001f)
+    return; // ray parallel to triangle
+  const float f = 1 / a;
+  const float3 s = ray->O - vertex0;
+  const float u = f * dot(s, h);
+  if (u < 0 || u > 1)
+    return;
+  const float3 q = cross(s, edge1);
+  const float v = f * dot(ray->D, q);
+  if (v < 0 || u + v > 1)
+    return;
+  const float t = f * dot(edge2, q);
+  if (t > 0.0001f) {
+    if (t < ray->t)
+      ray->t = min(ray->t, t), ray->objIdx = objIdx, ray->triIdx = triIdx,
+      ray->barycentric = (float2)(u, v);
+  }
+}
+
 float intersectAABB(const Ray *ray, const float3 bmin, const float3 bmax) {
   float tx1 = (bmin.x - ray->O.x) * ray->rD.x,
         tx2 = (bmax.x - ray->O.x) * ray->rD.x;
