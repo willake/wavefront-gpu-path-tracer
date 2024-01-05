@@ -160,6 +160,7 @@ void intersectBVH(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *t
         {
             for (uint i = 0; i < node->triCount; i++)
             {
+                return;
                 uint triIdx = triIdxs[node->leftFirst + i];
                 Tri *tri = &triangles[triIdx];
                 intersectTri(ray, tri, objIdx, triIdx);
@@ -201,19 +202,16 @@ void intersectBVH(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *t
     }
 }
 
-void intersectBLAS(Ray *ray, int objIdx, float16 invT, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs)
+void intersectBLAS(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs, int objIdx, float16 invT)
 {
-    return;
     Ray tRay = copyRay(ray);
     transformRay(&tRay, &invT);
-
     // intersectBVH
-    // intersectBVH(&tRay, bvh, bvhNodes, triangles, triIdxs, objIdx);
-
+    intersectBVH(&tRay, bvh, bvhNodes, triangles, triIdxs, objIdx);
     tRay.O = ray->O;
     tRay.D = ray->D;
     tRay.rD = ray->rD;
-    ray = &tRay;
+    *ray = tRay;
 }
 
 void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, BVHNode *bvhNodes, Tri *triangles,
@@ -228,7 +226,7 @@ void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, BVHN
         {
             // ray->traversed += 100;
             BLAS blas = blases[node->BLAS];
-            intersectBLAS(ray, blas.objIdx, blas.invT, &bvhes[blas.bvhIdx], bvhNodes, triangles, triIdxs);
+            intersectBLAS(ray, &bvhes[blas.bvhIdx], bvhNodes, triangles, triIdxs, blas.objIdx, blas.invT);
             if (stackPtr == 0)
                 break;
             else

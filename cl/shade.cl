@@ -103,8 +103,18 @@ __kernel void shade(__global uint *accumulator, __global Ray *rayBuffer, __globa
         accumulator[index] = sample(floorPixels, hitInfo.uv, 512, 512);
     }
 
-    if (ray.traversed > 1)
+    if (ray.traversed == 2)
     {
         accumulator[index] = 9527;
+    }
+
+    if (ray.traversed == 3)
+    {
+        accumulator[index] = 24601;
+    }
+
+    if (ray.traversed > 3)
+    {
+        accumulator[index] = 24601496;
     }
 }
