@@ -12,16 +12,14 @@ typedef struct __attribute__((aligned(128)))
     bool inside;        // 1 bytes
 } Ray;                  // total 77 bytes
 
-typedef struct
+typedef struct __attribute__((aligned(64)))
 {
-    float n0x, n0y, n0z; // 12 bytes
-    float n1x, n1y, n1z; // 12 bytes
-    float n2x, n2y, n2z; // 12 bytes
-    float uv0x, uv0y;    // 8 bytes
-    float uv1x, uv1y;    // 8 bytes
-    float uv2x, uv2y;    // 8 bytes
-    int dummy;           // 4 bytes
-} TriEx;                 // total 64 bytes
+    float2 uv0, uv1, uv2; // 24 bytes
+    float n0x, n0y, n0z;  // 12 bytes
+    float n1x, n1y, n1z;  // 12 bytes
+    float n2x, n2y, n2z;  // 12 bytes
+    float dummy;          // 4 bytes
+} TriEx;                  // total 64 bytes
 
 typedef struct
 {
@@ -65,9 +63,9 @@ float3 getBLASNormal(TriEx *triExs, const int triIdx, const float2 barycentric, 
 float2 getBLASUV(TriEx *triExs, const int triIdx, const float2 barycentric)
 {
     TriEx *ex = &triExs[triIdx];
-    float2 uv0 = (float2)(ex->uv0x, ex->uv0y);
-    float2 uv1 = (float2)(ex->uv1x, ex->uv1y);
-    float2 uv2 = (float2)(ex->uv2x, ex->uv2y);
+    float2 uv0 = ex->uv0;
+    float2 uv1 = ex->uv1;
+    float2 uv2 = ex->uv2;
     return (1 - barycentric.x - barycentric.y) * uv0 + barycentric.x * uv1 + barycentric.y * uv2;
 }
 
@@ -152,8 +150,8 @@ HitInfo getHitInfo(const Ray *ray, TriEx *triExs, BLAS *blases, const float3 I)
         hitInfo.matIdx = blas->matIdx;
     }
 
-    if (dot(hitInfo.normal, ray->D) > 0)
-        hitInfo.normal = -hitInfo.normal;
+    // if (dot(hitInfo.normal, ray->D) > 0)
+    //     hitInfo.normal = -hitInfo.normal;
 
     return hitInfo;
 }
@@ -179,12 +177,13 @@ __kernel void shade(__global uint *accumulator, __global Ray *rayBuffer, __globa
     float2 uv = hitInfo.uv;
 
     /* visualize triangle */
-    // accumulator[index] = ray.triIdx;
+    // accumulator[index] = ray.triIdx * 10;
     // return;
     /* visualize normal */
-    // float3 color = (N + 1) * 0.5f;
-    float3 color = (float3)(ray.barycentric.x, ray.barycentric.y, 0);
-    //  float3 color = getEdgeColor(ray.barycentric);
+    // float3 color = N;
+    float3 color = (N + 1) * 0.5f;
+    //  float3 color = (float3)(uv.x, uv.y, 0);
+    //    float3 color = getEdgeColor(ray.barycentric);
 
     accumulator[index] = RGB32FtoRGB8(color);
     return;
