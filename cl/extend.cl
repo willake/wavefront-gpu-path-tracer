@@ -62,7 +62,7 @@ typedef struct
     float aabbMinx, aabbMiny, aabbMinz;
     float aabbMaxx, aabbMaxy, aabbMaxz;
     uint leftRight, BLAS;
-} TLASNode;
+} TLASNode; // 32 bytes in total
 
 float3 transformVector(float3 *V, float16 *T)
 {
@@ -155,6 +155,7 @@ void intersectBVH(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *t
     uint stackPtr = 0;
     while (1)
     {
+        ray->traversed++;
         if (node->triCount > 0)
         {
             for (uint i = 0; i < node->triCount; i++)
@@ -202,11 +203,12 @@ void intersectBVH(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *t
 
 void intersectBLAS(Ray *ray, int objIdx, float16 invT, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs)
 {
+    return;
     Ray tRay = copyRay(ray);
     transformRay(&tRay, &invT);
 
     // intersectBVH
-    intersectBVH(&tRay, bvh, bvhNodes, triangles, triIdxs, objIdx);
+    // intersectBVH(&tRay, bvh, bvhNodes, triangles, triIdxs, objIdx);
 
     tRay.O = ray->O;
     tRay.D = ray->D;
@@ -217,19 +219,21 @@ void intersectBLAS(Ray *ray, int objIdx, float16 invT, BVH *bvh, BVHNode *bvhNod
 void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, BVHNode *bvhNodes, Tri *triangles,
                    uint *triIdxs)
 {
-    TLASNode *node = &tlasNodes[0], *stack[64];
+    TLASNode *node = &tlasNodes[0], *stack[32];
     uint stackPtr = 0;
     while (1)
     {
         ray->traversed++;
-        if (node->leftRight == 0)
+        if (node->leftRight == 0) // isLeaf
         {
+            // ray->traversed += 100;
             BLAS blas = blases[node->BLAS];
             intersectBLAS(ray, blas.objIdx, blas.invT, &bvhes[blas.bvhIdx], bvhNodes, triangles, triIdxs);
             if (stackPtr == 0)
                 break;
             else
                 node = stack[--stackPtr];
+            continue;
         }
         TLASNode *child1 = &tlasNodes[node->leftRight & 0xffff];
         TLASNode *child2 = &tlasNodes[node->leftRight >> 16];
@@ -239,13 +243,13 @@ void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, BVHN
                                     (float3)(child2->aabbMaxx, child2->aabbMaxy, child2->aabbMaxz));
         if (dist1 > dist2)
         {
-            float dist = dist1;
+            float d = dist1;
             dist1 = dist2;
-            dist2 = dist;
+            dist2 = d;
 
-            TLASNode *child = child1;
+            TLASNode *c = child1;
             child1 = child2;
-            child2 = child;
+            child2 = c;
         }
         if (dist1 == 1e30f)
         {
