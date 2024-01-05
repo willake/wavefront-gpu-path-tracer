@@ -63,6 +63,63 @@ void intersectFloor(Ray *ray) {
     ray->t = t, ray->objIdx = 1;
 }
 
+float intersectAABB(const Ray *ray, const float3 bmin, const float3 bmax) {
+  float tx1 = (bmin.x - ray->O.x) * ray->rD.x,
+        tx2 = (bmax.x - ray->O.x) * ray->rD.x;
+  float tmin = min(tx1, tx2), tmax = max(tx1, tx2);
+  float ty1 = (bmin.y - ray->O.y) * ray->rD.y,
+        ty2 = (bmax.y - ray->O.y) * ray->rD.y;
+  tmin = max(tmin, min(ty1, ty2)), tmax = min(tmax, max(ty1, ty2));
+  float tz1 = (bmin.z - ray->O.z) * ray->rD.z,
+        tz2 = (bmax.z - ray->O.z) * ray->rD.z;
+  tmin = max(tmin, min(tz1, tz2)), tmax = min(tmax, max(tz1, tz2));
+  if (tmax >= tmin && tmin < ray->t && tmax > 0)
+    return tmin;
+  else
+    return 1e30f;
+}
+
+void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases) {
+  TLASNode *node = &tlasNodes[0], *stack[64];
+  uint stackPtr = 0;
+  while (1) {
+    ray->traversed++;
+    if (node->leftRight == 0) {
+      if (stackPtr == 0)
+        break;
+      else
+        node = stack[--stackPtr];
+    }
+    TLASNode *child1 = &tlasNodes[node->leftRight & 0xffff];
+    TLASNode *child2 = &tlasNodes[node->leftRight >> 16];
+    float dist1 = intersectAABB(
+        ray, (float3)(child1->aabbMinx, child1->aabbMiny, child1->aabbMinz),
+        (float3)(child1->aabbMaxx, child1->aabbMaxy, child1->aabbMaxz));
+    float dist2 = intersectAABB(
+        ray, (float3)(child2->aabbMinx, child2->aabbMiny, child2->aabbMinz),
+        (float3)(child2->aabbMaxx, child2->aabbMaxy, child2->aabbMaxz));
+    if (dist1 > dist2) {
+      float dist = dist1;
+      dist1 = dist2;
+      dist2 = dist;
+
+      TLASNode *child = child1;
+      child1 = child2;
+      child2 = child;
+    }
+    if (dist1 == 1e30f) {
+      if (stackPtr == 0)
+        break;
+      else
+        node = stack[--stackPtr];
+    } else {
+      node = child1;
+      if (dist2 != 1e30f)
+        stack[stackPtr++] = child2;
+    }
+  }
+}
+
 __kernel void extend(__global Ray *rayBuffer, __global Tri *triBuffer,
                      __global TriEx *triExBuffer, __global uint *triIdxBuffer,
                      __global MeshInstance *meshInstances,
@@ -73,6 +130,7 @@ __kernel void extend(__global Ray *rayBuffer, __global Tri *triBuffer,
   Ray ray = rayBuffer[index];
 
   intersectFloor(&ray);
+  intersectTLAS(&ray, tlasNodes, blases);
 
   rayBuffer[index] = ray;
 }
