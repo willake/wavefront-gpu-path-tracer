@@ -149,7 +149,7 @@ float intersectAABB(const Ray *ray, const float3 bmin, const float3 bmax)
         return 1e30f;
 }
 
-void intersectBVH(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs)
+void intersectBVH(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs, int objIdx)
 {
     BVHNode *node = &bvhNodes[bvh->startNodeIdx], *stack[32];
     uint stackPtr = 0;
@@ -159,6 +159,9 @@ void intersectBVH(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *t
         {
             for (uint i = 0; i < node->triCount; i++)
             {
+                uint triIdx = triIdxs[node->leftFirst + i];
+                Tri *tri = &triangles[triIdx];
+                intersectTri(ray, tri, objIdx, triIdx);
             }
             if (stackPtr == 0)
                 break;
@@ -197,13 +200,13 @@ void intersectBVH(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *t
     }
 }
 
-void intersectBLAS(Ray *ray, float16 invT, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs)
+void intersectBLAS(Ray *ray, int objIdx, float16 invT, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs)
 {
     Ray tRay = copyRay(ray);
     transformRay(&tRay, &invT);
 
     // intersectBVH
-    intersectBVH(&tRay, bvh, bvhNodes, triangles, triIdxs);
+    intersectBVH(&tRay, bvh, bvhNodes, triangles, triIdxs, objIdx);
 
     tRay.O = ray->O;
     tRay.D = ray->D;
@@ -222,7 +225,7 @@ void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, BVHN
         if (node->leftRight == 0)
         {
             BLAS blas = blases[node->BLAS];
-            intersectBLAS(ray, blas.invT, &bvhes[blas.bvhIdx], bvhNodes, triangles, triIdxs);
+            intersectBLAS(ray, blas.objIdx, blas.invT, &bvhes[blas.bvhIdx], bvhNodes, triangles, triIdxs);
             if (stackPtr == 0)
                 break;
             else
