@@ -2,15 +2,15 @@
 // __attribute__((aligned(64)))
 typedef struct __attribute__((aligned(128)))
 {
-    float3 O, D, rD;    // 36 bytes
-    float t;            // 4 bytes
+    float3 O, D, rD;    // 48 bytes
     float2 barycentric; // 8 bytes
+    float t;            // 4 bytes
     int objIdx;         // 4 bytes
     int triIdx;         // 4 bytes
-    int traversed;
-    int tested;
-    bool inside; // 1 bytes
-} Ray;           // total 64 bytes
+    int traversed;      // 4 bytes
+    int tested;         // 4 bytes
+    bool inside;        // 1 bytes
+} Ray;                  // total 77 bytes
 
 typedef struct
 {
@@ -25,9 +25,9 @@ typedef struct
     float n0x, n0y, n0z;
     float n1x, n1y, n1z;
     float n2x, n2y, n2z;
-    float uv0x, uv0y, uv0z;
-    float uv1x, uv1y, uv1z;
-    float uv2x, uv2y, uv2z;
+    float uv0x, uv0y;
+    float uv1x, uv1y;
+    float uv2x, uv2y;
     int dummy;
 } TriEx; // total 64 bytes
 

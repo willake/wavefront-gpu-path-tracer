@@ -2,34 +2,34 @@
 // __attribute__((aligned(64)))
 typedef struct __attribute__((aligned(128)))
 {
-    float3 O, D, rD;    // 36 bytes
-    float t;            // 4 bytes
+    float3 O, D, rD;    // 48 bytes
     float2 barycentric; // 8 bytes
+    float t;            // 4 bytes
     int objIdx;         // 4 bytes
     int triIdx;         // 4 bytes
-    int traversed;
-    int tested;
-    bool inside; // 1 bytes
-} Ray;           // total 64 bytes
+    int traversed;      // 4 bytes
+    int tested;         // 4 bytes
+    bool inside;        // 1 bytes
+} Ray;                  // total 77 bytes
 
 typedef struct
 {
-    float n0x, n0y, n0z;
-    float n1x, n1y, n1z;
-    float n2x, n2y, n2z;
-    float uv0x, uv0y, uv0z;
-    float uv1x, uv1y, uv1z;
-    float uv2x, uv2y, uv2z;
-    int dummy;
-} TriEx; // total 64 bytes
+    float n0x, n0y, n0z; // 12 bytes
+    float n1x, n1y, n1z; // 12 bytes
+    float n2x, n2y, n2z; // 12 bytes
+    float uv0x, uv0y;    // 8 bytes
+    float uv1x, uv1y;    // 8 bytes
+    float uv2x, uv2y;    // 8 bytes
+    int dummy;           // 4 bytes
+} TriEx;                 // total 64 bytes
 
 typedef struct
 {
-    uint objIdx, matIdx, bvhIdx;
-    float16 T, invT;
-    float aabbMinx, aabbMiny, aabbMinz;
-    float aabbMaxx, aabbMaxy, aabbMaxz;
-} BLAS;
+    uint objIdx, matIdx, bvhIdx;        // 12 bytes
+    float16 T, invT;                    // 128 bytes
+    float aabbMinx, aabbMiny, aabbMinz; // 12 bytes
+    float aabbMaxx, aabbMaxy, aabbMaxz; // 12 bytes
+} BLAS;                                 // 164 bytes
 
 typedef struct
 {
@@ -37,6 +37,14 @@ typedef struct
     float2 uv;
     int matIdx;
 } HitInfo;
+
+uint RGB32FtoRGB8(float3 c)
+{
+    int r = (int)(min(c.x, 1.f) * 255);
+    int g = (int)(min(c.y, 1.f) * 255);
+    int b = (int)(min(c.z, 1.f) * 255);
+    return (r << 16) + (g << 8) + b;
+}
 
 float3 transformVector(float3 *V, float16 *T)
 {
@@ -50,7 +58,7 @@ float3 getBLASNormal(TriEx *triExs, const int triIdx, const float2 barycentric, 
     float3 n1 = (float3)(ex->n1x, ex->n1y, ex->n1z);
     float3 n2 = (float3)(ex->n2x, ex->n2y, ex->n2z);
     float3 N = (1 - barycentric.x - barycentric.y) * n0 + barycentric.x * n1 + barycentric.y * n2;
-    transformVector(&N, &T);
+    N = transformVector(&N, &T);
     return normalize(N);
 }
 
@@ -82,6 +90,20 @@ float2 getFloorUV(const float3 I)
 
     // Return the UV coordinates
     return (float2)(u, v);
+}
+
+/* For Debugging */
+float3 getEdgeColor(float2 barycentric)
+{
+    if (fabs(barycentric.x) < 0.03f || fabs(barycentric.x - 1) < 0.03f || fabs(barycentric.y) < 0.03f ||
+        fabs(barycentric.y - 1) < 0.03f)
+    {
+        return (float3)(0, 0, 0);
+    }
+    else
+    {
+        return (float3)(1);
+    }
 }
 
 uint getSkyColor(Ray *ray, uint *pixels, uint width, uint height)
@@ -130,6 +152,9 @@ HitInfo getHitInfo(const Ray *ray, TriEx *triExs, BLAS *blases, const float3 I)
         hitInfo.matIdx = blas->matIdx;
     }
 
+    if (dot(hitInfo.normal, ray->D) > 0)
+        hitInfo.normal = -hitInfo.normal;
+
     return hitInfo;
 }
 
@@ -153,6 +178,16 @@ __kernel void shade(__global uint *accumulator, __global Ray *rayBuffer, __globa
     float3 N = hitInfo.normal;
     float2 uv = hitInfo.uv;
 
+    /* visualize triangle */
+    // accumulator[index] = ray.triIdx;
+    // return;
+    /* visualize normal */
+    // float3 color = (N + 1) * 0.5f;
+    float3 color = (float3)(ray.barycentric.x, ray.barycentric.y, 0);
+    //  float3 color = getEdgeColor(ray.barycentric);
+
+    accumulator[index] = RGB32FtoRGB8(color);
+    return;
     if (ray.objIdx == 1)
     {
         accumulator[index] = sample(floorPixels, hitInfo.uv, 512, 512);
