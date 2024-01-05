@@ -56,6 +56,38 @@ typedef struct {
   uint leftRight, BLAS;
 } TLASNode;
 
+float3 transformVector(float3 *V, float16 *T) {
+  return (float3)(dot(T->s012, *V), dot(T->s456, *V), dot(T->s89A, *V));
+}
+
+float3 transformPosition(float3 *V, float16 *T) {
+  return (float3)(dot(T->s012, *V) + T->s3, dot(T->s456, *V) + T->s7,
+                  dot(T->s89A, *V) + T->sb);
+}
+
+void transformRay(Ray *ray, float16 *invTransform) {
+  // do the transform
+  ray->D = transformVector(&ray->D, invTransform);
+  ray->O = transformPosition(&ray->O, invTransform);
+  // update ray direction reciprocals
+  ray->rD = (float3)(1.0f / ray->D.x, 1.0f / ray->D.y, 1.0f / ray->D.z);
+}
+
+Ray copyRay(Ray *ray) {
+  Ray newRay;
+  newRay.O = ray->O;
+  newRay.D = ray->D;
+  newRay.rD = ray->rD;
+  newRay.t = ray->t;
+  newRay.barycentric = ray->barycentric;
+  newRay.objIdx = ray->objIdx;
+  newRay.triIdx = ray->triIdx;
+  newRay.traversed = ray->traversed;
+  newRay.tested = ray->tested;
+  newRay.inside = ray->inside;
+  return newRay;
+}
+
 void intersectFloor(Ray *ray) {
   float3 N = (float3)(0, 1, 0); // dist = 1
   float t = -(dot(ray->O, N) + 1) / (dot(ray->D, N));
@@ -106,12 +138,28 @@ float intersectAABB(const Ray *ray, const float3 bmin, const float3 bmax) {
     return 1e30f;
 }
 
-void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases) {
+void intersectBLAS(Ray *ray, float16 invT, BVH *bvh, Tri *triangles,
+                   uint *triIdxs) {
+  Ray tRay = copyRay(ray);
+  transformRay(&tRay, &invT);
+
+  // intersectBVH
+
+  tRay.O = ray->O;
+  tRay.D = ray->D;
+  tRay.rD = ray->rD;
+  ray = &tRay;
+}
+
+void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes,
+                   Tri *triangles, uint *triIdxs) {
   TLASNode *node = &tlasNodes[0], *stack[64];
   uint stackPtr = 0;
   while (1) {
     ray->traversed++;
     if (node->leftRight == 0) {
+      BLAS blas = blases[node->BLAS];
+      intersectBLAS(ray, blas.invT, &bvhes[blas.bvhIdx], triangles, triIdxs);
       if (stackPtr == 0)
         break;
       else
@@ -157,7 +205,7 @@ __kernel void extend(__global Ray *rayBuffer, __global Tri *triBuffer,
   Ray ray = rayBuffer[index];
 
   intersectFloor(&ray);
-  intersectTLAS(&ray, tlasNodes, blases);
+  intersectTLAS(&ray, tlasNodes, blases, bvhes, triBuffer, triIdxBuffer);
 
   rayBuffer[index] = ray;
 }
