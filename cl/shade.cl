@@ -179,14 +179,12 @@ __kernel void shade(__global uint *accumulator, __global Ray *rayBuffer, __globa
     /* visualize triangle */
     // accumulator[index] = ray.triIdx * 10;
     // return;
-    /* visualize normal */
-    // float3 color = N;
-    float3 color = (N + 1) * 0.5f;
-    //  float3 color = (float3)(uv.x, uv.y, 0);
-    //    float3 color = getEdgeColor(ray.barycentric);
-
-    accumulator[index] = RGB32FtoRGB8(color);
+    /* visualize normal */ float3 color = (N + 1) * 0.5f;
+    /* visualize uv */                       // float3 color = (float3)(uv.x, uv.y, 0);
+    /* visualize visualize triangle edges */ // float3 color = getEdgeColor(ray.barycentric);
+    /* debug */ accumulator[index] = RGB32FtoRGB8(color);
     return;
+
     if (ray.objIdx == 1)
     {
         accumulator[index] = sample(floorPixels, hitInfo.uv, 512, 512);
