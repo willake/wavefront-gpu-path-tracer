@@ -160,7 +160,6 @@ void intersectBVH(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *t
         {
             for (uint i = 0; i < node->triCount; i++)
             {
-                return;
                 uint triIdx = triIdxs[node->leftFirst + i];
                 Tri *tri = &triangles[triIdx];
                 intersectTri(ray, tri, objIdx, triIdx);
@@ -265,9 +264,9 @@ void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, BVHN
     }
 }
 
-__kernel void extend(__global Ray *rayBuffer, __global Tri *triBuffer, __global TriEx *triExBuffer,
-                     __global uint *triIdxBuffer, __global MeshInstance *meshInstances, __global BVHNode *bvhNodes,
-                     __global BVH *bvhes, __global BLAS *blases, __global TLASNode *tlasNodes)
+__kernel void extend(__global Ray *rayBuffer, __global Tri *triBuffer, __global uint *triIdxBuffer,
+                     __global BVHNode *bvhNodes, __global BVH *bvhes, __global BLAS *blases,
+                     __global TLASNode *tlasNodes)
 {
     const int index = get_global_id(0);
 
