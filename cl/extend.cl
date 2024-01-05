@@ -166,6 +166,34 @@ void intersectBVH(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *t
                 node = stack[--stackPtr];
             continue;
         }
+        BVHNode *child1 = &bvhNodes[bvh->startNodeIdx + node->leftFirst];
+        BVHNode *child2 = &bvhNodes[bvh->startNodeIdx + node->leftFirst + 1];
+        float dist1 = intersectAABB(ray, (float3)(child1->aabbMinx, child1->aabbMiny, child1->aabbMinz),
+                                    (float3)(child1->aabbMaxx, child1->aabbMaxy, child1->aabbMaxz));
+        float dist2 = intersectAABB(ray, (float3)(child2->aabbMinx, child2->aabbMiny, child2->aabbMinz),
+                                    (float3)(child2->aabbMaxx, child2->aabbMaxy, child2->aabbMaxz));
+        if (dist1 > dist2)
+        {
+            float d = dist1;
+            dist1 = dist2;
+            dist2 = d;
+            BVHNode *c = child1;
+            child1 = child2;
+            child2 = c;
+        }
+        if (dist1 == 1e30f)
+        {
+            if (stackPtr == 0)
+                break;
+            else
+                node = stack[--stackPtr];
+        }
+        else
+        {
+            node = child1;
+            if (dist2 != 1e30f)
+                stack[stackPtr++] = child2;
+        }
     }
 }
 
@@ -175,6 +203,7 @@ void intersectBLAS(Ray *ray, float16 invT, BVH *bvh, BVHNode *bvhNodes, Tri *tri
     transformRay(&tRay, &invT);
 
     // intersectBVH
+    intersectBVH(&tRay, bvh, bvhNodes, triangles, triIdxs);
 
     tRay.O = ray->O;
     tRay.D = ray->D;
