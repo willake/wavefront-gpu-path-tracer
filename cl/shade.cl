@@ -150,8 +150,8 @@ HitInfo getHitInfo(const Ray *ray, TriEx *triExs, BLAS *blases, const float3 I)
         hitInfo.matIdx = blas->matIdx;
     }
 
-    // if (dot(hitInfo.normal, ray->D) > 0)
-    //     hitInfo.normal = -hitInfo.normal;
+    if (dot(hitInfo.normal, ray->D) > 0)
+        hitInfo.normal = -hitInfo.normal;
 
     return hitInfo;
 }
