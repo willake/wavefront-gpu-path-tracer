@@ -149,7 +149,8 @@ float intersectAABB(const Ray *ray, const float3 bmin, const float3 bmax)
         return 1e30f;
 }
 
-void intersectBVH(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs, int objIdx)
+void intersectBVH(Ray *ray, BVH *bvh, MeshInstance *meshIns, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs,
+                  int objIdx)
 {
     BVHNode *node = &bvhNodes[bvh->startNodeIdx], *stack[32];
     uint stackPtr = 0;
@@ -160,7 +161,7 @@ void intersectBVH(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *t
         {
             for (uint i = 0; i < node->triCount; i++)
             {
-                uint triIdx = triIdxs[node->leftFirst + i];
+                uint triIdx = triIdxs[meshIns->triStartIdx + node->leftFirst + i];
                 Tri *tri = &triangles[triIdx];
                 intersectTri(ray, tri, objIdx, triIdx);
             }
@@ -201,20 +202,21 @@ void intersectBVH(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *t
     }
 }
 
-void intersectBLAS(Ray *ray, BVH *bvh, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs, int objIdx, float16 invT)
+void intersectBLAS(Ray *ray, BVH *bvh, MeshInstance *meshIns, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs,
+                   int objIdx, float16 invT)
 {
     Ray tRay = copyRay(ray);
     transformRay(&tRay, &invT);
     // intersectBVH
-    intersectBVH(&tRay, bvh, bvhNodes, triangles, triIdxs, objIdx);
+    intersectBVH(&tRay, bvh, meshIns, bvhNodes, triangles, triIdxs, objIdx);
     tRay.O = ray->O;
     tRay.D = ray->D;
     tRay.rD = ray->rD;
     *ray = tRay;
 }
 
-void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, BVHNode *bvhNodes, Tri *triangles,
-                   uint *triIdxs)
+void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, MeshInstance *meshInstances,
+                   BVHNode *bvhNodes, Tri *triangles, uint *triIdxs)
 {
     TLASNode *node = &tlasNodes[0], *stack[32];
     uint stackPtr = 0;
@@ -225,7 +227,8 @@ void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, BVHN
         {
             // ray->traversed += 100;
             BLAS blas = blases[node->BLAS];
-            intersectBLAS(ray, &bvhes[blas.bvhIdx], bvhNodes, triangles, triIdxs, blas.objIdx, blas.invT);
+            intersectBLAS(ray, &bvhes[blas.bvhIdx], &meshInstances[blas.bvhIdx], bvhNodes, triangles, triIdxs,
+                          blas.objIdx, blas.invT);
             if (stackPtr == 0)
                 break;
             else
@@ -266,14 +269,14 @@ void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, BVHN
 
 __kernel void extend(__global Ray *rayBuffer, __global Tri *triBuffer, __global uint *triIdxBuffer,
                      __global BVHNode *bvhNodes, __global BVH *bvhes, __global BLAS *blases,
-                     __global TLASNode *tlasNodes)
+                     __global TLASNode *tlasNodes, __global MeshInstance *meshInstances)
 {
     const int index = get_global_id(0);
 
     Ray ray = rayBuffer[index];
 
     intersectFloor(&ray);
-    intersectTLAS(&ray, tlasNodes, blases, bvhes, bvhNodes, triBuffer, triIdxBuffer);
+    intersectTLAS(&ray, tlasNodes, blases, bvhes, meshInstances, bvhNodes, triBuffer, triIdxBuffer);
 
     rayBuffer[index] = ray;
 }

@@ -75,9 +75,10 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth)
     float3 albedo = material->isAlbedoOverridden ? scene.GetAlbedo(ray.objIdx, I) : material->GetAlbedo(uv);
 
     /* visualize edges */    // return GetEdgeDebugColor(ray.barycentric);
-    /* visualize normal */  // return (N + 1) * 0.5f;
+    /* visualize normal */   // return (N + 1) * 0.5f;
     /* visualize distance */ // return 0.1f * float3( ray.t, ray.t, ray.t );
     /* visualize albedo */   // return albedo;
+    // return float3(ray.barycentric.x, ray.barycentric.y, 0);
     // if (m_inspectTraversal) return GetTraverseCountColor(ray.traversed, );
 
     if (material->isLight)
@@ -177,7 +178,7 @@ void Renderer::Tick(float deltaTime)
     rayBuffer->CopyToDevice(true);
     kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
     kernelExtend->SetArguments(rayBuffer, scene.triBuffer, scene.triIdxBuffer, scene.bvhNodeBuffer, scene.bvhBuffer,
-                               scene.blasBuffer, scene.tlasNodeBuffer);
+                               scene.blasBuffer, scene.tlasNodeBuffer, scene.meshInsBuffer);
     kernelExtend->Run(SCRWIDTH * SCRHEIGHT);
     accumulatorBuffer->CopyToDevice(true);
     kernelShade->SetArguments(accumulatorBuffer, rayBuffer, scene.skydomeBuffer, scene.skydome.width,
@@ -191,23 +192,21 @@ void Renderer::Tick(float deltaTime)
             screen->pixels[x + y * SCRWIDTH] = gpuaccumulator[x + y * SCRWIDTH];
         }
 
-    // kernelExtend->Run(SCRWIDTH * SCRHEIGHT);
-    // kernelConnect->Run(SCRWIDTH * SCRHEIGHT);
-    // rayBuffer->CopyFromDevice(true);
-
     // render tiles using a simple job system
-    // for (int jobIdx = 0, y = 0; y < SCRHEIGHT / 16; y++) for (int x = 0; x < SCRWIDTH / 16; x++)
-    //	jm->AddJob2(tileJob[jobIdx++].Init(this, x, y));
+    // for (int jobIdx = 0, y = 0; y < SCRHEIGHT / 16; y++)
+    //    for (int x = 0; x < SCRWIDTH / 16; x++)
+    //        jm->AddJob2(tileJob[jobIdx++].Init(this, x, y));
     // jm->RunJobs();
     //// gather energy received on tiles
     // energy = 0;
     // for (int tiles = (SCRWIDTH / 16) * (SCRHEIGHT / 16), i = 0; i < tiles; i++)
-    //	energy += tileJob[i].sum;
+    //     energy += tileJob[i].sum;
     //// performance report - running average - ms, MRays/s
     // m_avg = (1 - m_alpha) * m_avg + m_alpha * t.elapsed() * 1000;
-    // if (m_alpha > 0.05f) m_alpha *= 0.75f;
+    // if (m_alpha > 0.05f)
+    //     m_alpha *= 0.75f;
     // m_fps = 1000.0f / m_avg, m_rps = (SCRWIDTH * SCRHEIGHT) / m_avg;
-    //  handle user input
+    //   handle user input
     if (camera.HandleInput(deltaTime))
     {
         ClearAccumulator();
