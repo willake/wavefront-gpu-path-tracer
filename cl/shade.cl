@@ -1,95 +1,230 @@
 // Define ray
 // __attribute__((aligned(64)))
-typedef struct __attribute__((aligned(128))) {
-  float3 O, D, rD;    // 36 bytes
-  float t;            // 4 bytes
-  float2 barycentric; // 8 bytes
-  int objIdx;         // 4 bytes
-  int triIdx;         // 4 bytes
-  int traversed;
-  int tested;
-  bool inside; // 1 bytes
-} Ray;         // total 64 bytes
+typedef struct __attribute__((aligned(128)))
+{
+    float3 O, D, rD;    // 48 bytes
+    float2 barycentric; // 8 bytes
+    float t;            // 4 bytes
+    int objIdx;         // 4 bytes
+    int triIdx;         // 4 bytes
+    int traversed;      // 4 bytes
+    int tested;         // 4 bytes
+    bool inside;        // 1 bytes
+} Ray;                  // total 77 bytes
 
-typedef struct {
-  float3 normal;
-  float2 uv;
-  int matIdx;
+typedef struct __attribute__((aligned(64)))
+{
+    float2 uv0, uv1, uv2; // 24 bytes
+    float n0x, n0y, n0z;  // 12 bytes
+    float n1x, n1y, n1z;  // 12 bytes
+    float n2x, n2y, n2z;  // 12 bytes
+    float dummy;          // 4 bytes
+} TriEx;                  // total 64 bytes
+
+typedef struct
+{
+    uint objIdx, matIdx, bvhIdx;        // 12 bytes
+    float16 T, invT;                    // 128 bytes
+    float aabbMinx, aabbMiny, aabbMinz; // 12 bytes
+    float aabbMaxx, aabbMaxy, aabbMaxz; // 12 bytes
+} BLAS;
+
+typedef struct __attribute__((aligned(32)))
+{
+    float albedox, albedoy, albedoz;             // 12 bytes
+    float absorptionx, absorptiony, absorptionz; // 12 bytes
+    float reflectivity;                          // 4 bytes
+    float refractivity;                          // 4 bytes
+} Material;                                      // 32 bytes
+
+typedef struct __attribute__((aligned(16)))
+{
+    uint width;
+    uint height;
+    uint startIdx;
+    uint dummy;
+} Texture;
+
+typedef struct
+{
+    float3 normal;
+    float2 uv;
+    int matIdx;
 } HitInfo;
 
-float3 getFloorNormal() { return (float3)(0, 1, 0); }
-float2 getFloorUV(const float3 I) {
-  float u = I.x;
-  float v = I.z;
-
-  const float invto = 1.0f / 5.12f;
-
-  u *= invto;
-  v *= invto;
-
-  u = u - floor(u);
-  v = v - floor(v);
-
-  // Return the UV coordinates
-  return (float2)(u, v);
+uint RGB32FtoRGB8(float3 c)
+{
+    int r = (int)(min(c.x, 1.f) * 255);
+    int g = (int)(min(c.y, 1.f) * 255);
+    int b = (int)(min(c.z, 1.f) * 255);
+    return (r << 16) + (g << 8) + b;
 }
 
-uint getSkyColor(Ray *ray, uint *pixels, uint width, uint height) {
-  if (!pixels)
-    return 0;
-
-  float phi = atan2(-ray->D.z, ray->D.x);
-  uint u =
-      (uint)(width * (phi > 0 ? phi : (phi + 2 * M_PI_F)) * M_2_PI_F - 0.5f);
-  uint v = (uint)(height * acos(ray->D.y) * M_1_PI_F - 0.5f);
-  uint skyIdx = (u + v * width) % (width * height);
-
-  return pixels[skyIdx];
+float3 RGB8toRGB32F(uint c)
+{
+    float s = 1 / 256.0f;
+    int r = (c >> 16) & 255;
+    int g = (c >> 8) & 255;
+    int b = c & 255;
+    return (float3)(r * s, g * s, b * s);
 }
 
-uint sample(uint *pixels, float2 uv, uint width, uint height) {
-
-  float u = clamp(uv.x, 0.0f, 1.0f);
-  float v = 1 - clamp(uv.y, 0.0f, 1.0f);
-
-  uint x = (uint)(u * width);
-  uint y = (uint)(v * height);
-
-  x = clamp(x, (uint)0, width - 1);
-  y = clamp(y, (uint)0, height - 1);
-
-  uint index = x + y * width;
-
-  return pixels[index];
+float3 transformVector(float3 *V, float16 *T)
+{
+    return (float3)(dot(T->s012, *V), dot(T->s456, *V), dot(T->s89A, *V));
 }
 
-HitInfo getHitInfo(const Ray *ray, const float3 I) {
-  HitInfo hitInfo;
-  if (ray->objIdx == 1) {
-    hitInfo.normal = getFloorNormal();
-    hitInfo.uv = getFloorUV(I);
-  }
-
-  return hitInfo;
+float3 getBLASNormal(TriEx *triExs, const int triIdx, const float2 barycentric, float16 T)
+{
+    TriEx *ex = &triExs[triIdx];
+    float3 n0 = (float3)(ex->n0x, ex->n0y, ex->n0z);
+    float3 n1 = (float3)(ex->n1x, ex->n1y, ex->n1z);
+    float3 n2 = (float3)(ex->n2x, ex->n2y, ex->n2z);
+    float3 N = (1 - barycentric.x - barycentric.y) * n0 + barycentric.x * n1 + barycentric.y * n2;
+    N = transformVector(&N, &T);
+    return normalize(N);
 }
 
-__kernel void shade(__global uint *accumulator, __global Ray *rayBuffer,
-                    __global uint *skydomePixels, uint skydomeWidth,
-                    uint skydomeHeight, __global uint *floorPixels) {
-  // get ray id
-  const int index = get_global_id(0);
+float2 getBLASUV(TriEx *triExs, const int triIdx, const float2 barycentric)
+{
+    TriEx *ex = &triExs[triIdx];
+    float2 uv0 = ex->uv0;
+    float2 uv1 = ex->uv1;
+    float2 uv2 = ex->uv2;
+    return (1 - barycentric.x - barycentric.y) * uv0 + barycentric.x * uv1 + barycentric.y * uv2;
+}
 
-  Ray ray = rayBuffer[index];
+float3 getFloorNormal()
+{
+    return (float3)(0, 1, 0);
+}
+float2 getFloorUV(const float3 I)
+{
+    float u = I.x;
+    float v = I.z;
 
-  float3 I = ray.O + ray.D * ray.t;
-  HitInfo hitInfo = getHitInfo(&ray, I);
+    const float invto = 1.0f / 5.12f;
 
-  if (ray.objIdx == -1) {
-    accumulator[index] =
-        getSkyColor(&ray, skydomePixels, skydomeWidth, skydomeHeight);
-  }
+    u *= invto;
+    v *= invto;
 
-  if (ray.objIdx == 1) {
-    accumulator[index] = sample(floorPixels, hitInfo.uv, 512, 512);
-  }
+    u = u - floor(u);
+    v = v - floor(v);
+
+    // Return the UV coordinates
+    return (float2)(u, v);
+}
+
+/* For Debugging */
+float3 getEdgeColor(float2 barycentric)
+{
+    if (fabs(barycentric.x) < 0.03f || fabs(barycentric.x - 1) < 0.03f || fabs(barycentric.y) < 0.03f ||
+        fabs(barycentric.y - 1) < 0.03f)
+    {
+        return (float3)(0, 0, 0);
+    }
+    else
+    {
+        return (float3)(1);
+    }
+}
+
+uint getSkyColor(Ray *ray, uint *pixels, uint width, uint height)
+{
+    if (!pixels)
+        return 0;
+
+    float phi = atan2(-ray->D.z, ray->D.x);
+    uint u = (uint)(width * (phi > 0 ? phi : (phi + 2 * M_PI_F)) * M_2_PI_F - 0.5f);
+    uint v = (uint)(height * acos(ray->D.y) * M_1_PI_F - 0.5f);
+    uint skyIdx = (u + v * width) % (width * height);
+
+    return pixels[skyIdx];
+}
+
+float3 sample(uint *pixels, uint startIdx, float2 uv, uint width, uint height)
+{
+
+    float u = clamp(uv.x, 0.0f, 1.0f);
+    float v = 1 - clamp(uv.y, 0.0f, 1.0f);
+
+    uint x = (uint)(u * width);
+    uint y = (uint)(v * height);
+
+    x = clamp(x, (uint)0, width - 1);
+    y = clamp(y, (uint)0, height - 1);
+
+    uint index = x + y * width;
+
+    return RGB8toRGB32F(pixels[startIdx + index]);
+}
+
+HitInfo getHitInfo(const Ray *ray, TriEx *triExs, BLAS *blases, const float3 I)
+{
+    HitInfo hitInfo;
+    if (ray->objIdx == 1)
+    {
+        hitInfo.normal = getFloorNormal();
+        hitInfo.uv = getFloorUV(I);
+    }
+    else
+    {
+        BLAS *blas = &blases[ray->objIdx - 2];
+        hitInfo.normal = getBLASNormal(triExs, ray->triIdx, ray->barycentric, blas->T);
+        hitInfo.uv = getBLASUV(triExs, ray->triIdx, ray->barycentric);
+        hitInfo.matIdx = blas->matIdx;
+    }
+
+    if (dot(hitInfo.normal, ray->D) > 0)
+        hitInfo.normal = -hitInfo.normal;
+
+    return hitInfo;
+}
+
+float3 getAlbedo(__global uint *floorPixels, __global BLAS *blases, __global uint *texturePixels,
+                 __global Texture *textures, int objIdx, float2 uv)
+{
+    if (objIdx == 1)
+    {
+        return sample(floorPixels, 0, uv, 512, 512);
+    }
+    else
+    {
+        BLAS *blas = &blases[objIdx - 2];
+        Texture *texture = &textures[blas->matIdx];
+        return sample(texturePixels, texture->startIdx, uv, texture->width, texture->height);
+    }
+}
+
+__kernel void shade(__global uint *accumulator, __global Ray *rayBuffer, __global uint *skydomePixels,
+                    uint skydomeWidth, uint skydomeHeight, __global uint *floorPixels, __global TriEx *triExs,
+                    __global BLAS *blases, __global Material *materials, __global uint *texturePixels,
+                    __global Texture *textures)
+{
+    // get ray id
+    const int index = get_global_id(0);
+
+    Ray ray = rayBuffer[index];
+
+    if (ray.objIdx == -1)
+    {
+        accumulator[index] = getSkyColor(&ray, skydomePixels, skydomeWidth, skydomeHeight);
+        return;
+    }
+
+    float3 I = ray.O + ray.D * ray.t;
+    HitInfo hitInfo = getHitInfo(&ray, triExs, blases, I);
+    float3 N = hitInfo.normal;
+    float2 uv = hitInfo.uv;
+    float3 albedo = getAlbedo(floorPixels, blases, texturePixels, textures, ray.objIdx, uv);
+
+    /* visualize triangle */
+    // accumulator[index] = ray.triIdx * 10;
+    // return;
+    /* visualize normal */                   // float3 color = (N + 1) * 0.5f;
+    /* visualize uv */                       // float3 color = (float3)(uv.x, uv.y, 0);
+    /* visualize visualize triangle edges */ // float3 color = getEdgeColor(ray.barycentric);
+    /* debug */                              // accumulator[index] = RGB32FtoRGB8(color); return;
+
+    accumulator[index] = RGB32FtoRGB8(albedo);
 }

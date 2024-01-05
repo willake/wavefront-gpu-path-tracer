@@ -26,12 +26,17 @@
                 <y>0.0</y>
                 <z>180.0</z>
             </rotation>
+			<scale>
+                <x>0.005</x>
+                <y>0.005</y>
+                <z>0.005</z>
+            </scale>
         </object>
 		<object>
             <mesh_idx>0</mesh_idx>
             <material_idx>0</material_idx>
             <position>
-                <x>5.0</x>
+                <x>3.0</x>
                 <y>1</y>
                 <z>2.8</z>
             </position>
@@ -40,20 +45,11 @@
                 <y>0.0</y>
                 <z>180.0</z>
             </rotation>
-        </object>
-		<object>
-            <mesh_idx>1</mesh_idx>
-            <material_idx>0</material_idx>
-            <position>
-                <x>-5.0</x>
-                <y>1</y>
-                <z>2.8</z>
-            </position>
-            <rotation>
-                <x>-90.0</x>
-                <y>0.0</y>
-                <z>180.0</z>
-            </rotation>
+			<scale>
+                <x>0.005</x>
+                <y>0.005</y>
+                <z>0.005</z>
+            </scale>
         </object>
 
         <!-- Add more objects as needed -->
@@ -63,22 +59,14 @@
         <!-- Mesh 0 -->
         <mesh>
 			<id>0</id>
-            <model_location>../assets/cube.obj</model_location>
+            <model_location>../assets/wok.obj</model_location>
 			<scale>
-                <x>1</x>
-                <y>1</y>
-                <z>1</z>
+                <x>0.005</x>
+                <y>0.005</y>
+                <z>0.005</z>
             </scale>
         </mesh>
-		<mesh>
-			<id>1</id>
-            <model_location>../assets/cube.obj</model_location>
-			<scale>
-                <x>0.5</x>
-                <y>0.5</y>
-                <z>0.5</z>
-            </scale>
-        </mesh>
+
         <!-- Add more objects as needed -->
     </meshes>
 	<materials>

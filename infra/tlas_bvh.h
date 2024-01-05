@@ -7,8 +7,8 @@ namespace Tmpl8
 	struct TLASNode
 	{
 		float3 aabbMin = float3(0); // 12 bytes
-		uint leftRight = 0; // 4 bytes
 		float3 aabbMax = float3(0); // 12 bytes
+		uint leftRight = 0; // 4 bytes
 		uint BLAS = 0; // 4 bytes
 		// 32 bytes in total
 		bool isLeaf() { return leftRight == 0; }

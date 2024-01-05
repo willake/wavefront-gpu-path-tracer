@@ -1,0 +1,9 @@
+{
+	"C_Cpp.formatting": "clangFormat",
+	"C_Cpp.vcFormat.indent.braces": true,
+	"editor.tabSize": 4,
+	"C_Cpp.vcFormat.indent.accessSpecifiers": true,
+	"C_Cpp.vcFormat.indent.caseLabels": true,
+	"C_Cpp.vcFormat.indent.caseContentsWhenBlock": true,
+	"C_Cpp.vcFormat.newLine.beforeOpenBrace.block": "newLine"
+}
