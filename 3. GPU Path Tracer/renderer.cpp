@@ -17,10 +17,12 @@ void Renderer::Init()
     kernelShade = new Kernel("../cl/shade.cl", "shade");
     kernelConnect = new Kernel("../cl/kernels.cl", "connect");
 
+    seeds = new uint[SCRWIDTH * SCRHEIGHT];
     rays = new Ray[SCRWIDTH * SCRHEIGHT];
     rayBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(Ray), rays);
     // gpuaccumulator = new uint[SCRWIDTH * SCRHEIGHT];
     accumulatorBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(float4), accumulator);
+    seedBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(uint), seeds);
 }
 
 void Renderer::ClearAccumulator()
@@ -39,8 +41,8 @@ void Renderer::Tick(float deltaTime)
     Timer t;
 
     // GPGPU
-    kernelGeneratePrimaryRays->SetArguments(rayBuffer, SCRWIDTH, SCRHEIGHT, camera.camPos, camera.topLeft,
-                                            camera.topRight, camera.bottomLeft);
+    kernelGeneratePrimaryRays->SetArguments(rayBuffer, seedBuffer, SCRWIDTH, SCRHEIGHT, camera.camPos, camera.topLeft,
+                                            camera.topRight, camera.bottomLeft, spp);
     rayBuffer->CopyToDevice(true);
     kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
     kernelExtend->SetArguments(rayBuffer, scene.triBuffer, scene.triIdxBuffer, scene.bvhNodeBuffer, scene.bvhBuffer,
@@ -48,7 +50,7 @@ void Renderer::Tick(float deltaTime)
                                (int)scene.lightCount);
     kernelExtend->Run(SCRWIDTH * SCRHEIGHT);
     accumulatorBuffer->CopyToDevice(true);
-    kernelShade->SetArguments(accumulatorBuffer, rayBuffer, scene.skydomeBuffer, scene.skydome.width,
+    kernelShade->SetArguments(accumulatorBuffer, rayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
                               scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
                               scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer, scene.lightBuffer);
     kernelShade->Run(SCRWIDTH * SCRHEIGHT);

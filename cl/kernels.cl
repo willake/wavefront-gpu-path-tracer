@@ -1,4 +1,23 @@
-// #include "template/common.h"
+﻿// random numbers: seed using WangHash((threadidx+1)*17), then use RandomInt / RandomFloat
+uint WangHash(uint s)
+{
+    s = (s ^ 61) ^ (s >> 16), s *= 9, s = s ^ (s >> 4), s *= 0x27d4eb2d, s = s ^ (s >> 15);
+    return s;
+}
+uint RandomInt(uint *s)
+{
+    *s ^= *s << 13, *s ^= *s >> 17, *s ^= *s << 5;
+    return *s;
+}
+float RandomFloat(uint *s)
+{
+    return RandomInt(s) * 2.3283064365387e-10f; /* = 1 / (2^32-1) */
+}
+
+uint InitSeed(uint seedBase)
+{
+    return WangHash((seedBase + 1) * 17);
+}
 
 // Define ray
 // __attribute__((aligned(64)))
@@ -44,8 +63,8 @@ __kernel void testRayStructSize(__global Test *test)
     t.sizeTotal = sizeof(Ray);
     test[index] = t;
 }
-__kernel void generatePrimaryRays(__global Ray *rayBuffer, int width, int height, float3 camPos, float3 topLeft,
-                                  float3 topRight, float3 bottomLeft)
+__kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds, int width, int height, float3 camPos,
+                                  float3 topLeft, float3 topRight, float3 bottomLeft, int spp)
 {
     // get ray id
     const int index = get_global_id(0);
@@ -53,8 +72,12 @@ __kernel void generatePrimaryRays(__global Ray *rayBuffer, int width, int height
     const int y = index / width; // Integer division
     const int x = index % width; // Modulo operation
 
-    const float u = (float)x * (1.0f / width);
-    const float v = (float)y * (1.0f / height);
+    uint seed = InitSeed(x + y * width + spp * 1799);
+
+    seeds[index] = seed;
+
+    const float u = ((float)x + RandomFloat(seed)) * (1.0f / width);
+    const float v = ((float)y + RandomFloat(seed)) * (1.0f / height);
     const float3 P = topLeft + u * (topRight - topLeft) + v * (bottomLeft - topLeft);
 
     // // initializing a ray

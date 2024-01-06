@@ -1,3 +1,19 @@
+﻿// random numbers: seed using WangHash((threadidx+1)*17), then use RandomInt / RandomFloat
+uint WangHash(uint s)
+{
+    s = (s ^ 61) ^ (s >> 16), s *= 9, s = s ^ (s >> 4), s *= 0x27d4eb2d, s = s ^ (s >> 15);
+    return s;
+}
+uint RandomInt(uint *s)
+{
+    *s ^= *s << 13, *s ^= *s >> 17, *s ^= *s << 5;
+    return *s;
+}
+float RandomFloat(uint *s)
+{
+    return RandomInt(s) * 2.3283064365387e-10f; /* = 1 / (2^32-1) */
+}
+
 // Define ray
 // __attribute__((aligned(64)))
 typedef struct __attribute__((aligned(128)))
@@ -60,6 +76,18 @@ typedef struct
     float2 uv;
     int matIdx;
 } HitInfo;
+
+float3 diffusereflection(const float3 N, uint &seed)
+{
+    float3 R;
+    do
+    {
+        R = (float3)(RandomFloat(seed) * 2 - 1, RandomFloat(seed) * 2 - 1, RandomFloat(seed) * 2 - 1);
+    } while (dot(R, R) > 1);
+    if (dot(R, N) < 0)
+        R *= -1.0f;
+    return normalize(R);
+}
 
 uint RGB32FtoRGB8(float3 c)
 {
@@ -221,15 +249,16 @@ float3 getAlbedo(__global uint *floorPixels, __global BLAS *blases, __global uin
     }
 }
 
-__kernel void shade(__global float4 *accumulator, __global Ray *rayBuffer, __global uint *skydomePixels,
-                    uint skydomeWidth, uint skydomeHeight, __global uint *floorPixels, __global TriEx *triExs,
-                    __global BLAS *blases, __global Material *materials, __global uint *texturePixels,
-                    __global Texture *textures, __global Light *lights)
+__kernel void shade(__global float4 *accumulator, __global Ray *rayBuffer, __global uint *seeds,
+                    __global uint *skydomePixels, uint skydomeWidth, uint skydomeHeight, __global uint *floorPixels,
+                    __global TriEx *triExs, __global BLAS *blases, __global Material *materials,
+                    __global uint *texturePixels, __global Texture *textures, __global Light *lights)
 {
     // get ray id
     const int index = get_global_id(0);
 
     Ray ray = rayBuffer[index];
+    uint seed = seeds[index];
 
     if (ray.objIdx == -1)
     {
@@ -243,7 +272,7 @@ __kernel void shade(__global float4 *accumulator, __global Ray *rayBuffer, __glo
     float3 N = hitInfo.normal;
     float2 uv = hitInfo.uv;
     float3 albedo = getAlbedo(floorPixels, blases, texturePixels, textures, lights, ray.objIdx, uv);
-
+    float3 brdf = albedo * M_1_PI;
     /* visualize triangle */
     // accumulator[index] = ray.triIdx * 10;
     // return;
@@ -251,6 +280,42 @@ __kernel void shade(__global float4 *accumulator, __global Ray *rayBuffer, __glo
     /* visualize uv */                       // float3 color = (float3)(uv.x, uv.y, 0);
     /* visualize visualize triangle edges */ // float3 color = getEdgeColor(ray.barycentric);
     /* debug */                              // accumulator[index] = RGB32FtoRGB8(color); return;
+
+    // objIdx >= 900 is a light
+    if (ray.objIdx >= 900)
+    {
+        accumulator[index] += (float4)(albedo.x, albedo.y, albedo.z, 1);
+        return;
+    }
+
+    BLAS blas = blases[ray.objIdx - 2];
+    Material material = materials[blas.matIdx];
+
+    float3 out_radiance = (float3)(0);
+    float reflectivity = material.reflectivity;
+    float refractivity = material.reflectivity;
+
+    float3 medium_scale = (float3)(1);
+    if (ray.inside)
+    {
+        float3 absorption = (float3)(material.absorptionx, material.absorptiony, material.absorptionz);
+        medium_scale = exp(absorption * -ray.t);
+    }
+
+    float r = RandomFloat(seed);
+    if (r < reflectivity) // handle pure speculars
+    {
+        // generate extend ray
+    }
+    else if (r < reflectivity + refractivity) // handle dielectrics
+    {
+        // generate extend ray
+    }
+    else // diffuse surface
+    {
+        float3 R = diffusereflection(N, seed);
+        // generate extend ray
+    }
 
     accumulator[index] += (float4)(albedo.x, albedo.y, albedo.z, 1);
 }
