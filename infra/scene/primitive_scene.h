@@ -14,7 +14,8 @@ class PrimitiveScene : BaseScene
     PrimitiveScene();
     void SetTime(float t);
     float3 GetSkyColor(const Ray &ray) const;
-    Light GetLight(int idx);
+    Light GetLightByLightIdx(int lightIdx);
+    Light GetLightByObjIdx(int objIdx);
     float3 GetLightPos() const;
     float3 GetLightColor() const;
     float3 RandomPointOnLight(uint &seed, uint &lightIdx) const;

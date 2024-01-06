@@ -21,22 +21,22 @@ float3 Renderer::DirectIllumination(uint &seed, float3 I, float3 N, float3 brdf)
 {
     uint lightIdx;
     float3 randomLightPos = scene.RandomPointOnLight(seed, lightIdx);
-    Light light = scene.GetLight(lightIdx);
+    Light light = scene.GetLightByLightIdx(lightIdx);
 
     // Light related information
     float3 L = randomLightPos - I;
     float dist = length(L);
     L *= 1 / dist;
     float ndotl = dot(N, L);
-    float nldotl = dot(light.normal, -L);
+    float nldotl = dot(light.GetNormal(I), -L);
     float A = light.area;
     Ray shadowRay = Ray(I + L * EPSILON, L, dist - 2 * EPSILON);
     if (ndotl > 0 && nldotl > 0)
     {
-        if (scene.IsOccluded(shadowRay))
+        if (!scene.IsOccluded(shadowRay))
         {
             float solidAngle = (nldotl * A) / (dist * dist);
-            return scene.GetLightColor() * solidAngle * brdf * ndotl * scene.lightCount;
+            return light.color * solidAngle * brdf * ndotl * scene.lightCount;
         }
     }
     return float3(0);
@@ -96,8 +96,12 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth, bool lastSpecular)
     // return black if it is a light soucre
     if (material->isLight)
     {
-        if (depth == 0) return scene.GetLightColor();
-        else if (lastSpecular) return scene.GetLightColor();
+        if (depth == 0 && dot(-ray.D, N) > 0)
+        {
+            float face = dot(ray.D, N);
+            return scene.GetLightByObjIdx(ray.objIdx).color;
+        }
+        else if (lastSpecular) return scene.GetLightByObjIdx(ray.objIdx).color;
         else return float3(0);
     }
 

@@ -21,7 +21,8 @@ class BaseScene
     BaseScene() = default;
     virtual void SetTime(float t) = 0;
     virtual float3 GetSkyColor(const Ray &ray) const = 0;
-    virtual Light GetLight(int idx) = 0;
+    virtual Light GetLightByLightIdx(int lightIdx) = 0;
+    virtual Light GetLightByObjIdx(int objIdx) = 0;
     virtual float3 GetLightPos() const = 0;
     virtual float3 GetLightColor() const = 0;
     virtual float3 RandomPointOnLight(uint &seed, uint &lightIdx) const = 0;

@@ -13,10 +13,12 @@ namespace Tmpl8
 
 struct LightData
 {
-    float3 position; // 12 bytes
-    float size;      // 4 bytes
-    // TODO: rotation, colors, type
-}; // 16 bytes
+    float3 position;
+    float3 rotation;
+    float3 color;
+    float size;
+    // TODO: type
+};
 
 struct MaterialData
 {
@@ -63,7 +65,8 @@ class TLASFileScene : BaseScene
     void PrepareBuffers();
     void SetTime(float t);
     float3 GetSkyColor(const Ray &ray) const;
-    Light GetLight(int idx);
+    Light GetLightByLightIdx(int lightIdx);
+    Light GetLightByObjIdx(int objIdx);
     float3 GetLightPos() const;
     float3 GetLightColor() const;
     float3 RandomPointOnLight(uint &seed, uint &lightIdx) const;

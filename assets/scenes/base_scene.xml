@@ -18,15 +18,35 @@
                 <y>4.5</y>
                 <z>2.0</z>
             </position>
+			<rotation>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </rotation>
 			<size>1</size>
+			<color>
+				<x>240</x>
+                <y>0</y>
+                <z>0</z>
+			</color>
         </light>
 		<light>
 			<position>
-                <x>-1.3</x>
-                <y>4.5</y>
-                <z>2.0</z>
+                <x>-3.3</x>
+                <y>0</y>
+                <z>2.8</z>
             </position>
+			<rotation>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>90.0</z>
+            </rotation>
 			<size>1</size>
+			<color>
+				<x>0</x>
+                <y>0</y>
+                <z>220</z>
+			</color>
         </light>
         <!-- Add more lights as needed -->
     </lights>

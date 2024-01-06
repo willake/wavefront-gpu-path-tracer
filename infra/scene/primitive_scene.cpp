@@ -109,7 +109,12 @@ float3 PrimitiveScene::GetSkyColor(const Ray &ray) const
     return float3(0);
 }
 
-Light Tmpl8::PrimitiveScene::GetLight(int idx)
+Light PrimitiveScene::GetLightByLightIdx(int lightIdx)
+{
+    return Light();
+}
+
+Light PrimitiveScene::GetLightByObjIdx(int objIdx)
 {
     return Light();
 }

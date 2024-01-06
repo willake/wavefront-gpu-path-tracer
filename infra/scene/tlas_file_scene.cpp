@@ -43,14 +43,14 @@ TLASFileScene::TLASFileScene(const string &filePath)
     for (int i = 0; i < lightCount; i++)
     {
         LightData &lightData = sceneData.lights[i];
-        lightQuads[i] = Quad(0, lightData.size);
-        mat4 T = mat4::Translate(lightData.position);
-        // *mat4::RotateZ(sinf(animTime * 0.6f) * 0.1f);
+        lightQuads[i] = Quad(900 + i, lightData.size);
+        mat4 T = mat4::Translate(lightData.position) * mat4::RotateX(lightData.rotation.x * Deg2Red) *
+                 mat4::RotateY(lightData.rotation.y * Deg2Red) * mat4::RotateZ(lightData.rotation.z * Deg2Red);
         lightQuads[i].T = T, lightQuads[i].invT = T.FastInvertedTransformNoScale();
         lights[i] = Light();
-        lights[i].position = lightData.position;
-        lights[i].normal = lightQuads[i].GetNormal(float3(0));
+        lights[i].T = T, lights[i].invT = T.FastInvertedTransformNoScale();
         lights[i].area = lightData.size * lightData.size;
+        lights[i].color = lightData.color;
     }
 
     objCount = sceneData.objects.size();
@@ -231,6 +231,21 @@ SceneData TLASFileScene::LoadSceneFile(const string &filePath)
             int index = posNode->name()[0] - 'x'; // 'x', 'y', 'z' map to 0, 1, 2
             light.position[index] = std::stof(posNode->value());
         }
+
+        for (rapidxml::xml_node<> *rotNode = lightNode->first_node("rotation")->first_node(); rotNode;
+             rotNode = rotNode->next_sibling())
+        {
+            int index = rotNode->name()[0] - 'x'; // 'x', 'y', 'z' map to 0, 1, 2
+            light.rotation[index] = std::stof(rotNode->value());
+        }
+
+        for (rapidxml::xml_node<> *colNode = lightNode->first_node("color")->first_node(); colNode;
+             colNode = colNode->next_sibling())
+        {
+            int index = colNode->name()[0] - 'x'; // 'x', 'y', 'z' map to 0, 1, 2
+            light.color[index] = std::stof(colNode->value());
+        }
+
         light.size = std::stoi(lightNode->first_node("size")->value());
         sceneData.lights.push_back(light);
     }
@@ -353,11 +368,17 @@ float3 TLASFileScene::GetSkyColor(const Ray &ray) const
     return color;
 }
 
-Light Tmpl8::TLASFileScene::GetLight(int idx)
+Light TLASFileScene::GetLightByLightIdx(int lightIdx)
 {
-    if (idx >= lightCount)
+    if (lightIdx >= lightCount)
         return lights[0];
-    return lights[idx];
+    return lights[lightIdx];
+}
+
+Light TLASFileScene::GetLightByObjIdx(int objIdx)
+{
+    int lightIdx = objIdx - 900;
+    return GetLightByLightIdx(lightIdx);
 }
 
 float3 TLASFileScene::GetLightPos() const
@@ -407,27 +428,27 @@ bool TLASFileScene::IsOccluded(const Ray &ray)
 HitInfo TLASFileScene::GetHitInfo(const Ray &ray, const float3 I)
 {
     HitInfo hitInfo = HitInfo(float3(0), float2(0), &errorMaterial);
-    switch (ray.objIdx)
+    if (ray.objIdx >= 900)
     {
-    case 0:
-        hitInfo.normal = lightQuads[0].GetNormal(I);
+        hitInfo.normal = lightQuads[ray.objIdx - 900].GetNormal(I);
         hitInfo.uv = float2(0);
         hitInfo.material = &primitiveMaterials[0];
-        break;
-    case 1:
+    }
+    else if (ray.objIdx == 1)
+    {
         hitInfo.normal = floor.GetNormal(I);
         hitInfo.uv = floor.GetUV(I);
         hitInfo.material = &primitiveMaterials[1];
-        break;
-    default:
+    }
+    else
+    {
         BLAS &blas = tlas.blases[ray.objIdx - 2];
         hitInfo.normal = blas.GetNormal(ray.triIdx, ray.barycentric);
         hitInfo.uv = blas.GetUV(ray.triIdx, ray.barycentric);
         hitInfo.material = &materials[blas.matIdx];
-        break;
     }
 
-    if (dot(hitInfo.normal, ray.D) > 0)
+    if (ray.objIdx < 900 && dot(hitInfo.normal, ray.D) > 0)
         hitInfo.normal = -hitInfo.normal;
 
     return hitInfo;
