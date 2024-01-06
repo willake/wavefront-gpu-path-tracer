@@ -144,7 +144,7 @@ float3 getEdgeColor(float2 barycentric)
     }
 }
 
-uint getSkyColor(Ray *ray, uint *pixels, uint width, uint height)
+float3 getSkyColor(Ray *ray, uint *pixels, uint width, uint height)
 {
     if (!pixels)
         return 0;
@@ -154,7 +154,7 @@ uint getSkyColor(Ray *ray, uint *pixels, uint width, uint height)
     uint v = (uint)(height * acos(ray->D.y) * M_1_PI_F - 0.5f);
     uint skyIdx = (u + v * width) % (width * height);
 
-    return pixels[skyIdx];
+    return RGB8toRGB32F(pixels[skyIdx]);
 }
 
 float3 sample(uint *pixels, uint startIdx, float2 uv, uint width, uint height)
@@ -221,7 +221,7 @@ float3 getAlbedo(__global uint *floorPixels, __global BLAS *blases, __global uin
     }
 }
 
-__kernel void shade(__global uint *accumulator, __global Ray *rayBuffer, __global uint *skydomePixels,
+__kernel void shade(__global float4 *accumulator, __global Ray *rayBuffer, __global uint *skydomePixels,
                     uint skydomeWidth, uint skydomeHeight, __global uint *floorPixels, __global TriEx *triExs,
                     __global BLAS *blases, __global Material *materials, __global uint *texturePixels,
                     __global Texture *textures, __global Light *lights)
@@ -233,7 +233,8 @@ __kernel void shade(__global uint *accumulator, __global Ray *rayBuffer, __globa
 
     if (ray.objIdx == -1)
     {
-        accumulator[index] = getSkyColor(&ray, skydomePixels, skydomeWidth, skydomeHeight);
+        float3 skyColor = getSkyColor(&ray, skydomePixels, skydomeWidth, skydomeHeight);
+        accumulator[index] += (float4)(skyColor.x, skyColor.y, skyColor.z, 1);
         return;
     }
 
@@ -251,5 +252,5 @@ __kernel void shade(__global uint *accumulator, __global Ray *rayBuffer, __globa
     /* visualize visualize triangle edges */ // float3 color = getEdgeColor(ray.barycentric);
     /* debug */                              // accumulator[index] = RGB32FtoRGB8(color); return;
 
-    accumulator[index] = RGB32FtoRGB8(albedo);
+    accumulator[index] += (float4)(albedo.x, albedo.y, albedo.z, 1);
 }

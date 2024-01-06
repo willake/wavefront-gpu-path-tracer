@@ -173,5 +173,14 @@ uint64_t NowInMicro()
         .count();
 }
 
+float3 RGB8toRGB32F(uint c)
+{
+    float s = 1 / 256.0f;
+    int r = (c >> 16) & 255;
+    int g = (c >> 8) & 255;
+    int b = c & 255;
+    return (float3)(r * s, g * s, b * s);
+}
+
 const float Deg2Red = (PI * 2) / 360.0f;
 } // namespace Tmpl8

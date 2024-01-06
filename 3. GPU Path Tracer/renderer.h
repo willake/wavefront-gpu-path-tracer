@@ -23,16 +23,11 @@ class Renderer : public TheApp
     float m_fps = 0;
     float m_rps = 0;
     bool m_inspectTraversal = false;
-    float3 GetEdgeDebugColor(float2 uv);
 
   public:
     // game flow methods
     void Init();
     void ClearAccumulator();
-    float3 HandleMirror(const Ray &ray, uint &seed, const float3 &I, const float3 &N, const int depth);
-    float3 HandleDielectric(const Ray &ray, uint &seed, const float3 &I, const float3 &N, const int depth);
-    float3 Sample(Ray &ray, uint &seed, int depth = 0);
-    void ProcessTile(int tx, int ty, float &sum);
     void Tick(float deltaTime);
     void UI();
     void Shutdown()
@@ -76,7 +71,6 @@ class Renderer : public TheApp
 
     Ray *rays;
     Buffer *rayBuffer;
-    uint *gpuaccumulator;
     Buffer *accumulatorBuffer;
 };
 } // namespace Tmpl8
