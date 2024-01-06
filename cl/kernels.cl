@@ -1,4 +1,4 @@
-﻿// random numbers: seed using WangHash((threadidx+1)*17), then use RandomInt / RandomFloat
+// random numbers: seed using WangHash((threadidx+1)*17), then use RandomInt / RandomFloat
 uint WangHash(uint s)
 {
     s = (s ^ 61) ^ (s >> 16), s *= 9, s = s ^ (s >> 4), s *= 0x27d4eb2d, s = s ^ (s >> 15);
@@ -28,10 +28,11 @@ typedef struct __attribute__((aligned(128)))
     float t;            // 4 bytes
     int objIdx;         // 4 bytes
     int triIdx;         // 4 bytes
+    int pixelIdx;       // 4 bytes
     int traversed;      // 4 bytes
     int tested;         // 4 bytes
     bool inside;        // 1 bytes
-} Ray;                  // total 77 bytes
+} Ray;                  // total 81 bytes
 
 typedef struct
 {
@@ -63,7 +64,7 @@ __kernel void testRayStructSize(__global Test *test)
     t.sizeTotal = sizeof(Ray);
     test[index] = t;
 }
-__kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds, __global float4 pixels, int width,
+__kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds, __global float4 *pixels, int width,
                                   int height, float3 camPos, float3 topLeft, float3 topRight, float3 bottomLeft,
                                   int spp)
 {
@@ -93,6 +94,7 @@ __kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds,
     ray.objIdx = -1, ray.triIdx = -1;
     ray.traversed = 0, ray.tested = 0;
     ray.inside = false;
+    ray.pixelIdx = index;
 
     rayBuffer[index] = ray;
     pixels[index] = (float4)(1);

@@ -21,6 +21,9 @@ void Renderer::Init()
     pixels = new float4[SCRWIDTH * SCRHEIGHT];
     rays = new Ray[SCRWIDTH * SCRHEIGHT];
     rayBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(Ray), rays);
+    extensionCounterBuffer = new Buffer(sizeof(uint), &extensionCounter);
+    shadowrayBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(ShadowRay));
+    shadowrayCounterBuffer = new Buffer(sizeof(uint), &shadowrayCounter);
     // gpuaccumulator = new uint[SCRWIDTH * SCRHEIGHT];
     accumulatorBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(float4), accumulator);
     seedBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(uint), seeds);
@@ -49,17 +52,18 @@ void Renderer::Tick(float deltaTime)
     seedBuffer->CopyToDevice(true);
     pixelBuffer->CopyToDevice(true);
     kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
-    kernelExtend->SetArguments(rayBuffer, scene.triBuffer, scene.triIdxBuffer, scene.bvhNodeBuffer, scene.bvhBuffer,
-                               scene.blasBuffer, scene.tlasNodeBuffer, scene.meshInsBuffer, scene.lightBuffer,
-                               (int)scene.lightCount);
-    kernelExtend->Run(SCRWIDTH * SCRHEIGHT);
-    // accumulatorBuffer->CopyToDevice(true);
-    kernelShade->SetArguments(pixelBuffer, rayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
-                              scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
-                              scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer, scene.lightBuffer);
-    kernelShade->Run(SCRWIDTH * SCRHEIGHT);
-    pixelBuffer->CopyFromDevice(true);
-    // accumulatorBuffer->CopyFromDevice(true);
+    // kernelExtend->SetArguments(rayBuffer, scene.triBuffer, scene.triIdxBuffer, scene.bvhNodeBuffer, scene.bvhBuffer,
+    //                            scene.blasBuffer, scene.tlasNodeBuffer, scene.meshInsBuffer, scene.lightBuffer,
+    //                            (int)scene.lightCount);
+    // kernelExtend->Run(SCRWIDTH * SCRHEIGHT);
+    //// accumulatorBuffer->CopyToDevice(true);
+    // kernelShade->SetArguments(pixelBuffer, rayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
+    //                           scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
+    //                           scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer,
+    //                           scene.lightBuffer);
+    // kernelShade->Run(SCRWIDTH * SCRHEIGHT);
+    // pixelBuffer->CopyFromDevice(true);
+    //  accumulatorBuffer->CopyFromDevice(true);
 
     float scale = 1.0f / (spp + passes);
     for (int y = 0; y < SCRHEIGHT; y++)

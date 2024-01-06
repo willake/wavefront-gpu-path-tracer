@@ -1,4 +1,4 @@
-﻿// random numbers: seed using WangHash((threadidx+1)*17), then use RandomInt / RandomFloat
+// random numbers: seed using WangHash((threadidx+1)*17), then use RandomInt / RandomFloat
 uint WangHash(uint s)
 {
     s = (s ^ 61) ^ (s >> 16), s *= 9, s = s ^ (s >> 4), s *= 0x27d4eb2d, s = s ^ (s >> 15);
@@ -23,10 +23,18 @@ typedef struct __attribute__((aligned(128)))
     float t;            // 4 bytes
     int objIdx;         // 4 bytes
     int triIdx;         // 4 bytes
+    int pixelIdx;       // 4 bytes
     int traversed;      // 4 bytes
     int tested;         // 4 bytes
     bool inside;        // 1 bytes
-} Ray;                  // total 77 bytes
+} Ray;                  // total 81 bytes
+
+typedef struct __attribute__((aligned(128)))
+{
+    float3 O, D, rD, E; // 64 bytes
+    float t;            // 4 bytes
+    int pixelIdx;       // 4 bytes
+} ShadowRay;            // total 72 bytes
 
 typedef struct __attribute__((aligned(64)))
 {
@@ -77,14 +85,14 @@ typedef struct
     int matIdx;
 } HitInfo;
 
-float3 diffusereflection(const float3 N, uint &seed)
+float3 diffusereflection(float3 *N, uint seed)
 {
     float3 R;
-    do
+    while (dot(R, R) > 1)
     {
         R = (float3)(RandomFloat(seed) * 2 - 1, RandomFloat(seed) * 2 - 1, RandomFloat(seed) * 2 - 1);
-    } while (dot(R, R) > 1);
-    if (dot(R, N) < 0)
+    }
+    if (dot(R, *N) < 0)
         R *= -1.0f;
     return normalize(R);
 }
@@ -260,10 +268,12 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     Ray ray = rayBuffer[index];
     uint seed = seeds[index];
 
+    const int pixelIdx = ray.pixelIdx;
+
     if (ray.objIdx == -1)
     {
         float3 skyColor = getSkyColor(&ray, skydomePixels, skydomeWidth, skydomeHeight);
-        pixels[index] *= (float4)(skyColor.x, skyColor.y, skyColor.z, 1);
+        pixels[pixelIdx] *= (float4)(skyColor.x, skyColor.y, skyColor.z, 1);
         return;
     }
 
@@ -284,7 +294,7 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     // objIdx >= 900 is a light
     if (ray.objIdx >= 900)
     {
-        pixels[index] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
+        pixels[pixelIdx] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
         return;
     }
 
@@ -313,9 +323,9 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     }
     else // diffuse surface
     {
-        float3 R = diffusereflection(N, seed);
+        float3 R = diffusereflection(&N, seed);
         // generate extend ray
     }
 
-    pixels[index] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
+    pixels[pixelIdx] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
 }

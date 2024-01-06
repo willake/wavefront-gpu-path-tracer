@@ -15,6 +15,9 @@ __declspec(align(128)) class Ray
         barycentric = ray.barycentric;
         triIdx = ray.triIdx;
         inside = ray.inside;
+        pixelIdx = ray.pixelIdx;
+        traversed = ray.traversed;
+        tested = ray.tested;
     }
     Ray(const float3 origin, const float3 direction, const float distance = 1e34f, const int idx = -1)
     {
@@ -56,8 +59,47 @@ __declspec(align(128)) class Ray
     float t = 1e34f;                // 4 bytes
     int objIdx = -1;                // 4 bytes
     int triIdx = -1;                // 4 bytes
+    int pixelIdx = -1;              // 4 bytes
     int traversed = 0;              // 4 bytes
     int tested = 0;                 // 4 bytes
     bool inside = false;            // 1 bytes // true when in medium
+};
+
+__declspec(align(128)) struct ShadowRay
+{
+    union {
+        struct
+        {
+            float3 O;
+            float d0;
+        };
+        __m128 O4;
+    }; // 16 bytes
+    union {
+        struct
+        {
+            float3 D;
+            float d1;
+        };
+        __m128 D4;
+    }; // 16 bytes
+    union {
+        struct
+        {
+            float3 rD;
+            float d2;
+        };
+        __m128 rD4;
+    }; // 16 bytes
+    union {
+        struct
+        {
+            float3 E;
+            float d3;
+        };
+        __m128 E4;
+    };               // 16 bytes
+    float t = 1e34f; // 4 bytes
+    int pixelIdx;    // 4 bytes
 };
 } // namespace Tmpl8

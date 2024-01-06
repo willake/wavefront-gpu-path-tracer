@@ -72,7 +72,12 @@ class Renderer : public TheApp
 
     float4 *pixels;
     Ray *rays;
+    uint extensionCounter = 0;
+    uint shadowrayCounter = 0;
     Buffer *rayBuffer;
+    Buffer *extensionCounterBuffer;
+    Buffer *shadowrayBuffer;
+    Buffer *shadowrayCounterBuffer;
     Buffer *accumulatorBuffer;
     Buffer *seedBuffer;
     Buffer *pixelBuffer; // final pixels for a tick

@@ -7,6 +7,7 @@ typedef struct __attribute__((aligned(128)))
     float t;            // 4 bytes
     int objIdx;         // 4 bytes
     int triIdx;         // 4 bytes
+    int pixelIdx;       // 4 bytes
     int traversed;      // 4 bytes
     int tested;         // 4 bytes
     bool inside;        // 1 bytes
