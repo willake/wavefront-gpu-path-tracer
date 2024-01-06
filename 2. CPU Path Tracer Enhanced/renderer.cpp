@@ -17,6 +17,31 @@ void Renderer::ClearAccumulator()
     memset(accumulator, 0, SCRWIDTH * SCRHEIGHT * 16);
 }
 
+float3 Renderer::DirectIllumination(uint &seed, float3 I, float3 N, float3 brdf)
+{
+    uint lightIdx;
+    float3 randomLightPos = scene.RandomPointOnLight(seed, lightIdx);
+    Light light = scene.GetLight(lightIdx);
+
+    // Light related information
+    float3 L = randomLightPos - I;
+    float dist = length(L);
+    L *= 1 / dist;
+    float ndotl = dot(N, L);
+    float nldotl = dot(light.normal, -L);
+    float A = light.area;
+    Ray shadowRay = Ray(I + L * EPSILON, L, dist - 2 * EPSILON);
+    if (ndotl > 0 && nldotl > 0)
+    {
+        if (scene.IsOccluded(shadowRay))
+        {
+            float solidAngle = (nldotl * A) / (dist * dist);
+            return scene.GetLightColor() * solidAngle * brdf * ndotl * scene.lightCount;
+        }
+    }
+    return float3(0);
+}
+
 float3 Renderer::HandleMirror(const Ray &ray, uint &seed, const float3 &I, const float3 &N, const int depth)
 {
     float3 R = reflect(ray.D, N);
@@ -39,8 +64,7 @@ float3 Renderer::HandleDielectric(const Ray &ray, uint &seed, const float3 &I, c
         float3 T = eta * ray.D + ((eta * cosi - sqrtf(fabs(cost2))) * N);
         Ray t(I + T * EPSILON, T);
         t.inside = !ray.inside;
-        if (RandomFloat(seed) > Fr)
-            return Sample(t, seed, depth + 1);
+        if (RandomFloat(seed) > Fr) return Sample(t, seed, depth + 1);
     }
     return Sample(r, seed, depth + 1);
 }
@@ -52,10 +76,8 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth, bool lastSpecular)
 {
     scene.FindNearest(ray);
     // if (ray.objIdx == -1) return float3(0);
-    if (ray.objIdx == -1)
-        return scene.GetSkyColor(ray); // or a fancy sky color
-    if (depth >= depthLimit)
-        return float3(0);
+    if (ray.objIdx == -1) return scene.GetSkyColor(ray); // or a fancy sky color
+    if (depth >= depthLimit) return float3(0);
     float3 I = ray.O + ray.t * ray.D;
     HitInfo hitInfo = scene.GetHitInfo(ray, I);
     float3 N = hitInfo.normal;
@@ -74,14 +96,8 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth, bool lastSpecular)
     // return black if it is a light soucre
     if (material->isLight)
     {
-        if (lastSpecular)
-        {
-            return scene.GetLightColor();
-        }
-        else
-        {
-            return float3(0);
-        }
+        if (lastSpecular) { return scene.GetLightColor(); }
+        else { return float3(0); }
     }
 
     // Shade
@@ -111,30 +127,8 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth, bool lastSpecular)
     {
         float3 R = diffusereflection(N, seed);
         float3 brdf = albedo * INVPI;
-
-        uint lightIdx;
-        float3 randomLightPos = scene.RandomPointOnLight(seed, lightIdx);
-        Light light = scene.GetLight(lightIdx);
-
-        // Light related information
-        float3 L = randomLightPos - I;
-        float dist = length(L);
-        L *= 1 / dist;
-        float ndotl = dot(N, L);
-        float nldotl = dot(light.normal, -L);
-        float A = light.area;
-        Ray shadowRay = Ray(I + L * EPSILON, L, dist - 2 * EPSILON);
-        float3 Ld = float3(0);
-        if (ndotl > 0 && nldotl > 0)
-        {
-            if (scene.IsOccluded(shadowRay))
-            {
-                float solidAngle = (nldotl * A) / (dist * dist);
-                Ld = scene.GetLightColor() * solidAngle * brdf * ndotl * scene.lightCount;
-            }
-        }
-
         Ray r(I + R * EPSILON, R);
+        float3 Ld = DirectIllumination(seed, I, N, brdf);
         return medium_scale * brdf * 2 * PI * dot(R, N) * Sample(r, seed, depth + 1) + Ld;
     }
 }
@@ -145,10 +139,7 @@ float3 Renderer::GetEdgeDebugColor(float2 uv)
     {
         return float3(0, 0, 0);
     }
-    else
-    {
-        return float3(1);
-    }
+    else { return float3(1); }
 }
 
 // -----------------------------------------------------------
@@ -191,8 +182,7 @@ static struct TileJob : public Job
 void Renderer::Tick(float deltaTime)
 {
     // animation
-    if (animating)
-        scene.SetTime(anim_time += deltaTime * 0.002f), ClearAccumulator();
+    if (animating) scene.SetTime(anim_time += deltaTime * 0.002f), ClearAccumulator();
     // pixel loop
     Timer t;
 
@@ -207,16 +197,11 @@ void Renderer::Tick(float deltaTime)
         energy += tileJob[i].sum;
     // performance report - running average - ms, MRays/s
     m_avg = (1 - m_alpha) * m_avg + m_alpha * t.elapsed() * 1000;
-    if (m_alpha > 0.05f)
-        m_alpha *= 0.75f;
+    if (m_alpha > 0.05f) m_alpha *= 0.75f;
     m_fps = 1000.0f / m_avg, m_rps = (SCRWIDTH * SCRHEIGHT) / m_avg;
     //   handle user input
-    if (camera.HandleInput(deltaTime))
-    {
-        ClearAccumulator();
-    }
-    else
-        spp += passes;
+    if (camera.HandleInput(deltaTime)) { ClearAccumulator(); }
+    else spp += passes;
 }
 
 // -----------------------------------------------------------
@@ -251,6 +236,5 @@ void Renderer::UI()
     ImGui::Text("Camera Pos: (%.2f, %.2f, %.2f)", camera.camPos.x, camera.camPos.y, camera.camPos.z);
     ImGui::Text("Camera Target: (%.2f, %.2f, %.2f)", camera.camTarget.x, camera.camTarget.y, camera.camTarget.z);
     // reset accumulator if changes have been made
-    if (changed)
-        ClearAccumulator();
+    if (changed) ClearAccumulator();
 }

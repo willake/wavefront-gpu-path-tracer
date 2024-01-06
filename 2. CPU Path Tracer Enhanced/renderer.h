@@ -24,6 +24,7 @@ class Renderer : public TheApp
     float m_rps = 0;
     bool m_inspectTraversal = false;
     float3 GetEdgeDebugColor(float2 uv);
+    float3 DirectIllumination(uint &seed, float3 I, float3 N, float3 brdf);
 
   public:
     // game flow methods
