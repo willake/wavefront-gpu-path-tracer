@@ -21,7 +21,7 @@ float3 Renderer::HandleMirror(const Ray &ray, uint &seed, const float3 &I, const
 {
     float3 R = reflect(ray.D, N);
     Ray r(I + R * EPSILON, R);
-    return Sample(r, seed, depth + 1);
+    return Sample(r, seed, depth + 1, true);
 }
 
 float3 Renderer::HandleDielectric(const Ray &ray, uint &seed, const float3 &I, const float3 &N, const int depth)
@@ -48,12 +48,12 @@ float3 Renderer::HandleDielectric(const Ray &ray, uint &seed, const float3 &I, c
 // -----------------------------------------------------------
 // Evaluate light transport
 // -----------------------------------------------------------
-float3 Renderer::Sample(Ray &ray, uint &seed, int depth)
+float3 Renderer::Sample(Ray &ray, uint &seed, int depth, bool lastSpecular)
 {
     scene.FindNearest(ray);
     // if (ray.objIdx == -1) return float3(0);
     if (ray.objIdx == -1)
-        return float3(0); // or a fancy sky color
+        return scene.GetSkyColor(ray); // or a fancy sky color
     if (depth >= depthLimit)
         return float3(0);
     float3 I = ray.O + ray.t * ray.D;
@@ -73,7 +73,16 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth)
     // Part of NEE
     // return black if it is a light soucre
     if (material->isLight)
-        return float3(0);
+    {
+        if (lastSpecular)
+        {
+            return scene.GetLightColor();
+        }
+        else
+        {
+            return float3(0);
+        }
+    }
 
     // Shade
     float3 out_radiance(0);

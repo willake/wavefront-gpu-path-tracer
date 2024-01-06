@@ -31,7 +31,7 @@ class Renderer : public TheApp
     void ClearAccumulator();
     float3 HandleMirror(const Ray &ray, uint &seed, const float3 &I, const float3 &N, const int depth);
     float3 HandleDielectric(const Ray &ray, uint &seed, const float3 &I, const float3 &N, const int depth);
-    float3 Sample(Ray &ray, uint &seed, int depth = 0);
+    float3 Sample(Ray &ray, uint &seed, int depth = 0, bool lastSpecular = false);
     void ProcessTile(int tx, int ty, float &sum);
     void Tick(float deltaTime);
     void UI();
