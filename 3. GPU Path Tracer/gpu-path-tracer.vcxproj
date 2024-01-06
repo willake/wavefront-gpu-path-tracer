@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>1. Basics</ProjectName>
-    <ProjectGuid>{1B482D44-6893-42E7-ADF6-E497E4FCE916}</ProjectGuid>
+    <ProjectName>3. GPUPathTracer</ProjectName>
+    <ProjectGuid>{67408450-81BC-4214-B4E5-B5B11CD23E36}</ProjectGuid>
     <RootNamespace>Tmpl8</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
@@ -47,7 +47,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\template;.;..\lib;..\lib\imgui;..\lib\glad;..\lib\glfw\include;..\lib\OpenCL\inc;..\lib\zlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\infra;..\infra\scene;..\template;.;..\lib;..\lib\imgui;..\lib\glad;..\lib\glfw\include;..\lib\OpenCL\inc;..\lib\zlib;..\lib\rapidxml-1.13</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
@@ -126,6 +126,12 @@
   </ItemDefinitionGroup>
   <!-- END Custom section -->
   <ItemGroup>
+    <ClCompile Include="..\infra\blas.cpp" />
+    <ClCompile Include="..\infra\blas_bvh.cpp" />
+    <ClCompile Include="..\infra\mesh.cpp" />
+    <ClCompile Include="..\infra\scene\primitive_scene.cpp" />
+    <ClCompile Include="..\infra\scene\tlas_file_scene.cpp" />
+    <ClCompile Include="..\infra\tlas_bvh.cpp" />
     <ClCompile Include="..\lib\imgui\imgui.cpp" />
     <ClCompile Include="..\lib\imgui\imgui_demo.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -147,6 +153,15 @@
     <ClCompile Include="renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\infra\blas.h" />
+    <ClInclude Include="..\infra\blas_bvh.h" />
+    <ClInclude Include="..\infra\helper.h" />
+    <ClInclude Include="..\infra\hit_info.h" />
+    <ClInclude Include="..\infra\mesh.h" />
+    <ClInclude Include="..\infra\scene\base_scene.h" />
+    <ClInclude Include="..\infra\scene\primitive_scene.h" />
+    <ClInclude Include="..\infra\scene\tlas_file_scene.h" />
+    <ClInclude Include="..\infra\tlas_bvh.h" />
     <ClInclude Include="..\lib\imgui\imconfig.h" />
     <ClInclude Include="..\lib\imgui\imgui.h" />
     <ClInclude Include="..\lib\imgui\imgui_impl_glfw.h" />
@@ -158,7 +173,7 @@
     <ClInclude Include="..\lib\imgui\imstb_truetype.h" />
     <ClInclude Include="..\template\camera.h" />
     <ClInclude Include="..\template\common.h" />
-    <ClInclude Include="..\template\model.h" />
+    <ClInclude Include="..\template\material.h" />
     <ClInclude Include="..\template\opencl.h" />
     <ClInclude Include="..\template\opengl.h" />
     <ClInclude Include="..\template\precomp.h" />
@@ -166,6 +181,7 @@
     <ClInclude Include="..\template\ray.h" />
     <ClInclude Include="..\template\scene.h" />
     <ClInclude Include="..\template\surface.h" />
+    <ClInclude Include="..\template\texture.h" />
     <ClInclude Include="..\template\tmplmath.h" />
     <ClInclude Include="renderer.h" />
   </ItemGroup>

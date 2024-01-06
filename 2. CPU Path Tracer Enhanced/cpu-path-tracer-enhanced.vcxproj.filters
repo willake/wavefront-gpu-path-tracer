@@ -38,9 +38,6 @@
     <ClCompile Include="..\template\tmplmath.cpp">
       <Filter>template</Filter>
     </ClCompile>
-    <ClCompile Include="..\infra\blas_bvh.cpp">
-      <Filter>infra\bvh</Filter>
-    </ClCompile>
     <ClCompile Include="..\infra\tlas_bvh.cpp">
       <Filter>infra\bvh</Filter>
     </ClCompile>
@@ -50,11 +47,14 @@
     <ClCompile Include="..\infra\scene\tlas_file_scene.cpp">
       <Filter>infra\scene</Filter>
     </ClCompile>
-    <ClCompile Include="..\infra\mesh.cpp">
-      <Filter>infra</Filter>
+    <ClCompile Include="..\infra\blas_bvh.cpp">
+      <Filter>infra\bvh</Filter>
     </ClCompile>
     <ClCompile Include="..\infra\blas.cpp">
       <Filter>infra\bvh</Filter>
+    </ClCompile>
+    <ClCompile Include="..\infra\mesh.cpp">
+      <Filter>infra</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -128,9 +128,6 @@
     <ClInclude Include="..\infra\hit_info.h">
       <Filter>infra</Filter>
     </ClInclude>
-    <ClInclude Include="..\infra\blas_bvh.h">
-      <Filter>infra\bvh</Filter>
-    </ClInclude>
     <ClInclude Include="..\infra\tlas_bvh.h">
       <Filter>infra\bvh</Filter>
     </ClInclude>
@@ -143,11 +140,14 @@
     <ClInclude Include="..\infra\scene\tlas_file_scene.h">
       <Filter>infra\scene</Filter>
     </ClInclude>
-    <ClInclude Include="..\infra\mesh.h">
-      <Filter>infra</Filter>
+    <ClInclude Include="..\infra\blas_bvh.h">
+      <Filter>infra\bvh</Filter>
     </ClInclude>
     <ClInclude Include="..\infra\blas.h">
       <Filter>infra\bvh</Filter>
+    </ClInclude>
+    <ClInclude Include="..\infra\mesh.h">
+      <Filter>infra</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -158,13 +158,13 @@
       <UniqueIdentifier>{63ed95a2-d26b-4145-a2e0-5fb72e8ef727}</UniqueIdentifier>
     </Filter>
     <Filter Include="infra">
-      <UniqueIdentifier>{4f97b364-599f-4093-ba87-a95e49310992}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="infra\bvh">
-      <UniqueIdentifier>{066300a7-69c0-4b8b-8bdd-4fadf8a303a8}</UniqueIdentifier>
+      <UniqueIdentifier>{7fb1c592-c302-4654-9e21-66279d82d3de}</UniqueIdentifier>
     </Filter>
     <Filter Include="infra\scene">
-      <UniqueIdentifier>{e966b79d-de74-4b81-82cb-6083c0b3958b}</UniqueIdentifier>
+      <UniqueIdentifier>{e4ba0643-cc57-4199-b4ee-34ea83cfb073}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="infra\bvh">
+      <UniqueIdentifier>{7b677c45-6685-4911-9e3b-f4ade608f4a9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
