@@ -1,11 +1,11 @@
 #include "precomp.h"
 #include "tlas_file_scene.h"
 
-float3 TLASFileScene::RandomPointOnLight(const float r0, const float r1) const
+float3 TLASFileScene::RandomPointOnLight(const float r0, const float r1, uint &lightIdx) const
 {
     //// select a random light and use that
-    uint lightIdx = (uint)(r0 * lightCount);
-    const Quad &q = lights[lightIdx];
+    lightIdx = (uint)(r0 * lightCount);
+    const Quad &q = lightQuads[lightIdx];
     // renormalize r0 for reuse
     float stratum = lightIdx * 0.25f;
     float r2 = (r0 - stratum) / (1 - stratum);
@@ -37,14 +37,20 @@ TLASFileScene::TLASFileScene(const string &filePath)
     // create lights
     lightCount = sceneData.lights.size();
 
-    lights = new Quad[lightCount];
+    lightQuads = new Quad[lightCount];
+    lights = new Light[lightCount];
 
     for (int i = 0; i < lightCount; i++)
     {
-        lights[i] = Quad(0, sceneData.lights[i].size);
-        mat4 M1base = mat4::Translate(sceneData.lights[i].position);
+        LightData &lightData = sceneData.lights[i];
+        lightQuads[i] = Quad(0, lightData.size);
+        mat4 T = mat4::Translate(lightData.position);
         // *mat4::RotateZ(sinf(animTime * 0.6f) * 0.1f);
-        lights[i].T = M1base, lights[i].invT = M1base.FastInvertedTransformNoScale();
+        lightQuads[i].T = T, lightQuads[i].invT = T.FastInvertedTransformNoScale();
+        lights[i] = Light();
+        lights[i].position = lightData.position;
+        lights[i].normal = lightQuads[i].GetNormal(float3(0));
+        lights[i].area = lightData.size * lightData.size;
     }
 
     objCount = sceneData.objects.size();
@@ -347,11 +353,18 @@ float3 TLASFileScene::GetSkyColor(const Ray &ray) const
     return color;
 }
 
+Light Tmpl8::TLASFileScene::GetLight(int idx)
+{
+    if (idx >= lightCount)
+        return lights[0];
+    return lights[idx];
+}
+
 float3 TLASFileScene::GetLightPos() const
 {
     // light point position is the middle of the swinging quad
-    float3 corner1 = TransformPosition(float3(-0.5f, 0, -0.5f), lights[0].T);
-    float3 corner2 = TransformPosition(float3(0.5f, 0, 0.5f), lights[0].T);
+    float3 corner1 = TransformPosition(float3(-0.5f, 0, -0.5f), lightQuads[0].T);
+    float3 corner2 = TransformPosition(float3(0.5f, 0, 0.5f), lightQuads[0].T);
     return (corner1 + corner2) * 0.5f - float3(0, 0.01f, 0);
 }
 
@@ -360,16 +373,16 @@ float3 TLASFileScene::GetLightColor() const
     return float3(24, 24, 22);
 }
 
-float3 TLASFileScene::RandomPointOnLight(uint &seed) const
+float3 TLASFileScene::RandomPointOnLight(uint &seed, uint &lightIdx) const
 {
-    return RandomPointOnLight(RandomFloat(seed), RandomFloat(seed));
+    return RandomPointOnLight(RandomFloat(seed), RandomFloat(seed), lightIdx);
 }
 
 void TLASFileScene::FindNearest(Ray &ray)
 {
     for (int i = 0; i < lightCount; i++)
     {
-        lights[i].Intersect(ray);
+        lightQuads[i].Intersect(ray);
     }
     floor.Intersect(ray);
     tlas.Intersect(ray);
@@ -379,7 +392,7 @@ bool TLASFileScene::IsOccluded(const Ray &ray)
 {
     for (int i = 0; i < lightCount; i++)
     {
-        if (lights[i].IsOccluded(ray))
+        if (lightQuads[i].IsOccluded(ray))
             return true;
     }
     Ray shadow = Ray(ray);
@@ -397,7 +410,7 @@ HitInfo TLASFileScene::GetHitInfo(const Ray &ray, const float3 I)
     switch (ray.objIdx)
     {
     case 0:
-        hitInfo.normal = lights[0].GetNormal(I);
+        hitInfo.normal = lightQuads[0].GetNormal(I);
         hitInfo.uv = float2(0);
         hitInfo.material = &primitiveMaterials[0];
         break;

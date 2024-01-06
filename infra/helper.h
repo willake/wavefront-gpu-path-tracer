@@ -3,6 +3,14 @@
 #include <string>
 #include <unordered_map>
 
+__declspec(align(32)) struct Light
+{
+    float3 position; // 12 bytes
+    float dummy;     // 4 bytes
+    float3 normal;   // 12 bytes
+    float area;      // 4 bytes
+};                   // 32 bytes in total
+
 struct Tri
 {
     Tri()

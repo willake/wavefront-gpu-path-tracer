@@ -101,9 +101,6 @@
     <ClInclude Include="..\template\common.h">
       <Filter>template</Filter>
     </ClInclude>
-    <ClInclude Include="..\template\scene.h">
-      <Filter>template</Filter>
-    </ClInclude>
     <ClInclude Include="..\template\surface.h">
       <Filter>template</Filter>
     </ClInclude>

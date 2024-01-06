@@ -20,7 +20,7 @@
             ray.t = t, ray.objIdx = i;                                                                                 \
     }
 
-float3 PrimitiveScene::RandomPointOnLight(const float r0, const float r1) const
+float3 PrimitiveScene::RandomPointOnLight(const float r0, const float r1, uint &lightIdx) const
 {
     return float3();
 }
@@ -109,12 +109,17 @@ float3 PrimitiveScene::GetSkyColor(const Ray &ray) const
     return float3(0);
 }
 
+Light Tmpl8::PrimitiveScene::GetLight(int idx)
+{
+    return Light();
+}
+
 float3 PrimitiveScene::GetLightColor() const
 {
     return float3(24, 24, 22);
 }
 
-float3 PrimitiveScene::RandomPointOnLight(uint &seed) const
+float3 PrimitiveScene::RandomPointOnLight(uint &seed, uint &lightIdx) const
 {
     return float3();
 }

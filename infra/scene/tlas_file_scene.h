@@ -55,7 +55,7 @@ struct SceneData
 class TLASFileScene : BaseScene
 {
   protected:
-    float3 RandomPointOnLight(const float r0, const float r1) const;
+    float3 RandomPointOnLight(const float r0, const float r1, uint &lightIdxx) const;
 
   public:
     TLASFileScene(const string &filePath);
@@ -63,9 +63,10 @@ class TLASFileScene : BaseScene
     void PrepareBuffers();
     void SetTime(float t);
     float3 GetSkyColor(const Ray &ray) const;
+    Light GetLight(int idx);
     float3 GetLightPos() const;
     float3 GetLightColor() const;
-    float3 RandomPointOnLight(uint &seed) const;
+    float3 RandomPointOnLight(uint &seed, uint &lightIdx) const;
     void FindNearest(Ray &ray);
     bool IsOccluded(const Ray &ray);
     float3 GetAlbedo(int objIdx, float3 I) const;
@@ -80,7 +81,8 @@ class TLASFileScene : BaseScene
     string sceneName;
     Texture skydome;
     Plane floor;
-    Quad *lights;
+    Quad *lightQuads;
+    Light *lights;
     int objIdUsed = 2;
     uint objCount = 0;
     uint materialCount = 0;

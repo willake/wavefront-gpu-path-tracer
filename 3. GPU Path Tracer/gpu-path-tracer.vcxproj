@@ -179,7 +179,6 @@
     <ClInclude Include="..\template\precomp.h" />
     <ClInclude Include="..\template\primitives.h" />
     <ClInclude Include="..\template\ray.h" />
-    <ClInclude Include="..\template\scene.h" />
     <ClInclude Include="..\template\surface.h" />
     <ClInclude Include="..\template\texture.h" />
     <ClInclude Include="..\template\tmplmath.h" />

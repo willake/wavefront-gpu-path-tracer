@@ -8,15 +8,16 @@ namespace Tmpl8
 class PrimitiveScene : BaseScene
 {
   protected:
-    float3 RandomPointOnLight(const float r0, const float r1) const;
+    float3 RandomPointOnLight(const float r0, const float r1, uint &lightIdx) const;
 
   public:
     PrimitiveScene();
     void SetTime(float t);
     float3 GetSkyColor(const Ray &ray) const;
+    Light GetLight(int idx);
     float3 GetLightPos() const;
     float3 GetLightColor() const;
-    float3 RandomPointOnLight(uint &seed) const;
+    float3 RandomPointOnLight(uint &seed, uint &lightIdx) const;
     void FindNearest(Ray &ray);
     bool IsOccluded(const Ray &ray);
     float3 GetAlbedo(int objIdx, float3 I) const;

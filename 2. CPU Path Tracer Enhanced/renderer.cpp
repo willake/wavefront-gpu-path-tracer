@@ -53,7 +53,7 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth)
     scene.FindNearest(ray);
     // if (ray.objIdx == -1) return float3(0);
     if (ray.objIdx == -1)
-        return scene.GetSkyColor(ray); // or a fancy sky color
+        return float3(0); // or a fancy sky color
     if (depth >= depthLimit)
         return float3(0);
     float3 I = ray.O + ray.t * ray.D;
@@ -70,9 +70,12 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth)
     // return float3(ray.barycentric.x, ray.barycentric.y, 0);
     // if (m_inspectTraversal) return GetTraverseCountColor(ray.traversed, );
 
+    // Part of NEE
+    // return black if it is a light soucre
     if (material->isLight)
-        return scene.GetLightColor();
+        return float3(0);
 
+    // Shade
     float3 out_radiance(0);
     float reflectivity = material->reflectivity;
     float refractivity = material->refractivity;
@@ -99,8 +102,31 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth)
     {
         float3 R = diffusereflection(N, seed);
         float3 brdf = albedo * INVPI;
+
+        uint lightIdx;
+        float3 randomLightPos = scene.RandomPointOnLight(seed, lightIdx);
+        Light light = scene.GetLight(lightIdx);
+
+        // Light related information
+        float3 L = randomLightPos - I;
+        float dist = length(L);
+        L *= 1 / dist;
+        float ndotl = dot(N, L);
+        float nldotl = dot(light.normal, -L);
+        float A = light.area;
+        Ray shadowRay = Ray(I + L * EPSILON, L, dist - 2 * EPSILON);
+        float3 Ld = float3(0);
+        if (ndotl > 0 && nldotl > 0)
+        {
+            if (scene.IsOccluded(shadowRay))
+            {
+                float solidAngle = (nldotl * A) / (dist * dist);
+                Ld = scene.GetLightColor() * solidAngle * brdf * ndotl * scene.lightCount;
+            }
+        }
+
         Ray r(I + R * EPSILON, R);
-        return medium_scale * brdf * 2 * PI * dot(R, N) * Sample(r, seed, depth + 1);
+        return medium_scale * brdf * 2 * PI * dot(R, N) * Sample(r, seed, depth + 1) + Ld;
     }
 }
 

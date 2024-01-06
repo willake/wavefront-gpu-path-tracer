@@ -15,15 +15,16 @@ namespace Tmpl8
 class BaseScene
 {
   protected:
-    virtual float3 RandomPointOnLight(const float r0, const float r1) const = 0;
+    virtual float3 RandomPointOnLight(const float r0, const float r1, uint &lightIdx) const = 0;
 
   public:
     BaseScene() = default;
     virtual void SetTime(float t) = 0;
     virtual float3 GetSkyColor(const Ray &ray) const = 0;
+    virtual Light GetLight(int idx) = 0;
     virtual float3 GetLightPos() const = 0;
     virtual float3 GetLightColor() const = 0;
-    virtual float3 RandomPointOnLight(uint &seed) const = 0;
+    virtual float3 RandomPointOnLight(uint &seed, uint &lightIdx) const = 0;
     virtual void FindNearest(Ray &ray) = 0;
     virtual bool IsOccluded(const Ray &ray) = 0;
     virtual float3 GetAlbedo(int objIdx, float3 I) const = 0;
