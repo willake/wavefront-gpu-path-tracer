@@ -74,15 +74,13 @@ __kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds,
     const int y = index / width; // Integer division
     const int x = index % width; // Modulo operation
 
-    uint seed = InitSeed(x + y * width + spp * 1799);
-
-    seeds[index] = seed;
-
-    const float u = ((float)x + RandomFloat(seed)) * (1.0f / width);
-    const float v = ((float)y + RandomFloat(seed)) * (1.0f / height);
+    uint seed = InitSeed(index + spp * 1799);
+    float r = RandomFloat(&seed);
+    const float u = ((float)x + 0) * (1.0f / width);
+    const float v = ((float)y + 0) * (1.0f / height);
     const float3 P = topLeft + u * (topRight - topLeft) + v * (bottomLeft - topLeft);
 
-    // // initializing a ray
+    // // // initializing a ray
     Ray ray;
     const float3 dir = P - camPos;
     const float distance = sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
@@ -97,6 +95,7 @@ __kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds,
     ray.pixelIdx = index;
 
     rayBuffer[index] = ray;
+    seeds[index] = seed;
     pixels[index] = (float4)(1);
 }
 
