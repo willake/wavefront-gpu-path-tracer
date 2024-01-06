@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\template\template.cpp">
-      <Filter>template</Filter>
-    </ClCompile>
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="..\lib\imgui\imgui.cpp">
       <Filter>template\imgui</Filter>
@@ -35,21 +32,33 @@
     <ClCompile Include="..\template\surface.cpp">
       <Filter>template</Filter>
     </ClCompile>
+    <ClCompile Include="..\template\template.cpp">
+      <Filter>template</Filter>
+    </ClCompile>
     <ClCompile Include="..\template\tmplmath.cpp">
       <Filter>template</Filter>
     </ClCompile>
+    <ClCompile Include="..\infra\tlas_bvh.cpp">
+      <Filter>infra\bvh</Filter>
+    </ClCompile>
+    <ClCompile Include="..\infra\scene\primitive_scene.cpp">
+      <Filter>infra\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\infra\scene\tlas_file_scene.cpp">
+      <Filter>infra\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\infra\blas_bvh.cpp">
+      <Filter>infra\bvh</Filter>
+    </ClCompile>
+    <ClCompile Include="..\infra\blas.cpp">
+      <Filter>infra\bvh</Filter>
+    </ClCompile>
+    <ClCompile Include="..\infra\mesh.cpp">
+      <Filter>infra</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\template\common.h">
-      <Filter>template</Filter>
-    </ClInclude>
-    <ClInclude Include="..\template\precomp.h">
-      <Filter>template</Filter>
-    </ClInclude>
     <ClInclude Include="renderer.h" />
-    <ClInclude Include="..\lib\imgui\imconfig.h">
-      <Filter>template\imgui</Filter>
-    </ClInclude>
     <ClInclude Include="..\lib\imgui\imgui.h">
       <Filter>template\imgui</Filter>
     </ClInclude>
@@ -74,10 +83,22 @@
     <ClInclude Include="..\lib\imgui\imstb_truetype.h">
       <Filter>template\imgui</Filter>
     </ClInclude>
+    <ClInclude Include="..\lib\imgui\imconfig.h">
+      <Filter>template\imgui</Filter>
+    </ClInclude>
     <ClInclude Include="..\template\opencl.h">
       <Filter>template</Filter>
     </ClInclude>
     <ClInclude Include="..\template\opengl.h">
+      <Filter>template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\template\precomp.h">
+      <Filter>template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\template\camera.h">
+      <Filter>template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\template\common.h">
       <Filter>template</Filter>
     </ClInclude>
     <ClInclude Include="..\template\surface.h">
@@ -86,33 +107,66 @@
     <ClInclude Include="..\template\tmplmath.h">
       <Filter>template</Filter>
     </ClInclude>
-    <ClInclude Include="..\template\camera.h">
-      <Filter>template</Filter>
-    </ClInclude>
-    <ClInclude Include="..\template\scene.h">
-      <Filter>template</Filter>
-    </ClInclude>
     <ClInclude Include="..\template\ray.h">
+      <Filter>template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\template\material.h">
       <Filter>template</Filter>
     </ClInclude>
     <ClInclude Include="..\template\primitives.h">
       <Filter>template</Filter>
     </ClInclude>
-    <ClInclude Include="..\template\model.h">
+    <ClInclude Include="..\template\texture.h">
       <Filter>template</Filter>
     </ClInclude>
+    <ClInclude Include="..\infra\helper.h">
+      <Filter>infra</Filter>
+    </ClInclude>
+    <ClInclude Include="..\infra\hit_info.h">
+      <Filter>infra</Filter>
+    </ClInclude>
+    <ClInclude Include="..\infra\tlas_bvh.h">
+      <Filter>infra\bvh</Filter>
+    </ClInclude>
+    <ClInclude Include="..\infra\scene\base_scene.h">
+      <Filter>infra\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\infra\scene\primitive_scene.h">
+      <Filter>infra\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\infra\scene\tlas_file_scene.h">
+      <Filter>infra\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\infra\blas_bvh.h">
+      <Filter>infra\bvh</Filter>
+    </ClInclude>
+    <ClInclude Include="..\infra\blas.h">
+      <Filter>infra\bvh</Filter>
+    </ClInclude>
+    <ClInclude Include="..\infra\mesh.h">
+      <Filter>infra</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="template">
+      <UniqueIdentifier>{ab1e8107-5ecc-459c-b6be-898036a3e059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="template\imgui">
+      <UniqueIdentifier>{63ed95a2-d26b-4145-a2e0-5fb72e8ef727}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="infra">
+      <UniqueIdentifier>{7fb1c592-c302-4654-9e21-66279d82d3de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="infra\scene">
+      <UniqueIdentifier>{e4ba0643-cc57-4199-b4ee-34ea83cfb073}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="infra\bvh">
+      <UniqueIdentifier>{7b677c45-6685-4911-9e3b-f4ade608f4a9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\template\LICENSE">
       <Filter>template</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="template">
-      <UniqueIdentifier>{a7d6e3cb-bfcd-438d-979f-17df241a55b4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="template\imgui">
-      <UniqueIdentifier>{b1e7f5d5-23d5-4fa2-8854-9a94fb160820}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
 </Project>

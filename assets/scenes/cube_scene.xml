@@ -1,15 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <scene>
     <!-- Scene Information -->
-    <scene_name>wok scene</scene_name>
-	<light_position>
-		<x>0.0</x>
-		<y>4.5</y>
-		<z>2.0</z>
-	</light_position>
+    <scene_name>cube scene</scene_name>
 	<plane_texture_location>../assets/textures/Stylized_Wood_basecolor.tga</plane_texture_location>
     <skydome_location>../assets/industrial_sunset_puresky_4k.hdr</skydome_location>
-
+	<!-- Light List -->
+    <lights>
+        <!-- Light 0 -->
+        <light>
+			<position>
+                <x>0.0</x>
+                <y>4.5</y>
+                <z>2.0</z>
+            </position>
+			<size>1</size>
+        </light>
+        <!-- Add more lights as needed -->
+    </lights>
     <!-- Object List -->
     <objects>
         <!-- Object 1 -->

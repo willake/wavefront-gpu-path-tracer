@@ -3,6 +3,19 @@
 #include <string>
 #include <unordered_map>
 
+struct Light
+{
+    mat4 T;       // 64 bytes
+    mat4 invT;    // 64 bytes
+    float3 color; // 12 bytes
+    float area;   // 4 bytes
+    float3 GetNormal(const float3 I) const
+    {
+        return TransformVector(float3(0, -1, 0), T);
+        // return float3(-T.cell[1], -T.cell[5], -T.cell[9]);
+    }
+}; // 144 bytes in total
+
 struct Tri
 {
     Tri()
