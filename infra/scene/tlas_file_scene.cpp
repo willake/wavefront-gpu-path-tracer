@@ -1,6 +1,22 @@
 #include "precomp.h"
 #include "tlas_file_scene.h"
 
+float3 TLASFileScene::RandomPointOnLight(const float r0, const float r1) const
+{
+    //// select a random light and use that
+    uint lightIdx = (uint)(r0 * lightCount);
+    const Quad &q = lights[lightIdx];
+    // renormalize r0 for reuse
+    float stratum = lightIdx * 0.25f;
+    float r2 = (r0 - stratum) / (1 - stratum);
+    // get a random position on the selected quad
+    const float size = q.size;
+    float3 corner1 = TransformPosition(float3(-size, 0, -size), q.T);
+    float3 corner2 = TransformPosition(float3(size, 0, -size), q.T);
+    float3 corner3 = TransformPosition(float3(-size, 0, size), q.T);
+    return corner1 + r2 * (corner2 - corner1) + r1 * (corner3 - corner1);
+}
+
 TLASFileScene::TLASFileScene(const string &filePath)
 {
     errorMaterial.albedo = float3(255, 192, 203) / 255.f;
@@ -13,14 +29,23 @@ TLASFileScene::TLASFileScene(const string &filePath)
     primitiveMaterials[1].textureDiffuse = Texture(sceneData.planeTextureLocation);
     objIdUsed = 2;
 
-    light = Quad(0, 1);
     floor = Plane(1, float3(0, 1, 0), 1, primitiveMaterials[1].textureDiffuse.width / 100);
-
-    mat4 M1base = mat4::Translate(sceneData.lightPos); // *mat4::RotateZ(sinf(animTime * 0.6f) * 0.1f);
-    light.T = M1base, light.invT = M1base.FastInvertedTransformNoScale();
 
     sceneName = sceneData.name;
     skydome = Texture(sceneData.skydomeLocation);
+
+    // create lights
+    lightCount = sceneData.lights.size();
+
+    lights = new Quad[lightCount];
+
+    for (int i = 0; i < lightCount; i++)
+    {
+        lights[i] = Quad(0, sceneData.lights[i].size);
+        mat4 M1base = mat4::Translate(sceneData.lights[i].position);
+        // *mat4::RotateZ(sinf(animTime * 0.6f) * 0.1f);
+        lights[i].T = M1base, lights[i].invT = M1base.FastInvertedTransformNoScale();
+    }
 
     objCount = sceneData.objects.size();
 
@@ -186,14 +211,23 @@ SceneData TLASFileScene::LoadSceneFile(const string &filePath)
 
     // Extract scene information
     sceneData.name = root->first_node("scene_name")->value();
-    for (rapidxml::xml_node<> *lightPosNode = root->first_node("light_position")->first_node(); lightPosNode;
-         lightPosNode = lightPosNode->next_sibling())
-    {
-        int index = lightPosNode->name()[0] - 'x'; // 'x', 'y', 'z' map to 0, 1, 2
-        sceneData.lightPos[index] = std::stof(lightPosNode->value());
-    }
     sceneData.planeTextureLocation = root->first_node("plane_texture_location")->value();
     sceneData.skydomeLocation = root->first_node("skydome_location")->value();
+
+    // Extract light information
+    for (rapidxml::xml_node<> *lightNode = root->first_node("lights")->first_node("light"); lightNode;
+         lightNode = lightNode->next_sibling())
+    {
+        LightData light;
+        for (rapidxml::xml_node<> *posNode = lightNode->first_node("position")->first_node(); posNode;
+             posNode = posNode->next_sibling())
+        {
+            int index = posNode->name()[0] - 'x'; // 'x', 'y', 'z' map to 0, 1, 2
+            light.position[index] = std::stof(posNode->value());
+        }
+        light.size = std::stoi(lightNode->first_node("size")->value());
+        sceneData.lights.push_back(light);
+    }
 
     // Extract object information
     for (rapidxml::xml_node<> *objNode = root->first_node("objects")->first_node("object"); objNode;
@@ -316,8 +350,8 @@ float3 TLASFileScene::GetSkyColor(const Ray &ray) const
 float3 TLASFileScene::GetLightPos() const
 {
     // light point position is the middle of the swinging quad
-    float3 corner1 = TransformPosition(float3(-0.5f, 0, -0.5f), light.T);
-    float3 corner2 = TransformPosition(float3(0.5f, 0, 0.5f), light.T);
+    float3 corner1 = TransformPosition(float3(-0.5f, 0, -0.5f), lights[0].T);
+    float3 corner2 = TransformPosition(float3(0.5f, 0, 0.5f), lights[0].T);
     return (corner1 + corner2) * 0.5f - float3(0, 0.01f, 0);
 }
 
@@ -326,18 +360,28 @@ float3 TLASFileScene::GetLightColor() const
     return float3(24, 24, 22);
 }
 
+float3 TLASFileScene::RandomPointOnLight(uint &seed) const
+{
+    return RandomPointOnLight(RandomFloat(seed), RandomFloat(seed));
+}
+
 void TLASFileScene::FindNearest(Ray &ray)
 {
-    light.Intersect(ray);
+    for (int i = 0; i < lightCount; i++)
+    {
+        lights[i].Intersect(ray);
+    }
     floor.Intersect(ray);
     tlas.Intersect(ray);
 }
 
 bool TLASFileScene::IsOccluded(const Ray &ray)
 {
-    // from tmpl8rt_IGAD
-    if (light.IsOccluded(ray))
-        return true;
+    for (int i = 0; i < lightCount; i++)
+    {
+        if (lights[i].IsOccluded(ray))
+            return true;
+    }
     Ray shadow = Ray(ray);
     shadow.t = 1e34f;
     tlas.Intersect(shadow);
@@ -353,7 +397,7 @@ HitInfo TLASFileScene::GetHitInfo(const Ray &ray, const float3 I)
     switch (ray.objIdx)
     {
     case 0:
-        hitInfo.normal = light.GetNormal(I);
+        hitInfo.normal = lights[0].GetNormal(I);
         hitInfo.uv = float2(0);
         hitInfo.material = &primitiveMaterials[0];
         break;
