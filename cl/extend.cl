@@ -64,6 +64,14 @@ typedef struct
     uint leftRight, BLAS;
 } TLASNode; // 32 bytes in total
 
+typedef struct
+{
+    float16 T;    // 64 bytes
+    float16 invT; // 64 bytes
+    float3 color; // 12 bytes
+    float area;   // 4 bytes
+} Light;
+
 float3 transformVector(float3 *V, float16 *T)
 {
     return (float3)(dot(T->s012, *V), dot(T->s456, *V), dot(T->s89A, *V));
@@ -269,7 +277,7 @@ void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, Mesh
 
 __kernel void extend(__global Ray *rayBuffer, __global Tri *triBuffer, __global uint *triIdxBuffer,
                      __global BVHNode *bvhNodes, __global BVH *bvhes, __global BLAS *blases,
-                     __global TLASNode *tlasNodes, __global MeshInstance *meshInstances)
+                     __global TLASNode *tlasNodes, __global MeshInstance *meshInstances, __global Light *lights)
 {
     const int index = get_global_id(0);
 

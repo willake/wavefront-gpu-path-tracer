@@ -347,6 +347,8 @@ void TLASFileScene::PrepareBuffers()
     blasBuffer->CopyToDevice(true);
     tlasNodeBuffer = new Buffer(objCount * 2 * sizeof(TLASNode), tlas.tlasNode);
     tlasNodeBuffer->CopyToDevice(true);
+    lightBuffer = new Buffer(lightCount * sizeof(Light), lights);
+    lightBuffer->CopyToDevice(true);
 }
 
 void TLASFileScene::SetTime(float t)

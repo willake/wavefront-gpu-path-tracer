@@ -124,5 +124,6 @@ class TLASFileScene : BaseScene
     Buffer *textureBuffer;
     GPUMaterial *gpuMats;
     Buffer *materialBuffer;
+    Buffer *lightBuffer;
 };
 } // namespace Tmpl8
