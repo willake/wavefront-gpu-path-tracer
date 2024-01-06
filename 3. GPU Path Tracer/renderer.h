@@ -72,9 +72,12 @@ class Renderer : public TheApp
 
     float4 *pixels;
     Ray *rays;
+    Ray *extensionrays;
+    ShadowRay *shadowrays;
     uint extensionCounter = 0;
     uint shadowrayCounter = 0;
     Buffer *rayBuffer;
+    Buffer *extensionrayBuffer;
     Buffer *extensionCounterBuffer;
     Buffer *shadowrayBuffer;
     Buffer *shadowrayCounterBuffer;

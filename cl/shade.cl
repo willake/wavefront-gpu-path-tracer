@@ -260,7 +260,9 @@ float3 getAlbedo(__global uint *floorPixels, __global BLAS *blases, __global uin
 __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global uint *seeds,
                     __global uint *skydomePixels, uint skydomeWidth, uint skydomeHeight, __global uint *floorPixels,
                     __global TriEx *triExs, __global BLAS *blases, __global Material *materials,
-                    __global uint *texturePixels, __global Texture *textures, __global Light *lights)
+                    __global uint *texturePixels, __global Texture *textures, __global Light *lights,
+                    __global Ray *extensionrayBuffer, __global ShadowRay *shadowrayBuffer,
+                    __global uint *extensionrayCounter, __global uint *shadowrayCounter)
 {
     // get ray id
     const int index = get_global_id(0);
