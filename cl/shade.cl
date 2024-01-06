@@ -47,6 +47,15 @@ typedef struct __attribute__((aligned(16)))
 
 typedef struct
 {
+    float16 T;                    // 64 bytes
+    float16 invT;                 // 64 bytes
+    float colorx, colory, colorz; // 12 bytes
+    float size;                   // 4 bytes
+    int objIdx;                   // 4 bytes
+} Light;                          // 148 bytes in total
+
+typedef struct
+{
     float3 normal;
     float2 uv;
     int matIdx;
@@ -72,6 +81,12 @@ float3 RGB8toRGB32F(uint c)
 float3 transformVector(float3 *V, float16 *T)
 {
     return (float3)(dot(T->s012, *V), dot(T->s456, *V), dot(T->s89A, *V));
+}
+
+float3 getLightNormal(Light *light)
+{
+    float3 N = (float3)(0, -1, 0);
+    return transformVector(&N, &light->T);
 }
 
 float3 getBLASNormal(TriEx *triExs, const int triIdx, const float2 barycentric, float16 T)
@@ -159,9 +174,14 @@ float3 sample(uint *pixels, uint startIdx, float2 uv, uint width, uint height)
     return RGB8toRGB32F(pixels[startIdx + index]);
 }
 
-HitInfo getHitInfo(const Ray *ray, TriEx *triExs, BLAS *blases, const float3 I)
+HitInfo getHitInfo(const Ray *ray, TriEx *triExs, BLAS *blases, Light *lights, const float3 I)
 {
     HitInfo hitInfo;
+    if (ray->objIdx >= 900)
+    {
+        hitInfo.normal = getLightNormal(&lights[ray->objIdx - 900]);
+        hitInfo.uv = (float2)(0, 0);
+    }
     if (ray->objIdx == 1)
     {
         hitInfo.normal = getFloorNormal();
@@ -175,16 +195,21 @@ HitInfo getHitInfo(const Ray *ray, TriEx *triExs, BLAS *blases, const float3 I)
         hitInfo.matIdx = blas->matIdx;
     }
 
-    if (dot(hitInfo.normal, ray->D) > 0)
+    if (ray->objIdx < 900 && dot(hitInfo.normal, ray->D) > 0)
         hitInfo.normal = -hitInfo.normal;
 
     return hitInfo;
 }
 
 float3 getAlbedo(__global uint *floorPixels, __global BLAS *blases, __global uint *texturePixels,
-                 __global Texture *textures, int objIdx, float2 uv)
+                 __global Texture *textures, __global Light *lights, int objIdx, float2 uv)
 {
-    if (objIdx == 1)
+    if (objIdx >= 900)
+    {
+        Light *light = &lights[objIdx - 900];
+        return (float3)(light->colorx, light->colory, light->colorz);
+    }
+    else if (objIdx == 1)
     {
         return sample(floorPixels, 0, uv, 512, 512);
     }
@@ -199,7 +224,7 @@ float3 getAlbedo(__global uint *floorPixels, __global BLAS *blases, __global uin
 __kernel void shade(__global uint *accumulator, __global Ray *rayBuffer, __global uint *skydomePixels,
                     uint skydomeWidth, uint skydomeHeight, __global uint *floorPixels, __global TriEx *triExs,
                     __global BLAS *blases, __global Material *materials, __global uint *texturePixels,
-                    __global Texture *textures)
+                    __global Texture *textures, __global Light *lights)
 {
     // get ray id
     const int index = get_global_id(0);
@@ -213,10 +238,10 @@ __kernel void shade(__global uint *accumulator, __global Ray *rayBuffer, __globa
     }
 
     float3 I = ray.O + ray.D * ray.t;
-    HitInfo hitInfo = getHitInfo(&ray, triExs, blases, I);
+    HitInfo hitInfo = getHitInfo(&ray, triExs, blases, lights, I);
     float3 N = hitInfo.normal;
     float2 uv = hitInfo.uv;
-    float3 albedo = getAlbedo(floorPixels, blases, texturePixels, textures, ray.objIdx, uv);
+    float3 albedo = getAlbedo(floorPixels, blases, texturePixels, textures, lights, ray.objIdx, uv);
 
     /* visualize triangle */
     // accumulator[index] = ray.triIdx * 10;

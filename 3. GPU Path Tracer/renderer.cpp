@@ -184,7 +184,7 @@ void Renderer::Tick(float deltaTime)
     accumulatorBuffer->CopyToDevice(true);
     kernelShade->SetArguments(accumulatorBuffer, rayBuffer, scene.skydomeBuffer, scene.skydome.width,
                               scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
-                              scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer);
+                              scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer, scene.lightBuffer);
     kernelShade->Run(SCRWIDTH * SCRHEIGHT);
     accumulatorBuffer->CopyFromDevice(true);
 
