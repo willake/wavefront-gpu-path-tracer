@@ -249,7 +249,7 @@ float3 getAlbedo(__global uint *floorPixels, __global BLAS *blases, __global uin
     }
 }
 
-__kernel void shade(__global float4 *accumulator, __global Ray *rayBuffer, __global uint *seeds,
+__kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global uint *seeds,
                     __global uint *skydomePixels, uint skydomeWidth, uint skydomeHeight, __global uint *floorPixels,
                     __global TriEx *triExs, __global BLAS *blases, __global Material *materials,
                     __global uint *texturePixels, __global Texture *textures, __global Light *lights)
@@ -263,7 +263,7 @@ __kernel void shade(__global float4 *accumulator, __global Ray *rayBuffer, __glo
     if (ray.objIdx == -1)
     {
         float3 skyColor = getSkyColor(&ray, skydomePixels, skydomeWidth, skydomeHeight);
-        accumulator[index] += (float4)(skyColor.x, skyColor.y, skyColor.z, 1);
+        pixels[index] *= (float4)(skyColor.x, skyColor.y, skyColor.z, 1);
         return;
     }
 
@@ -284,7 +284,7 @@ __kernel void shade(__global float4 *accumulator, __global Ray *rayBuffer, __glo
     // objIdx >= 900 is a light
     if (ray.objIdx >= 900)
     {
-        accumulator[index] += (float4)(albedo.x, albedo.y, albedo.z, 1);
+        pixels[index] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
         return;
     }
 
@@ -317,5 +317,5 @@ __kernel void shade(__global float4 *accumulator, __global Ray *rayBuffer, __glo
         // generate extend ray
     }
 
-    accumulator[index] += (float4)(albedo.x, albedo.y, albedo.z, 1);
+    pixels[index] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
 }

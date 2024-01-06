@@ -70,9 +70,11 @@ class Renderer : public TheApp
     Kernel *kernelShade;
     Kernel *kernelConnect;
 
+    float4 *pixels;
     Ray *rays;
     Buffer *rayBuffer;
     Buffer *accumulatorBuffer;
     Buffer *seedBuffer;
+    Buffer *pixelBuffer; // final pixels for a tick
 };
 } // namespace Tmpl8

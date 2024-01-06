@@ -63,8 +63,9 @@ __kernel void testRayStructSize(__global Test *test)
     t.sizeTotal = sizeof(Ray);
     test[index] = t;
 }
-__kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds, int width, int height, float3 camPos,
-                                  float3 topLeft, float3 topRight, float3 bottomLeft, int spp)
+__kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds, __global float4 pixels, int width,
+                                  int height, float3 camPos, float3 topLeft, float3 topRight, float3 bottomLeft,
+                                  int spp)
 {
     // get ray id
     const int index = get_global_id(0);
@@ -94,6 +95,7 @@ __kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds,
     ray.inside = false;
 
     rayBuffer[index] = ray;
+    pixels[index] = (float4)(1);
 }
 
 __kernel void connect()
