@@ -29,7 +29,7 @@ float3 Renderer::DirectIllumination(uint &seed, float3 I, float3 N, float3 brdf)
     L *= 1 / dist;
     float ndotl = dot(N, L);
     float nldotl = dot(light.GetNormal(I), -L);
-    float A = light.area;
+    float A = light.size * light.size;
     Ray shadowRay = Ray(I + L * EPSILON, L, dist - 2 * EPSILON);
     if (ndotl > 0 && nldotl > 0)
     {

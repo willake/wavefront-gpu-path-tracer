@@ -66,11 +66,12 @@ typedef struct
 
 typedef struct
 {
-    float16 T;    // 64 bytes
-    float16 invT; // 64 bytes
-    float3 color; // 12 bytes
-    float area;   // 4 bytes
-} Light;
+    float16 T;                    // 64 bytes
+    float16 invT;                 // 64 bytes
+    float colorx, colory, colorz; // 12 bytes
+    float size;                   // 4 bytes
+    int objIdx;                   // 4 bytes
+} Light;                          // 148 bytes in total
 
 float3 transformVector(float3 *V, float16 *T)
 {
@@ -105,6 +106,25 @@ Ray copyRay(Ray *ray)
     newRay.tested = ray->tested;
     newRay.inside = ray->inside;
     return newRay;
+}
+
+void intersectLight(Ray *ray, Light *light)
+{
+    float16 invT = light->invT;
+    float size = light->size * 0.5f;
+    const float Oy = invT[4] * ray->O.x + invT[5] * ray->O.y + invT[6] * ray->O.z + invT[7];
+    const float Dy = invT[4] * ray->D.x + invT[5] * ray->D.y + invT[6] * ray->D.z;
+    const float t = Oy / -Dy;
+    if (t < ray->t && t > 0)
+    {
+        const float Ox = invT[0] * ray->O.x + invT[1] * ray->O.y + invT[2] * ray->O.z + invT[3];
+        const float Oz = invT[8] * ray->O.x + invT[9] * ray->O.y + invT[10] * ray->O.z + invT[11];
+        const float Dx = invT[0] * ray->D.x + invT[1] * ray->D.y + invT[2] * ray->D.z;
+        const float Dz = invT[8] * ray->D.x + invT[9] * ray->D.y + invT[10] * ray->D.z;
+        const float Ix = Ox + t * Dx, Iz = Oz + t * Dz;
+        if (Ix > -size && Ix < size && Iz > -size && Iz < size)
+            ray->t = t, ray->objIdx = light->objIdx;
+    }
 }
 
 void intersectFloor(Ray *ray)
@@ -277,12 +297,17 @@ void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, Mesh
 
 __kernel void extend(__global Ray *rayBuffer, __global Tri *triBuffer, __global uint *triIdxBuffer,
                      __global BVHNode *bvhNodes, __global BVH *bvhes, __global BLAS *blases,
-                     __global TLASNode *tlasNodes, __global MeshInstance *meshInstances, __global Light *lights)
+                     __global TLASNode *tlasNodes, __global MeshInstance *meshInstances, __global Light *lights,
+                     uint lightCount)
 {
     const int index = get_global_id(0);
 
     Ray ray = rayBuffer[index];
 
+    for (int i = 0; i < lightCount; i++)
+    {
+        intersectLight(&ray, &lights[i]);
+    }
     intersectFloor(&ray);
     intersectTLAS(&ray, tlasNodes, blases, bvhes, meshInstances, bvhNodes, triBuffer, triIdxBuffer);
 

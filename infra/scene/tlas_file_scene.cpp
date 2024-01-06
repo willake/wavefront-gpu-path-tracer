@@ -49,8 +49,9 @@ TLASFileScene::TLASFileScene(const string &filePath)
         lightQuads[i].T = T, lightQuads[i].invT = T.FastInvertedTransformNoScale();
         lights[i] = Light();
         lights[i].T = T, lights[i].invT = T.FastInvertedTransformNoScale();
-        lights[i].area = lightData.size * lightData.size;
+        lights[i].size = lightData.size;
         lights[i].color = lightData.color;
+        lights[i].objIdx = 900 + i;
     }
 
     objCount = sceneData.objects.size();
