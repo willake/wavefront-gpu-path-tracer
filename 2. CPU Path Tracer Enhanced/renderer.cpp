@@ -96,8 +96,9 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth, bool lastSpecular)
     // return black if it is a light soucre
     if (material->isLight)
     {
-        if (lastSpecular) { return scene.GetLightColor(); }
-        else { return float3(0); }
+        if (depth == 0) return scene.GetLightColor();
+        else if (lastSpecular) return scene.GetLightColor();
+        else return float3(0);
     }
 
     // Shade
