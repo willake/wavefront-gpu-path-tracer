@@ -1,5 +1,5 @@
 #include "precomp.h"
-#include "blas_bvh.h"
+#include "bvh.h"
 
 BVH::BVH(MeshInstance &meshIns, Tri *tris, TriEx *triExs)
 {

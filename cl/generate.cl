@@ -35,36 +35,6 @@ typedef struct __attribute__((aligned(128)))
     bool lastSpecular;  // 1 bytes
 } Ray;                  // total 82 bytes
 
-typedef struct
-{
-    int sizeO;
-    int sizeD;
-    int sizerD;
-    int sizet;
-    int sizebary;
-    int sizeObjIdx;
-    int sizeTriIdx;
-    int sizeInside;
-    int sizePadding;
-    int sizeTotal;
-} Test;
-
-__kernel void testRayStructSize(__global Test *test)
-{
-    const int index = get_global_id(0);
-    Test t;
-    t.sizeO = sizeof(float3);
-    t.sizeD = sizeof(float3);
-    t.sizerD = sizeof(float3);
-    t.sizet = sizeof(float);
-    t.sizebary = sizeof(float2);
-    t.sizeObjIdx = sizeof(int);
-    t.sizeTriIdx = sizeof(int);
-    t.sizeInside = sizeof(bool);
-    t.sizePadding = sizeof(char[7]);
-    t.sizeTotal = sizeof(Ray);
-    test[index] = t;
-}
 __kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds, __global float4 *pixels, int width,
                                   int height, float3 camPos, float3 topLeft, float3 topRight, float3 bottomLeft,
                                   int spp)
@@ -98,8 +68,4 @@ __kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds,
     rayBuffer[index] = ray;
     seeds[index] = seed;
     pixels[index] = (float4)(1);
-}
-
-__kernel void finalize()
-{
 }
