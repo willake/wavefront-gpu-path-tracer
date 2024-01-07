@@ -33,7 +33,7 @@ void Renderer::Init()
 
     // init shadow rays
     shadowrays = new ShadowRay[SCRWIDTH * SCRHEIGHT];
-    shadowrayBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(ShadowRay), shadowrayBuffer);
+    shadowrayBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(ShadowRay), shadowrays);
     shadowrayCounterBuffer = new Buffer(sizeof(uint), &shadowrayCounter);
 }
 
@@ -127,9 +127,8 @@ void Renderer::Tick(float deltaTime)
         if (shadowCount > 0)
         {
             // kernelConnect->SetArguments(shadowrayBuffer, pixelBuffer, scene.triBuffer, scene.triIdxBuffer,
-            //                             scene.bvhNodeBuffer, scene.bvhBuffer, scene.blasBuffer,
-            //                             scene.tlasNodeBuffer, scene.meshInsBuffer, scene.lightBuffer,
-            //                             (int)scene.lightCount);
+            //                             scene.bvhNodeBuffer, scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer,
+            //                             scene.meshInsBuffer, scene.lightBuffer, (int)scene.lightCount);
             // kernelConnect->Run(shadowCount);
         }
 

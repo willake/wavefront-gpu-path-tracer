@@ -49,11 +49,11 @@ typedef struct __attribute__((aligned(128)))
 
 ShadowRay GenerateShadowRay(const float3 origin, const float3 direction, const float distance, const int pixelIdx)
 {
-    ShadowRay ray;
-    ray.O = origin, ray.D = direction, ray.t = distance;
-    ray.rD = (float3)(1 / ray.D.x, 1 / ray.D.y, 1 / ray.D.z);
-    ray.pixelIdx = pixelIdx;
-    return ray;
+    ShadowRay shadowRay;
+    shadowRay.O = origin, shadowRay.D = direction, shadowRay.t = distance;
+    // ray.rD = (float3)(1 / ray.D.x, 1 / ray.D.y, 1 / ray.D.z);
+    // ray.pixelIdx = pixelIdx;
+    return shadowRay;
 }
 
 typedef struct __attribute__((aligned(64)))
@@ -305,7 +305,6 @@ ShadowRay directionIllumination(Light *lights, uint lightCount, uint *seed, floa
     uint lightIdx;
     float3 randomLightPos = randomPointOnLight(lights, lightCount, seed, &lightIdx);
     Light *light = &lights[lightIdx];
-
     // lighting related information
     float3 L = randomLightPos - I;
     float dist = length(L);
@@ -313,13 +312,15 @@ ShadowRay directionIllumination(Light *lights, uint lightCount, uint *seed, floa
     float ndotl = dot(N, L);
     float nldotl = dot(getLightNormal(light), -L);
     float A = light->size * light->size;
-    ShadowRay ray = GenerateShadowRay(I + L * EPSILON, L, dist - 2 * EPSILON, pixelIdx);
+
+    ShadowRay shadowRay = GenerateShadowRay(I + L * EPSILON, L, dist - 2 * EPSILON, pixelIdx);
     if (ndotl > 0 && nldotl > 0)
     {
         float solidAngle = (nldotl * A) / (dist * dist);
-        ray.E = (float3)(light->colorx, light->colory, light->colorz) * solidAngle * brdf * ndotl * lightCount;
+
+        // ray.E = (float3)(light->colorx, light->colory, light->colorz) * solidAngle * brdf * ndotl * lightCount;
     }
-    return ray;
+    return shadowRay;
 }
 
 __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global uint *seeds,
@@ -391,16 +392,16 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     {
         float3 R = diffusereflection(&N, &seed);
         // compute diffuse
-        // pixels[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
-        //                     (float4)(brdf.x, brdf.y, brdf.z, 0) * 2 * M_PI_F * dot(R, N);
+        pixels[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
+                            (float4)(brdf.x, brdf.y, brdf.z, 0) * 2 * M_PI_F * dot(R, N);
         // generate extend ray
         uint ei = atomic_inc(extensionrayCounter);
         extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, pixelIdx);
 
-        // uint si = atomic_inc(shadowrayCounter);
-        // shadowrayBuffer[si] = directionIllumination(lights, lightCount, &seed, I, N, brdf, pixelIdx);
-        if (depth == 0)
-            pixels[pixelIdx] *= (float4)(brdf.x, brdf.y, brdf.z, 0);
+        uint si = atomic_inc(shadowrayCounter);
+        shadowrayBuffer[si] = directionIllumination(lights, lightCount, &seed, I, N, brdf, pixelIdx);
+        // if (depth == 0)
+        //     pixels[pixelIdx] *= (float4)(brdf.x, brdf.y, brdf.z, 0);
     }
     // pixels[pixelIdx] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
 }
