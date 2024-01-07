@@ -8,6 +8,7 @@
 #include "base_scene.h"
 #include "primitive_scene.h"
 #include "tlas_file_scene.h"
+#include "scene_buffer.h"
 
 #define EPSILON 0.001f
 
@@ -30,6 +31,7 @@ class Renderer : public TheApp
     void SwitchPrimaryRay();
 
   public:
+    Renderer();
     // game flow methods
     void Init();
     void ClearAccumulator();
@@ -62,7 +64,6 @@ class Renderer : public TheApp
     int2 mousePos;
     float4 *accumulator;
     uint *seeds;
-    TLASFileScene scene = TLASFileScene("../assets/scenes/glass_scene.xml");
     Camera camera;
     int spp = 1, passes = 1;
     bool animating = false;
@@ -90,5 +91,6 @@ class Renderer : public TheApp
     Buffer *accumulatorBuffer;
     Buffer *seedBuffer;
     Buffer *pixelBuffer; // final pixels for a tick
+    SceneBuffer *sceneBuffer;
 };
 } // namespace Tmpl8

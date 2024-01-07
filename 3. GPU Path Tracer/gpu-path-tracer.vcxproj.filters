@@ -56,6 +56,9 @@
     <ClCompile Include="..\infra\mesh.cpp">
       <Filter>infra</Filter>
     </ClCompile>
+    <ClCompile Include="..\infra\scene\scene_buffer.cpp">
+      <Filter>infra\scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.h" />
@@ -145,6 +148,9 @@
     </ClInclude>
     <ClInclude Include="..\infra\mesh.h">
       <Filter>infra</Filter>
+    </ClInclude>
+    <ClInclude Include="..\infra\scene\scene_buffer.h">
+      <Filter>infra\scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

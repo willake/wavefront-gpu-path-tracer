@@ -5,6 +5,7 @@
 #include "blas.h"
 #include "tlas_bvh.h"
 #include "rapidxml.hpp"
+#include "scene_buffer.h"
 
 #define TLAS_USE_BVH
 
@@ -60,9 +61,8 @@ class TLASFileScene : BaseScene
     float3 RandomPointOnLight(const float r0, const float r1, uint &lightIdxx) const;
 
   public:
-    TLASFileScene(const string &filePath);
+    TLASFileScene(const string &filePath, SceneBuffer *sceneBuffer = nullptr);
     SceneData LoadSceneFile(const string &filePath);
-    void PrepareBuffers();
     void SetTime(float t);
     float3 GetSkyColor(const Ray &ray) const;
     Light GetLightByLightIdx(int lightIdx);
@@ -100,30 +100,5 @@ class TLASFileScene : BaseScene
     BVH *bvhs;
     BLAS *blases;
     Material *materials;
-    // GPU buffers
-    Buffer *skydomeBuffer;
-    Buffer *floorBuffer;
-    Tri *triangles;
-    Buffer *triBuffer;
-    TriEx *triangleExs;
-    Buffer *triExBuffer;
-    uint *triangleIndices;
-    Buffer *triIdxBuffer;
-    MeshInstance *meshInstances;
-    Buffer *meshInsBuffer;
-    BVHNode *bvhNodes;
-    Buffer *bvhNodeBuffer;
-    GPUBVH *gpubvhs;
-    Buffer *bvhBuffer;
-    GPUBLAS *gpublases;
-    Buffer *blasBuffer;
-    Buffer *tlasNodeBuffer;
-    uint *texturePixels;
-    Buffer *texturePixelBuffer;
-    GPUTexture *gputextures;
-    Buffer *textureBuffer;
-    GPUMaterial *gpuMats;
-    Buffer *materialBuffer;
-    Buffer *lightBuffer;
 };
 } // namespace Tmpl8

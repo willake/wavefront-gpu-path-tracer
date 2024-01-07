@@ -17,7 +17,7 @@ float3 TLASFileScene::RandomPointOnLight(const float r0, const float r1, uint &l
     return corner1 + r2 * (corner2 - corner1) + r1 * (corner3 - corner1);
 }
 
-TLASFileScene::TLASFileScene(const string &filePath)
+TLASFileScene::TLASFileScene(const string &filePath, SceneBuffer *sceneBuffer)
 {
     errorMaterial.albedo = float3(255, 192, 203) / 255.f;
 
@@ -31,9 +31,20 @@ TLASFileScene::TLASFileScene(const string &filePath)
 
     floor = Plane(1, float3(0, 1, 0), 1, primitiveMaterials[1].textureDiffuse.width / 100);
 
+    if (sceneBuffer)
+    {
+        sceneBuffer->floorPixels = primitiveMaterials[1].textureDiffuse.pixels;
+        sceneBuffer->floorTexture =
+            GPUTexture(primitiveMaterials[1].textureDiffuse.width, primitiveMaterials[1].textureDiffuse.height);
+    }
+
     sceneName = sceneData.name;
     skydome = Texture(sceneData.skydomeLocation);
-
+    if (sceneBuffer)
+    {
+        sceneBuffer->skydomePixels = skydome.pixels;
+        sceneBuffer->skydomeTexture = GPUTexture(skydome.width, skydome.height);
+    }
     // create lights
     lightCount = sceneData.lights.size();
 
@@ -53,16 +64,26 @@ TLASFileScene::TLASFileScene(const string &filePath)
         lights[i].color = lightData.color;
         lights[i].objIdx = 900 + i;
     }
-
+    if (sceneBuffer)
+    {
+        sceneBuffer->lights = lights;
+        sceneBuffer->lightCount = lightCount;
+    }
     objCount = sceneData.objects.size();
 
     materialCount = sceneData.materials.size();
 
     materials = new Material[materialCount];
-    gpuMats = new GPUMaterial[materialCount];
+    GPUMaterial *gpuMats = new GPUMaterial[materialCount];
 
     meshCount = sceneData.meshes.size();
 
+    if (sceneBuffer)
+    {
+        sceneBuffer->objCount = objCount;
+        sceneBuffer->materialCount = materialCount;
+        sceneBuffer->meshCount = meshCount;
+    }
     // Setup materials
     for (int i = 0; i < materialCount; i++)
     {
@@ -81,9 +102,13 @@ TLASFileScene::TLASFileScene(const string &filePath)
         // materials[i].textureDiffuse = std::make_unique<Texture>(sceneData.materials[i].textureLocation);
     }
 
+    if (sceneBuffer)
+    {
+        sceneBuffer->gpuMats = gpuMats;
+    }
     // Setup texturePixels
 
-    gputextures = new GPUTexture[materialCount];
+    GPUTexture *gputextures = new GPUTexture[materialCount];
     totalPixelCount = 0;
     for (int i = 0; i < materialCount; i++)
     {
@@ -94,7 +119,7 @@ TLASFileScene::TLASFileScene(const string &filePath)
         totalPixelCount += texture.width * texture.height;
     }
 
-    texturePixels = new uint[totalPixelCount];
+    uint *texturePixels = new uint[totalPixelCount];
 
     for (int i = 0; i < materialCount; i++)
     {
@@ -106,10 +131,17 @@ TLASFileScene::TLASFileScene(const string &filePath)
             texturePixels[gputextures[i].startIdx + pI] = texture.pixels[pI];
         }
     }
+
+    if (sceneBuffer)
+    {
+        sceneBuffer->gputextures = gputextures;
+        sceneBuffer->totalPixelCount = totalPixelCount;
+        sceneBuffer->texturePixels = texturePixels;
+    }
     // Setup meshes
 
     meshes.resize(meshCount);
-    meshInstances = new MeshInstance[meshCount];
+    MeshInstance *meshInstances = new MeshInstance[meshCount];
 
     // prepare for the huge triangle array
     totalTriangleCount = 0;
@@ -122,8 +154,9 @@ TLASFileScene::TLASFileScene(const string &filePath)
         totalTriangleCount += meshes[i].triCount;
     }
 
-    triangles = new Tri[totalTriangleCount];
-    triangleExs = new TriEx[totalTriangleCount];
+    // For GPU
+    Tri *triangles = new Tri[totalTriangleCount];
+    TriEx *triangleExs = new TriEx[totalTriangleCount];
 
     int tmpTriangleIndx = 0;
     for (int i = 0; i < meshCount; i++)
@@ -143,12 +176,20 @@ TLASFileScene::TLASFileScene(const string &filePath)
         tmpTriangleIndx += mesh.triCount;
     }
 
+    if (sceneBuffer)
+    {
+        sceneBuffer->triangles = triangles;
+        sceneBuffer->triangleExs = triangleExs;
+        sceneBuffer->totalTriangleCount = totalTriangleCount;
+        sceneBuffer->meshInstances = meshInstances;
+    }
+
     // Setup BVHs
 
     totalBVHNodeCount = 0;
     // prepare for bvh nodes
     bvhs = new BVH[meshCount];
-    gpubvhs = new GPUBVH[meshCount];
+    GPUBVH *gpubvhs = new GPUBVH[meshCount];
 
     for (int i = 0; i < meshCount; i++)
     {
@@ -156,8 +197,8 @@ TLASFileScene::TLASFileScene(const string &filePath)
         totalBVHNodeCount += bvhs[i].triangleCount * 2 - 1;
     }
 
-    bvhNodes = new BVHNode[totalBVHNodeCount];
-    triangleIndices = new uint[totalTriangleCount];
+    BVHNode *bvhNodes = new BVHNode[totalBVHNodeCount];
+    uint *triangleIndices = new uint[totalTriangleCount];
 
     int tmpBVHNodeIdx = 0;
     for (int i = 0; i < meshCount; i++)
@@ -180,9 +221,17 @@ TLASFileScene::TLASFileScene(const string &filePath)
         tmpBVHNodeIdx += gpubvhs[i].nodeCount;
     }
 
+    if (sceneBuffer)
+    {
+        sceneBuffer->totalBVHNodeCount = totalBVHNodeCount;
+        sceneBuffer->gpubvhs = gpubvhs;
+        sceneBuffer->bvhNodes = bvhNodes;
+        sceneBuffer->triangleIndices = triangleIndices;
+    }
+
     // Setup BLASes
     blases = new BLAS[objCount];
-    gpublases = new GPUBLAS[objCount];
+    GPUBLAS *gpublases = new GPUBLAS[objCount];
 
     for (int i = 0; i < objCount; i++)
     {
@@ -195,10 +244,19 @@ TLASFileScene::TLASFileScene(const string &filePath)
         objIdUsed++;
     }
 
+    if (sceneBuffer)
+    {
+        sceneBuffer->gpublases = gpublases;
+    }
+
     // setup tlas
     tlas = TLAS(blases, objCount);
 
-    PrepareBuffers();
+    if (sceneBuffer)
+    {
+        sceneBuffer->tlasNodes = tlas.tlasNode;
+    }
+    // PrepareBuffers();
     SetTime(0);
 }
 
@@ -313,43 +371,6 @@ SceneData TLASFileScene::LoadSceneFile(const string &filePath)
     }
 
     return sceneData;
-}
-
-void TLASFileScene::PrepareBuffers()
-{
-    // skydome
-    skydomeBuffer = new Buffer(skydome.width * skydome.height * sizeof(uint), skydome.pixels);
-    skydomeBuffer->CopyToDevice(true);
-    // floor
-    Texture &floorTex = primitiveMaterials[1].textureDiffuse;
-    floorBuffer = new Buffer(floorTex.width * floorTex.height * sizeof(uint), floorTex.pixels);
-    floorBuffer->CopyToDevice(true);
-    // materials
-    materialBuffer = new Buffer(materialCount * sizeof(GPUMaterial), gpuMats);
-    materialBuffer->CopyToDevice(true);
-    texturePixelBuffer = new Buffer(totalPixelCount * sizeof(uint), texturePixels);
-    texturePixelBuffer->CopyToDevice(true);
-    textureBuffer = new Buffer(materialCount * sizeof(GPUTexture), gputextures);
-    textureBuffer->CopyToDevice(true);
-    // scene data
-    triBuffer = new Buffer(totalTriangleCount * sizeof(Tri), triangles);
-    triBuffer->CopyToDevice(true);
-    triExBuffer = new Buffer(totalTriangleCount * sizeof(TriEx), triangleExs);
-    triExBuffer->CopyToDevice(true);
-    triIdxBuffer = new Buffer(totalTriangleCount * sizeof(uint), triangleIndices);
-    triIdxBuffer->CopyToDevice(true);
-    meshInsBuffer = new Buffer(meshCount * sizeof(MeshInstance), meshInstances);
-    meshInsBuffer->CopyToDevice(true);
-    bvhNodeBuffer = new Buffer(totalBVHNodeCount * sizeof(BVHNode), bvhNodes);
-    bvhNodeBuffer->CopyToDevice(true);
-    bvhBuffer = new Buffer(meshCount * sizeof(GPUBVH), gpubvhs);
-    bvhBuffer->CopyToDevice(true);
-    blasBuffer = new Buffer(objCount * sizeof(GPUBLAS), gpublases);
-    blasBuffer->CopyToDevice(true);
-    tlasNodeBuffer = new Buffer(objCount * 2 * sizeof(TLASNode), tlas.tlasNode);
-    tlasNodeBuffer->CopyToDevice(true);
-    lightBuffer = new Buffer(lightCount * sizeof(Light), lights);
-    lightBuffer->CopyToDevice(true);
 }
 
 void TLASFileScene::SetTime(float t)

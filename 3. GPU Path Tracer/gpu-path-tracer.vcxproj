@@ -130,6 +130,7 @@
     <ClCompile Include="..\infra\blas_bvh.cpp" />
     <ClCompile Include="..\infra\mesh.cpp" />
     <ClCompile Include="..\infra\scene\primitive_scene.cpp" />
+    <ClCompile Include="..\infra\scene\scene_buffer.cpp" />
     <ClCompile Include="..\infra\scene\tlas_file_scene.cpp" />
     <ClCompile Include="..\infra\tlas_bvh.cpp" />
     <ClCompile Include="..\lib\imgui\imgui.cpp" />
@@ -160,6 +161,7 @@
     <ClInclude Include="..\infra\mesh.h" />
     <ClInclude Include="..\infra\scene\base_scene.h" />
     <ClInclude Include="..\infra\scene\primitive_scene.h" />
+    <ClInclude Include="..\infra\scene\scene_buffer.h" />
     <ClInclude Include="..\infra\scene\tlas_file_scene.h" />
     <ClInclude Include="..\infra\tlas_bvh.h" />
     <ClInclude Include="..\lib\imgui\imconfig.h" />
