@@ -28,15 +28,17 @@ typedef struct __attribute__((aligned(128)))
     int traversed;      // 4 bytes
     int tested;         // 4 bytes
     bool inside;        // 1 bytes
-} Ray;                  // total 81 bytes
+    bool lastSpecular;  // 1 bytes
+} Ray;                  // total 82 bytes
 
-Ray GenerateRay(const float3 origin, const float3 direction, const int pixelIdx)
+Ray GenerateRay(const float3 origin, const float3 direction, const int pixelIdx, const bool lastSpecular)
 {
     Ray ray;
     ray.O = origin, ray.D = direction, ray.t = 1e34f;
     ray.rD = (float3)(1 / ray.D.x, 1 / ray.D.y, 1 / ray.D.z);
     ray.objIdx = -1;
     ray.pixelIdx = pixelIdx;
+    ray.lastSpecular = lastSpecular;
     return ray;
 }
 
@@ -282,6 +284,18 @@ float3 getAlbedo(__global uint *floorPixels, __global BLAS *blases, __global uin
     }
 }
 
+inline float3 reflect(float3 *in, float3 *n)
+{
+    return *in - 2.0f * (*n) * dot((*n), (*in));
+}
+
+Ray handleMirror(Ray *ray, float3 *I, float3 *N, int pixelIdx)
+{
+    float3 R = reflect(&ray->D, N);
+    Ray reflectionRay = GenerateRay(*I + R * EPSILON, R, pixelIdx, true);
+    return reflectionRay;
+}
+
 float3 randomPointOnLight(Light *lights, uint lightCount, uint *seed, uint *lightIdx)
 {
     float r0 = RandomFloat(seed);
@@ -374,28 +388,43 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
             pixels[pixelIdx] = (float4)(light->colorx, light->colory, light->colorz, 0);
             return;
         }
+        else if (ray.lastSpecular)
+        {
+            pixels[pixelIdx] = (float4)(light->colorx, light->colory, light->colorz, 0);
+            return;
+        }
         pixels[pixelIdx] = (float4)(0);
         return;
     }
 
-    BLAS blas = blases[ray.objIdx - 2];
-    Material material = materials[blas.matIdx];
-
     float3 out_radiance = (float3)(0);
-    float reflectivity = material.reflectivity;
-    float refractivity = material.reflectivity;
+    float reflectivity = 0.0f;
+    float refractivity = 0.0f;
+    float3 absorption = (float3)(0);
+
+    if (ray.objIdx > 1)
+    {
+        BLAS blas = blases[ray.objIdx - 2];
+        Material material = materials[blas.matIdx];
+        reflectivity = material.reflectivity;
+        refractivity = material.reflectivity;
+        absorption = (float3)(material.absorptionx, material.absorptiony, material.absorptionz);
+    }
 
     float3 medium_scale = (float3)(1);
     if (ray.inside)
     {
-        float3 absorption = (float3)(material.absorptionx, material.absorptiony, material.absorptionz);
         medium_scale = exp(absorption * -ray.t);
     }
 
     float r = RandomFloat(&seed);
     if (r < reflectivity) // handle pure speculars
     {
-        // generate extend ray
+        // generate reflection ray
+        pixels[pixelIdx] *=
+            (float4)(albedo.x, albedo.y, albedo.z, 0) * (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0);
+        uint ei = atomic_inc(extensionrayCounter);
+        extensionrayBuffer[ei] = handleMirror(&ray, &I, &N, pixelIdx);
     }
     else if (r < reflectivity + refractivity) // handle dielectrics
     {
@@ -407,9 +436,9 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
         // compute diffuse
         pixels[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
                             (float4)(brdf.x, brdf.y, brdf.z, 0) * 2 * M_PI_F * dot(R, N);
-        // generate extend ray
+        // generate extension ray
         uint ei = atomic_inc(extensionrayCounter);
-        extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, pixelIdx);
+        extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, pixelIdx, false);
 
         uint si = atomic_inc(shadowrayCounter);
         shadowrayBuffer[si] = directionIllumination(lights, lightCount, &seed, I, N, brdf, pixelIdx);

@@ -32,7 +32,8 @@ typedef struct __attribute__((aligned(128)))
     int traversed;      // 4 bytes
     int tested;         // 4 bytes
     bool inside;        // 1 bytes
-} Ray;                  // total 81 bytes
+    bool lastSpecular;  // 1 bytes
+} Ray;                  // total 82 bytes
 
 typedef struct
 {

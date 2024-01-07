@@ -11,7 +11,8 @@ typedef struct __attribute__((aligned(128)))
     int traversed;      // 4 bytes
     int tested;         // 4 bytes
     bool inside;        // 1 bytes
-} Ray;                  // total 77 bytes
+    bool lastSpecular;  // 1 bytes
+} Ray;                  // total 82 bytes
 
 typedef struct
 {
@@ -107,6 +108,7 @@ Ray copyRay(Ray *ray)
     newRay.tested = ray->tested;
     newRay.inside = ray->inside;
     newRay.pixelIdx = ray->pixelIdx;
+    newRay.lastSpecular = ray->lastSpecular;
     return newRay;
 }
 
