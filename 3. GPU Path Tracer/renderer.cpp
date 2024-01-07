@@ -135,8 +135,8 @@ void Renderer::Tick(float deltaTime)
         kernelShade->SetArguments(pixelBuffer, primaryRayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
                                   scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
                                   scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer,
-                                  scene.lightBuffer, extensionRayBuffer, shadowrayBuffer, extensionCounterBuffer,
-                                  shadowrayCounterBuffer, depth);
+                                  scene.lightBuffer, (int)scene.lightCount, extensionRayBuffer, shadowrayBuffer,
+                                  extensionCounterBuffer, shadowrayCounterBuffer, depth);
         kernelShade->Run(extensionCount);
         extensionCounterBuffer->CopyFromDevice(true);
         shadowrayCounterBuffer->CopyFromDevice(true);

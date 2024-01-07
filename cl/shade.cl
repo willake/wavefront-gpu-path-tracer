@@ -51,8 +51,8 @@ ShadowRay GenerateShadowRay(const float3 origin, const float3 direction, const f
 {
     ShadowRay shadowRay;
     shadowRay.O = origin, shadowRay.D = direction, shadowRay.t = distance;
-    // ray.rD = (float3)(1 / ray.D.x, 1 / ray.D.y, 1 / ray.D.z);
-    // ray.pixelIdx = pixelIdx;
+    shadowRay.rD = (float3)(1 / shadowRay.D.x, 1 / shadowRay.D.y, 1 / shadowRay.D.z);
+    shadowRay.pixelIdx = pixelIdx;
     return shadowRay;
 }
 
@@ -318,7 +318,7 @@ ShadowRay directionIllumination(Light *lights, uint lightCount, uint *seed, floa
     {
         float solidAngle = (nldotl * A) / (dist * dist);
 
-        // ray.E = (float3)(light->colorx, light->colory, light->colorz) * solidAngle * brdf * ndotl * lightCount;
+        shadowRay.E = (float3)(light->colorx, light->colory, light->colorz) * solidAngle * brdf * ndotl * lightCount;
     }
     return shadowRay;
 }
