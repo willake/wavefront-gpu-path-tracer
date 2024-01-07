@@ -1,3 +1,4 @@
+#define EPSILON 0.001f
 // random numbers: seed using WangHash((threadidx+1)*17), then use RandomInt / RandomFloat
 uint WangHash(uint s)
 {
@@ -29,12 +30,31 @@ typedef struct __attribute__((aligned(128)))
     bool inside;        // 1 bytes
 } Ray;                  // total 81 bytes
 
+Ray GenerateRay(const float3 origin, const float3 direction, const int pixelIdx)
+{
+    Ray ray;
+    ray.O = origin, ray.D = direction, ray.t = 1e34f;
+    ray.rD = (float3)(1 / ray.D.x, 1 / ray.D.y, 1 / ray.D.z);
+    ray.objIdx = -1;
+    ray.pixelIdx = pixelIdx;
+    return ray;
+}
+
 typedef struct __attribute__((aligned(128)))
 {
     float3 O, D, rD, E; // 64 bytes
     float t;            // 4 bytes
     int pixelIdx;       // 4 bytes
 } ShadowRay;            // total 72 bytes
+
+ShadowRay GenerateShadowRay(const float3 origin, const float3 direction, const float distance, const int pixelIdx)
+{
+    ShadowRay ray;
+    ray.O = origin, ray.D = direction, ray.t = distance;
+    ray.rD = (float3)(1 / ray.D.x, 1 / ray.D.y, 1 / ray.D.z);
+    ray.pixelIdx = pixelIdx;
+    return ray;
+}
 
 typedef struct __attribute__((aligned(64)))
 {
@@ -90,7 +110,7 @@ float3 diffusereflection(float3 *N, uint seed)
     float3 R;
     while (dot(R, R) > 1)
     {
-        R = (float3)(RandomFloat(seed) * 2 - 1, RandomFloat(seed) * 2 - 1, RandomFloat(seed) * 2 - 1);
+        R = (float3)(RandomFloat(&seed) * 2 - 1, RandomFloat(&seed) * 2 - 1, RandomFloat(&seed) * 2 - 1);
     }
     if (dot(R, *N) < 0)
         R *= -1.0f;
@@ -314,7 +334,7 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
         medium_scale = exp(absorption * -ray.t);
     }
 
-    float r = RandomFloat(seed);
+    float r = RandomFloat(&seed);
     if (r < reflectivity) // handle pure speculars
     {
         // generate extend ray
@@ -326,8 +346,12 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     else // diffuse surface
     {
         float3 R = diffusereflection(&N, seed);
+        pixels[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
+                            (float4)(brdf.x, brdf.y, brdf.z, 0) * 2 * M_PI_F * dot(R, N);
         // generate extend ray
+        uint ei = atomic_inc(extensionrayCounter);
+        extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, index);
     }
 
-    pixels[pixelIdx] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
+    // pixels[pixelIdx] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
 }

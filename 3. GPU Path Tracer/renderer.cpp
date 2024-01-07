@@ -73,7 +73,7 @@ void Renderer::Tick(float deltaTime)
                               scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
                               scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer, scene.lightBuffer,
                               extensionrayBuffer, shadowrayBuffer, extensionCounterBuffer, shadowrayCounterBuffer);
-    kernelShade->Run(extensionCounter);
+    kernelShade->Run(SCRWIDTH * SCRHEIGHT);
     //  pixelBuffer->CopyFromDevice(true);
     //   accumulatorBuffer->CopyFromDevice(true);
 
