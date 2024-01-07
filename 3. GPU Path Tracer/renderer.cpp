@@ -15,7 +15,7 @@ void Renderer::Init()
     kernelGeneratePrimaryRays = new Kernel("../cl/kernels.cl", "generatePrimaryRays");
     kernelExtend = new Kernel("../cl/extend.cl", "extend");
     kernelShade = new Kernel("../cl/shade.cl", "shade");
-    kernelConnect = new Kernel("../cl/kernels.cl", "connect");
+    kernelConnect = new Kernel("../cl/connect.cl", "connect");
 
     seeds = new uint[SCRWIDTH * SCRHEIGHT];
     pixels = new float4[SCRWIDTH * SCRHEIGHT];
@@ -97,13 +97,18 @@ void Renderer::Tick(float deltaTime)
 
         if (shadowCount > 0)
         {
-            kernelShade->SetArguments(pixelBuffer, rayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
-                                      scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
-                                      scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer,
-                                      scene.lightBuffer, extensionrayBuffer, shadowrayBuffer, extensionCounterBuffer,
-                                      shadowrayCounterBuffer);
-            kernelShade->Run(shadowCount);
+            kernelConnect->SetArguments(shadowrayBuffer, pixelBuffer, scene.triBuffer, scene.triIdxBuffer,
+                                        scene.bvhNodeBuffer, scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer,
+                                        scene.meshInsBuffer, scene.lightBuffer, (int)scene.lightCount);
+            kernelConnect->Run(shadowCount);
         }
+
+        kernelShade->SetArguments(pixelBuffer, rayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
+                                  scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
+                                  scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer,
+                                  scene.lightBuffer, extensionrayBuffer, shadowrayBuffer, extensionCounterBuffer,
+                                  shadowrayCounterBuffer);
+        kernelShade->Run(shadowCount);
         extensionCounterBuffer->CopyFromDevice();
         shadowrayCounterBuffer->CopyFromDevice();
         pa++;

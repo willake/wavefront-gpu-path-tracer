@@ -99,10 +99,6 @@ __kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds,
     pixels[index] = (float4)(1);
 }
 
-__kernel void connect()
-{
-}
-
 __kernel void finalize()
 {
 }
