@@ -5,7 +5,7 @@
 Renderer::Renderer()
 {
     sceneBuffer = new SceneBuffer();
-    TLASFileScene scene = TLASFileScene("../assets/scenes/glass_scene.xml", sceneBuffer);
+    TLASFileScene scene = TLASFileScene(scenePath, sceneBuffer);
 
     sceneBuffer->CreateBuffers();
     sceneBuffer->CopyToDevice();
