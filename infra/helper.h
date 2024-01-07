@@ -8,13 +8,14 @@ struct Light
     mat4 T;       // 64 bytes
     mat4 invT;    // 64 bytes
     float3 color; // 12 bytes
-    float area;   // 4 bytes
+    float size;   // 4 bytes
+    int objIdx;   // 4 bytes
     float3 GetNormal(const float3 I) const
     {
         return TransformVector(float3(0, -1, 0), T);
         // return float3(-T.cell[1], -T.cell[5], -T.cell[9]);
     }
-}; // 144 bytes in total
+}; // 152 bytes in total
 
 struct Tri
 {
@@ -170,6 +171,15 @@ uint64_t NowInMicro()
     return std::chrono::duration_cast<std::chrono::microseconds>(
                std::chrono::high_resolution_clock::now().time_since_epoch())
         .count();
+}
+
+float3 RGB8toRGB32F(uint c)
+{
+    float s = 1 / 256.0f;
+    int r = (c >> 16) & 255;
+    int g = (c >> 8) & 255;
+    int b = c & 255;
+    return (float3)(r * s, g * s, b * s);
 }
 
 const float Deg2Red = (PI * 2) / 360.0f;

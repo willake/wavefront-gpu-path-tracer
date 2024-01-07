@@ -23,16 +23,16 @@ class Renderer : public TheApp
     float m_fps = 0;
     float m_rps = 0;
     bool m_inspectTraversal = false;
-    float3 GetEdgeDebugColor(float2 uv);
+    uint m_extensionRayCount = 0;
+    uint m_shadowRayCount = 0;
+    Buffer *GetPrimaryRayBuffer();
+    Buffer *GetExtensionRayBuffer();
+    void SwitchPrimaryRay();
 
   public:
     // game flow methods
     void Init();
     void ClearAccumulator();
-    float3 HandleMirror(const Ray &ray, uint &seed, const float3 &I, const float3 &N, const int depth);
-    float3 HandleDielectric(const Ray &ray, uint &seed, const float3 &I, const float3 &N, const int depth);
-    float3 Sample(Ray &ray, uint &seed, int depth = 0);
-    void ProcessTile(int tx, int ty, float &sum);
     void Tick(float deltaTime);
     void UI();
     void Shutdown()
@@ -61,6 +61,7 @@ class Renderer : public TheApp
     // data members
     int2 mousePos;
     float4 *accumulator;
+    uint *seeds;
     TLASFileScene scene = TLASFileScene("../assets/scenes/base_scene.xml");
     Camera camera;
     int spp = 1, passes = 1;
@@ -74,9 +75,20 @@ class Renderer : public TheApp
     Kernel *kernelShade;
     Kernel *kernelConnect;
 
-    Ray *rays;
-    Buffer *rayBuffer;
-    uint *gpuaccumulator;
+    float4 *pixels;
+    Ray *rays1;
+    Ray *rays2; // have 2 ray buffers for switching, preventing writing the same buffer
+    bool useRays1AsPrimary = true;
+    ShadowRay *shadowrays;
+    uint extensionCounter = 0;
+    uint shadowrayCounter = 0;
+    Buffer *rayBuffer1;
+    Buffer *rayBuffer2;
+    Buffer *extensionCounterBuffer;
+    Buffer *shadowrayBuffer;
+    Buffer *shadowrayCounterBuffer;
     Buffer *accumulatorBuffer;
+    Buffer *seedBuffer;
+    Buffer *pixelBuffer; // final pixels for a tick
 };
 } // namespace Tmpl8

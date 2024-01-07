@@ -49,8 +49,9 @@ TLASFileScene::TLASFileScene(const string &filePath)
         lightQuads[i].T = T, lightQuads[i].invT = T.FastInvertedTransformNoScale();
         lights[i] = Light();
         lights[i].T = T, lights[i].invT = T.FastInvertedTransformNoScale();
-        lights[i].area = lightData.size * lightData.size;
+        lights[i].size = lightData.size;
         lights[i].color = lightData.color;
+        lights[i].objIdx = 900 + i;
     }
 
     objCount = sceneData.objects.size();
@@ -347,6 +348,8 @@ void TLASFileScene::PrepareBuffers()
     blasBuffer->CopyToDevice(true);
     tlasNodeBuffer = new Buffer(objCount * 2 * sizeof(TLASNode), tlas.tlasNode);
     tlasNodeBuffer->CopyToDevice(true);
+    lightBuffer = new Buffer(lightCount * sizeof(Light), lights);
+    lightBuffer->CopyToDevice(true);
 }
 
 void TLASFileScene::SetTime(float t)

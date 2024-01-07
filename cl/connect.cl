@@ -1,17 +1,21 @@
-// Define ray
-// __attribute__((aligned(64)))
 typedef struct __attribute__((aligned(128)))
 {
-    float3 O, D, rD;    // 48 bytes
-    float2 barycentric; // 8 bytes
+    float3 O, D, rD, E; // 64 bytes
     float t;            // 4 bytes
-    int objIdx;         // 4 bytes
-    int triIdx;         // 4 bytes
     int pixelIdx;       // 4 bytes
-    int traversed;      // 4 bytes
-    int tested;         // 4 bytes
-    bool inside;        // 1 bytes
-} Ray;                  // total 77 bytes
+} ShadowRay;            // total 72 bytes
+
+ShadowRay copyRay(ShadowRay *ray)
+{
+    ShadowRay newRay;
+    newRay.O = ray->O;
+    newRay.D = ray->D;
+    newRay.rD = ray->rD;
+    newRay.E = ray->E;
+    newRay.t = ray->t;
+    newRay.pixelIdx = ray->pixelIdx;
+    return newRay;
+}
 
 typedef struct
 {
@@ -84,7 +88,7 @@ float3 transformPosition(float3 *V, float16 *T)
     return (float3)(dot(T->s012, *V) + T->s3, dot(T->s456, *V) + T->s7, dot(T->s89A, *V) + T->sb);
 }
 
-void transformRay(Ray *ray, float16 *invTransform)
+void transformRay(ShadowRay *ray, float16 *invTransform)
 {
     // do the transform
     ray->D = transformVector(&ray->D, invTransform);
@@ -93,24 +97,7 @@ void transformRay(Ray *ray, float16 *invTransform)
     ray->rD = (float3)(1.0f / ray->D.x, 1.0f / ray->D.y, 1.0f / ray->D.z);
 }
 
-Ray copyRay(Ray *ray)
-{
-    Ray newRay;
-    newRay.O = ray->O;
-    newRay.D = ray->D;
-    newRay.rD = ray->rD;
-    newRay.t = ray->t;
-    newRay.barycentric = ray->barycentric;
-    newRay.objIdx = ray->objIdx;
-    newRay.triIdx = ray->triIdx;
-    newRay.traversed = ray->traversed;
-    newRay.tested = ray->tested;
-    newRay.inside = ray->inside;
-    newRay.pixelIdx = ray->pixelIdx;
-    return newRay;
-}
-
-void intersectLight(Ray *ray, Light *light)
+bool isOccludedLight(const ShadowRay *ray, Light *light)
 {
     float16 invT = light->invT;
     float size = light->size * 0.5f;
@@ -125,19 +112,25 @@ void intersectLight(Ray *ray, Light *light)
         const float Dz = invT[8] * ray->D.x + invT[9] * ray->D.y + invT[10] * ray->D.z;
         const float Ix = Ox + t * Dx, Iz = Oz + t * Dz;
         if (Ix > -size && Ix < size && Iz > -size && Iz < size)
-            ray->t = t, ray->objIdx = light->objIdx;
+        {
+            return true;
+        }
     }
+    return false;
 }
 
-void intersectFloor(Ray *ray)
+bool isOccludedFloor(const ShadowRay *ray)
 {
     float3 N = (float3)(0, 1, 0); // dist = 1
     float t = -(dot(ray->O, N) + 1) / (dot(ray->D, N));
     if (t < ray->t && t > 0)
-        ray->t = t, ray->objIdx = 1;
+    {
+        return true;
+    }
+    return false;
 }
 
-void intersectTri(Ray *ray, const Tri *tri, const int objIdx, uint triIdx)
+bool isOccludedTri(const ShadowRay *ray, const Tri *tri)
 {
     const float3 vertex0 = (float3)(tri->v0x, tri->v0y, tri->v0z);
     const float3 vertex1 = (float3)(tri->v1x, tri->v1y, tri->v1z);
@@ -147,25 +140,28 @@ void intersectTri(Ray *ray, const Tri *tri, const int objIdx, uint triIdx)
     const float3 h = cross(ray->D, edge2);
     const float a = dot(edge1, h);
     if (a > -0.0001f && a < 0.0001f)
-        return; // ray parallel to triangle
+        return false; // ray parallel to triangle
     const float f = 1 / a;
     const float3 s = ray->O - vertex0;
     const float u = f * dot(s, h);
     if (u < 0 || u > 1)
-        return;
+        return false;
     const float3 q = cross(s, edge1);
     const float v = f * dot(ray->D, q);
     if (v < 0 || u + v > 1)
-        return;
+        return false;
     const float t = f * dot(edge2, q);
     if (t > 0.0001f)
     {
         if (t < ray->t)
-            ray->t = min(ray->t, t), ray->objIdx = objIdx, ray->triIdx = triIdx, ray->barycentric = (float2)(u, v);
+        {
+            return true;
+        }
     }
+    return false;
 }
 
-float intersectAABB(const Ray *ray, const float3 bmin, const float3 bmax)
+float intersectAABB(const ShadowRay *ray, const float3 bmin, const float3 bmax)
 {
     float tx1 = (bmin.x - ray->O.x) * ray->rD.x, tx2 = (bmax.x - ray->O.x) * ray->rD.x;
     float tmin = min(tx1, tx2), tmax = max(tx1, tx2);
@@ -179,21 +175,23 @@ float intersectAABB(const Ray *ray, const float3 bmin, const float3 bmax)
         return 1e30f;
 }
 
-void intersectBVH(Ray *ray, BVH *bvh, MeshInstance *meshIns, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs,
-                  int objIdx)
+bool isOccludedBVH(const ShadowRay *ray, BVH *bvh, MeshInstance *meshIns, BVHNode *bvhNodes, Tri *triangles,
+                   uint *triIdxs)
 {
     BVHNode *node = &bvhNodes[bvh->startNodeIdx], *stack[32];
     uint stackPtr = 0;
     while (1)
     {
-        ray->traversed++;
         if (node->triCount > 0)
         {
             for (uint i = 0; i < node->triCount; i++)
             {
                 uint triIdx = triIdxs[meshIns->triStartIdx + node->leftFirst + i];
                 Tri *tri = &triangles[triIdx];
-                intersectTri(ray, tri, objIdx, triIdx);
+                if (isOccludedTri(ray, tri))
+                {
+                    return true;
+                }
             }
             if (stackPtr == 0)
                 break;
@@ -230,35 +228,34 @@ void intersectBVH(Ray *ray, BVH *bvh, MeshInstance *meshIns, BVHNode *bvhNodes, 
                 stack[stackPtr++] = child2;
         }
     }
+    return false;
 }
 
-void intersectBLAS(Ray *ray, BVH *bvh, MeshInstance *meshIns, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs,
-                   int objIdx, float16 invT)
+bool isOccludedBLAS(ShadowRay *ray, BVH *bvh, MeshInstance *meshIns, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs,
+                    float16 invT)
 {
-    Ray tRay = copyRay(ray);
+    ShadowRay tRay = copyRay(ray);
     transformRay(&tRay, &invT);
     // intersectBVH
-    intersectBVH(&tRay, bvh, meshIns, bvhNodes, triangles, triIdxs, objIdx);
-    tRay.O = ray->O;
-    tRay.D = ray->D;
-    tRay.rD = ray->rD;
-    *ray = tRay;
+    return isOccludedBVH(&tRay, bvh, meshIns, bvhNodes, triangles, triIdxs);
 }
 
-void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, MeshInstance *meshInstances,
-                   BVHNode *bvhNodes, Tri *triangles, uint *triIdxs)
+bool isOccludedTLAS(ShadowRay *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, MeshInstance *meshInstances,
+                    BVHNode *bvhNodes, Tri *triangles, uint *triIdxs)
 {
     TLASNode *node = &tlasNodes[0], *stack[32];
     uint stackPtr = 0;
     while (1)
     {
-        ray->traversed++;
         if (node->leftRight == 0) // isLeaf
         {
             // ray->traversed += 100;
             BLAS blas = blases[node->BLAS];
-            intersectBLAS(ray, &bvhes[blas.bvhIdx], &meshInstances[blas.bvhIdx], bvhNodes, triangles, triIdxs,
-                          blas.objIdx, blas.invT);
+            if (isOccludedBLAS(ray, &bvhes[blas.bvhIdx], &meshInstances[blas.bvhIdx], bvhNodes, triangles, triIdxs,
+                               blas.invT))
+            {
+                return true;
+            }
             if (stackPtr == 0)
                 break;
             else
@@ -295,23 +292,35 @@ void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, Mesh
                 stack[stackPtr++] = child2;
         }
     }
+    return false;
 }
 
-__kernel void extend(__global Ray *rayBuffer, __global Tri *triBuffer, __global uint *triIdxBuffer,
-                     __global BVHNode *bvhNodes, __global BVH *bvhes, __global BLAS *blases,
-                     __global TLASNode *tlasNodes, __global MeshInstance *meshInstances, __global Light *lights,
-                     uint lightCount)
+__kernel void connect(__global ShadowRay *rayBuffer, __global float4 *pixels, __global Tri *triBuffer,
+                      __global uint *triIdxBuffer, __global BVHNode *bvhNodes, __global BVH *bvhes,
+                      __global BLAS *blases, __global TLASNode *tlasNodes, __global MeshInstance *meshInstances,
+                      __global Light *lights, uint lightCount)
 {
     const int index = get_global_id(0);
 
-    Ray ray = rayBuffer[index];
+    ShadowRay ray = rayBuffer[index];
 
     for (int i = 0; i < lightCount; i++)
     {
-        intersectLight(&ray, &lights[i]);
+        if (isOccludedLight(&ray, &lights[i]))
+        {
+            return;
+        }
     }
-    intersectFloor(&ray);
-    intersectTLAS(&ray, tlasNodes, blases, bvhes, meshInstances, bvhNodes, triBuffer, triIdxBuffer);
 
-    rayBuffer[index] = ray;
+    if (isOccludedFloor(&ray))
+    {
+        return;
+    }
+
+    if (isOccludedTLAS(&ray, tlasNodes, blases, bvhes, meshInstances, bvhNodes, triBuffer, triIdxBuffer))
+    {
+        return;
+    }
+
+    pixels[ray.pixelIdx] += (float4)(ray.E.x, ray.E.y, ray.E.z, 0);
 }

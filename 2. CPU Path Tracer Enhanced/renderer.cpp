@@ -29,7 +29,7 @@ float3 Renderer::DirectIllumination(uint &seed, float3 I, float3 N, float3 brdf)
     L *= 1 / dist;
     float ndotl = dot(N, L);
     float nldotl = dot(light.GetNormal(I), -L);
-    float A = light.area;
+    float A = light.size * light.size;
     Ray shadowRay = Ray(I + L * EPSILON, L, dist - 2 * EPSILON);
     if (ndotl > 0 && nldotl > 0)
     {
@@ -96,11 +96,7 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth, bool lastSpecular)
     // return black if it is a light soucre
     if (material->isLight)
     {
-        if (depth == 0 && dot(-ray.D, N) > 0)
-        {
-            float face = dot(ray.D, N);
-            return scene.GetLightByObjIdx(ray.objIdx).color;
-        }
+        if (depth == 0 && dot(-ray.D, N) > 0) { return scene.GetLightByObjIdx(ray.objIdx).color; }
         else if (lastSpecular) return scene.GetLightByObjIdx(ray.objIdx).color;
         else return float3(0);
     }
