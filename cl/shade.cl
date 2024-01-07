@@ -344,8 +344,8 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     if (ray.objIdx == -1)
     {
         float3 skyColor = getSkyColor(&ray, skydomePixels, skydomeWidth, skydomeHeight);
-        // pixels[pixelIdx] *= (float4)(skyColor.x, skyColor.y, skyColor.z, 1);
-        pixels[pixelIdx] *= (float4)(0);
+        pixels[pixelIdx] *= (float4)(skyColor.x, skyColor.y, skyColor.z, 1);
+        // pixels[pixelIdx] *= (float4)(0);
         return;
     }
 
@@ -366,6 +366,14 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     // objIdx >= 900 is a light
     if (ray.objIdx >= 900)
     {
+        Light *light = &lights[ray.objIdx - 900];
+        float3 LN = getLightNormal(&lights[ray.objIdx - 900]);
+        // TODO: remove this, but it is weird that N is missing when enter this if statement
+        if (depth == 0 && dot(-ray.D, LN) > 0)
+        {
+            pixels[pixelIdx] = (float4)(light->colorx, light->colory, light->colorz, 0);
+            return;
+        }
         pixels[pixelIdx] = (float4)(0);
         return;
     }
