@@ -1,9 +1,9 @@
 #pragma once
 
 #include "base_scene.h"
-#include "blas_bvh.h"
+#include "bvh.h"
 #include "blas.h"
-#include "tlas_bvh.h"
+#include "tlas.h"
 #include "rapidxml.hpp"
 #include "scene_buffer.h"
 

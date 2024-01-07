@@ -38,7 +38,7 @@
     <ClCompile Include="..\template\tmplmath.cpp">
       <Filter>template</Filter>
     </ClCompile>
-    <ClCompile Include="..\infra\tlas_bvh.cpp">
+    <ClCompile Include="..\infra\tlas.cpp">
       <Filter>infra\bvh</Filter>
     </ClCompile>
     <ClCompile Include="..\infra\scene\primitive_scene.cpp">
@@ -47,7 +47,7 @@
     <ClCompile Include="..\infra\scene\tlas_file_scene.cpp">
       <Filter>infra\scene</Filter>
     </ClCompile>
-    <ClCompile Include="..\infra\blas_bvh.cpp">
+    <ClCompile Include="..\infra\bvh.cpp">
       <Filter>infra\bvh</Filter>
     </ClCompile>
     <ClCompile Include="..\infra\blas.cpp">
@@ -125,7 +125,7 @@
     <ClInclude Include="..\infra\hit_info.h">
       <Filter>infra</Filter>
     </ClInclude>
-    <ClInclude Include="..\infra\tlas_bvh.h">
+    <ClInclude Include="..\infra\tlas.h">
       <Filter>infra\bvh</Filter>
     </ClInclude>
     <ClInclude Include="..\infra\scene\base_scene.h">
@@ -137,7 +137,7 @@
     <ClInclude Include="..\infra\scene\tlas_file_scene.h">
       <Filter>infra\scene</Filter>
     </ClInclude>
-    <ClInclude Include="..\infra\blas_bvh.h">
+    <ClInclude Include="..\infra\bvh.h">
       <Filter>infra\bvh</Filter>
     </ClInclude>
     <ClInclude Include="..\infra\blas.h">
