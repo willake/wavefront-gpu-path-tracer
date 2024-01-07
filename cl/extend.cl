@@ -106,6 +106,7 @@ Ray copyRay(Ray *ray)
     newRay.traversed = ray->traversed;
     newRay.tested = ray->tested;
     newRay.inside = ray->inside;
+    newRay.pixelIdx = ray->pixelIdx;
     return newRay;
 }
 

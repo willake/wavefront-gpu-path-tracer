@@ -105,12 +105,12 @@ typedef struct
     int matIdx;
 } HitInfo;
 
-float3 diffusereflection(float3 *N, uint seed)
+float3 diffusereflection(float3 *N, uint *seed)
 {
     float3 R;
     while (dot(R, R) > 1)
     {
-        R = (float3)(RandomFloat(&seed) * 2 - 1, RandomFloat(&seed) * 2 - 1, RandomFloat(&seed) * 2 - 1);
+        R = (float3)(RandomFloat(seed) * 2 - 1, RandomFloat(seed) * 2 - 1, RandomFloat(seed) * 2 - 1);
     }
     if (dot(R, *N) < 0)
         R *= -1.0f;
@@ -333,9 +333,8 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     const int index = get_global_id(0);
 
     Ray ray = rayBuffer[index];
-    uint seed = seeds[index];
-
     const int pixelIdx = ray.pixelIdx;
+    uint seed = seeds[pixelIdx];
 
     if (ray.objIdx == -1)
     {
@@ -361,7 +360,7 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     // objIdx >= 900 is a light
     if (ray.objIdx >= 900)
     {
-        pixels[pixelIdx] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
+        pixels[pixelIdx] = (float4)(0);
         return;
     }
 
@@ -390,7 +389,7 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     }
     else // diffuse surface
     {
-        float3 R = diffusereflection(&N, seed);
+        float3 R = diffusereflection(&N, &seed);
         // compute diffuse
         pixels[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
                             (float4)(brdf.x, brdf.y, brdf.z, 0) * 2 * M_PI_F * dot(R, N);

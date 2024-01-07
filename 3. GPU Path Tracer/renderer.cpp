@@ -89,26 +89,26 @@ void Renderer::Tick(float deltaTime)
 
         if (extensionCount > 0)
         {
-            kernelExtend->SetArguments(extensionrayBuffer, scene.triBuffer, scene.triIdxBuffer, scene.bvhNodeBuffer,
+            /*kernelExtend->SetArguments(extensionrayBuffer, scene.triBuffer, scene.triIdxBuffer, scene.bvhNodeBuffer,
                                        scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer, scene.meshInsBuffer,
                                        scene.lightBuffer, (int)scene.lightCount);
-            kernelExtend->Run(extensionCount);
+            kernelExtend->Run(extensionCount);*/
         }
 
         if (shadowCount > 0)
         {
-            kernelConnect->SetArguments(shadowrayBuffer, pixelBuffer, scene.triBuffer, scene.triIdxBuffer,
+            /*kernelConnect->SetArguments(shadowrayBuffer, pixelBuffer, scene.triBuffer, scene.triIdxBuffer,
                                         scene.bvhNodeBuffer, scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer,
                                         scene.meshInsBuffer, scene.lightBuffer, (int)scene.lightCount);
-            kernelConnect->Run(shadowCount);
+            kernelConnect->Run(shadowCount);*/
         }
 
-        kernelShade->SetArguments(pixelBuffer, rayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
+        /*kernelShade->SetArguments(pixelBuffer, rayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
                                   scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
                                   scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer,
                                   scene.lightBuffer, extensionrayBuffer, shadowrayBuffer, extensionCounterBuffer,
                                   shadowrayCounterBuffer);
-        kernelShade->Run(shadowCount);
+        kernelShade->Run(extensionCount);*/
         extensionCounterBuffer->CopyFromDevice();
         shadowrayCounterBuffer->CopyFromDevice();
         pa++;
