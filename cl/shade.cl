@@ -396,7 +396,7 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
                             (float4)(brdf.x, brdf.y, brdf.z, 0) * 2 * M_PI_F * dot(R, N);
         // generate extend ray
         uint ei = atomic_inc(extensionrayCounter);
-        extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, index);
+        extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, pixelIdx);
 
         uint si = atomic_inc(shadowrayCounter);
         shadowrayBuffer[si] = directionIllumination(lights, lightCount, &seed, I, N, brdf, pixelIdx);

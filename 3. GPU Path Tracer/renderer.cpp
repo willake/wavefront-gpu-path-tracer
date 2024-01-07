@@ -108,7 +108,7 @@ void Renderer::Tick(float deltaTime)
         shadowrayCounterBuffer->CopyFromDevice();
         pa++;
     }
-    //  pixelBuffer->CopyFromDevice(true);
+    pixelBuffer->CopyFromDevice(true);
     //   accumulatorBuffer->CopyFromDevice(true);
 
     float scale = 1.0f / (spp + passes);
