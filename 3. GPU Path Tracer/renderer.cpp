@@ -74,6 +74,39 @@ void Renderer::Tick(float deltaTime)
                               scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer, scene.lightBuffer,
                               extensionrayBuffer, shadowrayBuffer, extensionCounterBuffer, shadowrayCounterBuffer);
     kernelShade->Run(SCRWIDTH * SCRHEIGHT);
+
+    int pa = 0;
+    // run extension rays and shadow rays
+    while (pa < 10 || extensionCounter > 0 || shadowrayCounter > 0)
+    {
+        uint extensionCount = extensionCounter;
+        uint shadowCount = shadowrayCounter;
+        extensionCounter = 0;
+        extensionCounterBuffer->CopyToDevice();
+        shadowrayCounter = 0;
+        shadowrayCounterBuffer->CopyToDevice();
+
+        if (extensionCount > 0)
+        {
+            kernelExtend->SetArguments(extensionrayBuffer, scene.triBuffer, scene.triIdxBuffer, scene.bvhNodeBuffer,
+                                       scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer, scene.meshInsBuffer,
+                                       scene.lightBuffer, (int)scene.lightCount);
+            kernelExtend->Run(extensionCount);
+        }
+
+        if (shadowCount > 0)
+        {
+            kernelShade->SetArguments(pixelBuffer, rayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
+                                      scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
+                                      scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer,
+                                      scene.lightBuffer, extensionrayBuffer, shadowrayBuffer, extensionCounterBuffer,
+                                      shadowrayCounterBuffer);
+            kernelShade->Run(shadowCount);
+        }
+        extensionCounterBuffer->CopyFromDevice();
+        shadowrayCounterBuffer->CopyFromDevice();
+        pa++;
+    }
     //  pixelBuffer->CopyFromDevice(true);
     //   accumulatorBuffer->CopyFromDevice(true);
 
