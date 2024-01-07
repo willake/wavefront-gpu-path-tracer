@@ -28,15 +28,17 @@ typedef struct __attribute__((aligned(128)))
     int traversed;      // 4 bytes
     int tested;         // 4 bytes
     bool inside;        // 1 bytes
-} Ray;                  // total 81 bytes
+    bool lastSpecular;  // 1 bytes
+} Ray;                  // total 82 bytes
 
-Ray GenerateRay(const float3 origin, const float3 direction, const int pixelIdx)
+Ray GenerateRay(const float3 origin, const float3 direction, const int pixelIdx, const bool lastSpecular)
 {
     Ray ray;
     ray.O = origin, ray.D = direction, ray.t = 1e34f;
     ray.rD = (float3)(1 / ray.D.x, 1 / ray.D.y, 1 / ray.D.z);
     ray.objIdx = -1;
     ray.pixelIdx = pixelIdx;
+    ray.lastSpecular = lastSpecular;
     return ray;
 }
 
@@ -290,7 +292,7 @@ inline float3 reflect(float3 *in, float3 *n)
 Ray handleMirror(Ray *ray, float3 *I, float3 *N, int pixelIdx)
 {
     float3 R = reflect(&ray->D, N);
-    Ray reflectionRay = GenerateRay(*I + R * EPSILON, R, pixelIdx);
+    Ray reflectionRay = GenerateRay(*I + R * EPSILON, R, pixelIdx, true);
     return reflectionRay;
 }
 
@@ -386,6 +388,11 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
             pixels[pixelIdx] = (float4)(light->colorx, light->colory, light->colorz, 0);
             return;
         }
+        else if (ray.lastSpecular)
+        {
+            pixels[pixelIdx] = (float4)(light->colorx, light->colory, light->colorz, 0);
+            return;
+        }
         pixels[pixelIdx] = (float4)(0);
         return;
     }
@@ -431,7 +438,7 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
                             (float4)(brdf.x, brdf.y, brdf.z, 0) * 2 * M_PI_F * dot(R, N);
         // generate extension ray
         uint ei = atomic_inc(extensionrayCounter);
-        extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, pixelIdx);
+        extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, pixelIdx, false);
 
         uint si = atomic_inc(shadowrayCounter);
         shadowrayBuffer[si] = directionIllumination(lights, lightCount, &seed, I, N, brdf, pixelIdx);

@@ -63,6 +63,7 @@ __declspec(align(128)) class Ray
     int traversed = 0;              // 4 bytes
     int tested = 0;                 // 4 bytes
     bool inside = false;            // 1 bytes // true when in medium
+    bool lastSpecular = false;      // 1 bytes // if the last is a specular, have to put it here for GPU
 };
 
 __declspec(align(128)) struct ShadowRay
