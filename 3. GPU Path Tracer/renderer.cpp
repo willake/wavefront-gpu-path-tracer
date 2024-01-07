@@ -126,10 +126,10 @@ void Renderer::Tick(float deltaTime)
 
         if (shadowCount > 0)
         {
-            // kernelConnect->SetArguments(shadowrayBuffer, pixelBuffer, scene.triBuffer, scene.triIdxBuffer,
-            //                             scene.bvhNodeBuffer, scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer,
-            //                             scene.meshInsBuffer, scene.lightBuffer, (int)scene.lightCount);
-            // kernelConnect->Run(shadowCount);
+            kernelConnect->SetArguments(shadowrayBuffer, pixelBuffer, scene.triBuffer, scene.triIdxBuffer,
+                                        scene.bvhNodeBuffer, scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer,
+                                        scene.meshInsBuffer, scene.lightBuffer, (int)scene.lightCount);
+            kernelConnect->Run(shadowCount);
         }
 
         kernelShade->SetArguments(pixelBuffer, primaryRayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,

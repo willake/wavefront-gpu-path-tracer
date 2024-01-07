@@ -97,7 +97,7 @@ void transformRay(ShadowRay *ray, float16 *invTransform)
     ray->rD = (float3)(1.0f / ray->D.x, 1.0f / ray->D.y, 1.0f / ray->D.z);
 }
 
-bool isOccludedLight(ShadowRay *ray, Light *light)
+bool isOccludedLight(const ShadowRay *ray, Light *light)
 {
     float16 invT = light->invT;
     float size = light->size * 0.5f;
@@ -113,26 +113,24 @@ bool isOccludedLight(ShadowRay *ray, Light *light)
         const float Ix = Ox + t * Dx, Iz = Oz + t * Dz;
         if (Ix > -size && Ix < size && Iz > -size && Iz < size)
         {
-            ray->t = t;
             return true;
         }
     }
     return false;
 }
 
-bool isOccludedFloor(ShadowRay *ray)
+bool isOccludedFloor(const ShadowRay *ray)
 {
     float3 N = (float3)(0, 1, 0); // dist = 1
     float t = -(dot(ray->O, N) + 1) / (dot(ray->D, N));
     if (t < ray->t && t > 0)
     {
-        ray->t = t;
         return true;
     }
     return false;
 }
 
-bool isOccludedTri(ShadowRay *ray, const Tri *tri)
+bool isOccludedTri(const ShadowRay *ray, const Tri *tri)
 {
     const float3 vertex0 = (float3)(tri->v0x, tri->v0y, tri->v0z);
     const float3 vertex1 = (float3)(tri->v1x, tri->v1y, tri->v1z);
@@ -157,14 +155,13 @@ bool isOccludedTri(ShadowRay *ray, const Tri *tri)
     {
         if (t < ray->t)
         {
-            ray->t = min(ray->t, t);
             return true;
         }
     }
     return false;
 }
 
-bool intersectAABB(const ShadowRay *ray, const float3 bmin, const float3 bmax)
+float intersectAABB(const ShadowRay *ray, const float3 bmin, const float3 bmax)
 {
     float tx1 = (bmin.x - ray->O.x) * ray->rD.x, tx2 = (bmax.x - ray->O.x) * ray->rD.x;
     float tmin = min(tx1, tx2), tmax = max(tx1, tx2);
@@ -172,10 +169,14 @@ bool intersectAABB(const ShadowRay *ray, const float3 bmin, const float3 bmax)
     tmin = max(tmin, min(ty1, ty2)), tmax = min(tmax, max(ty1, ty2));
     float tz1 = (bmin.z - ray->O.z) * ray->rD.z, tz2 = (bmax.z - ray->O.z) * ray->rD.z;
     tmin = max(tmin, min(tz1, tz2)), tmax = min(tmax, max(tz1, tz2));
-    return tmax >= tmin && tmin < ray->t && tmax > 0;
+    if (tmax >= tmin && tmin < ray->t && tmax > 0)
+        return tmin;
+    else
+        return 1e30f;
 }
 
-bool isOccludedBVH(ShadowRay *ray, BVH *bvh, MeshInstance *meshIns, BVHNode *bvhNodes, Tri *triangles, uint *triIdxs)
+bool isOccludedBVH(const ShadowRay *ray, BVH *bvh, MeshInstance *meshIns, BVHNode *bvhNodes, Tri *triangles,
+                   uint *triIdxs)
 {
     BVHNode *node = &bvhNodes[bvh->startNodeIdx], *stack[32];
     uint stackPtr = 0;
@@ -236,12 +237,7 @@ bool isOccludedBLAS(ShadowRay *ray, BVH *bvh, MeshInstance *meshIns, BVHNode *bv
     ShadowRay tRay = copyRay(ray);
     transformRay(&tRay, &invT);
     // intersectBVH
-    bool isOccluded = isOccludedBVH(&tRay, bvh, meshIns, bvhNodes, triangles, triIdxs);
-    tRay.O = ray->O;
-    tRay.D = ray->D;
-    tRay.rD = ray->rD;
-    *ray = tRay;
-    return isOccluded;
+    return isOccludedBVH(&tRay, bvh, meshIns, bvhNodes, triangles, triIdxs);
 }
 
 bool isOccludedTLAS(ShadowRay *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, MeshInstance *meshInstances,
@@ -320,10 +316,13 @@ __kernel void connect(__global ShadowRay *rayBuffer, __global float4 *pixels, __
     {
         return;
     }
+
     if (isOccludedTLAS(&ray, tlasNodes, blases, bvhes, meshInstances, bvhNodes, triBuffer, triIdxBuffer))
     {
         return;
     }
 
-    pixels[ray.pixelIdx] += (float4)(ray.E.x, ray.E.y, ray.E.z, 0);
+    return;
+
+    // pixels[ray.pixelIdx] += (float4)(ray.E.x, ray.E.y, ray.E.z, 0);
 }
