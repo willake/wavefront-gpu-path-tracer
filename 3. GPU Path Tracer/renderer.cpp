@@ -104,7 +104,7 @@ void Renderer::Tick(float deltaTime)
 
     int depth = 1;
     // run extension rays and shadow rays
-    while (depth < 5 && (extensionCounter > 0 || shadowrayCounter > 0))
+    while (depth < 7 && (extensionCounter > 0 || shadowrayCounter > 0))
     {
         int extensionCount = extensionCounter;
         int shadowCount = shadowrayCounter;

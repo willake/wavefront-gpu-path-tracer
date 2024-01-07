@@ -442,13 +442,16 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     if (r < reflectivity) // handle pure speculars
     {
         // generate reflection ray
-        pixels[pixelIdx] *= (float4)(1, 1, 1, 0) * (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0);
+        pixels[pixelIdx] *=
+            (float4)(albedo.x, albedo.y, albedo.z, 0) * (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0);
         uint ei = atomic_inc(extensionrayCounter);
         extensionrayBuffer[ei] = handleMirror(&ray, &I, &N, pixelIdx);
     }
     else if (r < reflectivity + refractivity) // handle dielectrics
     {
         // generate extend ray
+        pixels[pixelIdx] *=
+            (float4)(albedo.x, albedo.y, albedo.z, 0) * (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0);
         uint ei = atomic_inc(extensionrayCounter);
         extensionrayBuffer[ei] = handleHandleDielectric(&ray, &seed, &I, &N, pixelIdx);
     }

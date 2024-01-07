@@ -92,11 +92,11 @@
 			<reflectivity>0.0</reflectivity>
 			<refractivity>1.0</refractivity>
 			<absorption>
-                <x>0.0</x>
-                <y>0.0</y>
-                <z>0.0</z>
+                <x>0.3</x>
+                <y>0.3</y>
+                <z>0.3</z>
             </absorption>
-			<texture_location>../assets/blue.png</texture_location>
+			<texture_location>../assets/textures/white.png</texture_location>
 		</material>
 	</materials>
 </scene>
