@@ -1,6 +1,6 @@
 # Hui GPU Path Tracer
 
-This renderer is based on a cpu ray tracer I made, which is extended from [template project](https://github.com/jbikker/tmpl8rt_UU) of [Dr. Jacco Bikker](https://github.com/jbikker). The following feature is developed:
+This renderer is based on a [cpu ray tracer](https://github.com/willake/cpu-ray-tracer) I made, which is extended from [template project](https://github.com/jbikker/tmpl8rt_UU) of [Dr. Jacco Bikker](https://github.com/jbikker). The following feature is developed:
 **Graphics related**
 
 -   CPU Path Tracing
