@@ -108,10 +108,10 @@ typedef struct
 float3 diffusereflection(float3 *N, uint *seed)
 {
     float3 R;
-    while (dot(R, R) > 1)
+    do
     {
         R = (float3)(RandomFloat(seed) * 2 - 1, RandomFloat(seed) * 2 - 1, RandomFloat(seed) * 2 - 1);
-    }
+    } while (dot(R, R) > 1);
     if (dot(R, *N) < 0)
         R *= -1.0f;
     return normalize(R);
@@ -399,7 +399,8 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
 
         uint si = atomic_inc(shadowrayCounter);
         shadowrayBuffer[si] = directionIllumination(lights, lightCount, &seed, I, N, brdf, pixelIdx);
+        // pixels[pixelIdx] *= (float4)(dot(R, N), 1, 1, 1);
     }
 
-    // pixels[pixelIdx] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
+    pixels[pixelIdx] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
 }
