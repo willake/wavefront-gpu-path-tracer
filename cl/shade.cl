@@ -139,6 +139,11 @@ float3 transformVector(float3 *V, float16 *T)
     return (float3)(dot(T->s012, *V), dot(T->s456, *V), dot(T->s89A, *V));
 }
 
+float3 transformPosition(float3 *V, float16 *T)
+{
+    return (float3)(dot(T->s012, *V) + T->s3, dot(T->s456, *V) + T->s7, dot(T->s89A, *V) + T->sb);
+}
+
 float3 getLightNormal(Light *light)
 {
     float3 N = (float3)(0, -1, 0);
@@ -277,10 +282,50 @@ float3 getAlbedo(__global uint *floorPixels, __global BLAS *blases, __global uin
     }
 }
 
+float3 randomPointOnLight(Light *lights, uint lightCount, uint *seed, uint *lightIdx)
+{
+    float r0 = RandomFloat(seed);
+    float r1 = RandomFloat(seed);
+    *lightIdx = (uint)(r0 * lightCount);
+    Light *light = &lights[*lightIdx];
+    // renormalize r0 for reuse
+    float stratum = *lightIdx * 0.25f;
+    float r2 = (r0 - stratum) / (1 - stratum);
+    // get a random position on the select quad
+    const float size = light->size * 0.5f;
+    float3 corner1 = transformPosition(&(float3)(-size, 0, -size), &light->T);
+    float3 corner2 = transformPosition(&(float3)(size, 0, -size), &light->T);
+    float3 corner3 = transformPosition(&(float3)(-size, 0, size), &light->T);
+    return corner1 + r2 * (corner2 - corner1) + r1 * (corner3 - corner1);
+}
+
+ShadowRay directionIllumination(Light *lights, uint lightCount, uint *seed, float3 I, float3 N, float3 brdf,
+                                int pixelIdx)
+{
+    uint lightIdx;
+    float3 randomLightPos = randomPointOnLight(lights, lightCount, seed, &lightIdx);
+    Light *light = &lights[lightIdx];
+
+    // lighting related information
+    float3 L = randomLightPos - I;
+    float dist = length(L);
+    L = normalize(L);
+    float ndotl = dot(N, L);
+    float nldotl = dot(getLightNormal(light), -L);
+    float A = light->size * light->size;
+    ShadowRay ray = GenerateShadowRay(I + L * EPSILON, L, dist - 2 * EPSILON, pixelIdx);
+    if (ndotl > 0 && nldotl > 0)
+    {
+        float solidAngle = (nldotl * A) / (dist * dist);
+        ray.E = (float3)(light->colorx, light->colory, light->colorz) * solidAngle * brdf * ndotl * lightCount;
+    }
+    return ray;
+}
+
 __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global uint *seeds,
                     __global uint *skydomePixels, uint skydomeWidth, uint skydomeHeight, __global uint *floorPixels,
                     __global TriEx *triExs, __global BLAS *blases, __global Material *materials,
-                    __global uint *texturePixels, __global Texture *textures, __global Light *lights,
+                    __global uint *texturePixels, __global Texture *textures, __global Light *lights, uint lightCount,
                     __global Ray *extensionrayBuffer, __global ShadowRay *shadowrayBuffer,
                     __global uint *extensionrayCounter, __global uint *shadowrayCounter)
 {
@@ -304,7 +349,7 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     float3 N = hitInfo.normal;
     float2 uv = hitInfo.uv;
     float3 albedo = getAlbedo(floorPixels, blases, texturePixels, textures, lights, ray.objIdx, uv);
-    float3 brdf = albedo * M_1_PI;
+    float3 brdf = albedo * M_1_PI_F;
     /* visualize triangle */
     // accumulator[index] = ray.triIdx * 10;
     // return;
@@ -346,11 +391,15 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     else // diffuse surface
     {
         float3 R = diffusereflection(&N, seed);
+        // compute diffuse
         pixels[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
                             (float4)(brdf.x, brdf.y, brdf.z, 0) * 2 * M_PI_F * dot(R, N);
         // generate extend ray
         uint ei = atomic_inc(extensionrayCounter);
         extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, index);
+
+        uint si = atomic_inc(shadowrayCounter);
+        shadowrayBuffer[si] = directionIllumination(lights, lightCount, &seed, I, N, brdf, pixelIdx);
     }
 
     // pixels[pixelIdx] *= (float4)(albedo.x, albedo.y, albedo.z, 1);

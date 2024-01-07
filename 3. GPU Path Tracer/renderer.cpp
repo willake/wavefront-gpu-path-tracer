@@ -72,7 +72,8 @@ void Renderer::Tick(float deltaTime)
     kernelShade->SetArguments(pixelBuffer, rayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
                               scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
                               scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer, scene.lightBuffer,
-                              extensionrayBuffer, shadowrayBuffer, extensionCounterBuffer, shadowrayCounterBuffer);
+                              (int)scene.lightCount, extensionrayBuffer, shadowrayBuffer, extensionCounterBuffer,
+                              shadowrayCounterBuffer);
     kernelShade->Run(SCRWIDTH * SCRHEIGHT);
 
     int pa = 0;
