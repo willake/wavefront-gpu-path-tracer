@@ -62,7 +62,7 @@ class Renderer : public TheApp
     int2 mousePos;
     float4 *accumulator;
     uint *seeds;
-    TLASFileScene scene = TLASFileScene("../assets/scenes/base_scene.xml");
+    TLASFileScene scene = TLASFileScene("../assets/scenes/glass_scene.xml");
     Camera camera;
     int spp = 1, passes = 1;
     bool animating = false;

@@ -66,7 +66,7 @@ float3 Renderer::HandleDielectric(const Ray &ray, uint &seed, const float3 &I, c
         t.inside = !ray.inside;
         if (RandomFloat(seed) > Fr) return Sample(t, seed, depth + 1);
     }
-    return Sample(r, seed, depth + 1);
+    return Sample(r, seed, depth + 1, true);
 }
 
 // -----------------------------------------------------------

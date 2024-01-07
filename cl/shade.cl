@@ -296,6 +296,27 @@ Ray handleMirror(Ray *ray, float3 *I, float3 *N, int pixelIdx)
     return reflectionRay;
 }
 
+Ray handleHandleDielectric(Ray *ray, uint *seed, float3 *I, float3 *N, int pixelIdx)
+{
+    float3 R = reflect(&ray->D, N);
+    float n1 = ray->inside ? 1.2f : 1, n2 = ray->inside ? 1 : 1.2f;
+    float eta = n1 / n2, cosi = dot(-ray->D, *N);
+    float cost2 = 1.0f - eta * eta * (1 - cosi * cosi);
+    float Fr = 1;
+    Ray r = GenerateRay(*I + R * EPSILON, R, pixelIdx, true);
+    if (cost2 > 0)
+    {
+        float a = n1 - n2, b = n1 + n2, R0 = (a * a) / (b * b), c = 1 - cosi;
+        Fr = R0 + (1 - R0) * (c * c * c * c * c);
+        float3 T = eta * ray->D + ((eta * cosi - sqrt(fabs(cost2))) * (*N));
+        Ray t = GenerateRay(*I + T * EPSILON, T, pixelIdx, false);
+        t.inside = !ray->inside;
+        if (RandomFloat(seed) > Fr)
+            return t;
+    }
+    return r;
+}
+
 float3 randomPointOnLight(Light *lights, uint lightCount, uint *seed, uint *lightIdx)
 {
     float r0 = RandomFloat(seed);
@@ -407,7 +428,7 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
         BLAS blas = blases[ray.objIdx - 2];
         Material material = materials[blas.matIdx];
         reflectivity = material.reflectivity;
-        refractivity = material.reflectivity;
+        refractivity = material.refractivity;
         absorption = (float3)(material.absorptionx, material.absorptiony, material.absorptionz);
     }
 
@@ -429,6 +450,10 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     else if (r < reflectivity + refractivity) // handle dielectrics
     {
         // generate extend ray
+        pixels[pixelIdx] *=
+            (float4)(albedo.x, albedo.y, albedo.z, 0) * (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0);
+        uint ei = atomic_inc(extensionrayCounter);
+        extensionrayBuffer[ei] = handleHandleDielectric(&ray, &seed, &I, &N, pixelIdx);
     }
     else // diffuse surface
     {
