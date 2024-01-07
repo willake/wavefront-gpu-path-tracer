@@ -327,7 +327,7 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
                     __global TriEx *triExs, __global BLAS *blases, __global Material *materials,
                     __global uint *texturePixels, __global Texture *textures, __global Light *lights, uint lightCount,
                     __global Ray *extensionrayBuffer, __global ShadowRay *shadowrayBuffer,
-                    __global uint *extensionrayCounter, __global uint *shadowrayCounter)
+                    __global uint *extensionrayCounter, __global uint *shadowrayCounter, uint depth)
 {
     // get ray id
     const int index = get_global_id(0);
@@ -391,16 +391,16 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     {
         float3 R = diffusereflection(&N, &seed);
         // compute diffuse
-        pixels[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
-                            (float4)(brdf.x, brdf.y, brdf.z, 0) * 2 * M_PI_F * dot(R, N);
+        // pixels[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
+        //                     (float4)(brdf.x, brdf.y, brdf.z, 0) * 2 * M_PI_F * dot(R, N);
         // generate extend ray
         uint ei = atomic_inc(extensionrayCounter);
         extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, pixelIdx);
 
-        uint si = atomic_inc(shadowrayCounter);
-        shadowrayBuffer[si] = directionIllumination(lights, lightCount, &seed, I, N, brdf, pixelIdx);
-        // pixels[pixelIdx] *= (float4)(dot(R, N), 1, 1, 1);
+        // uint si = atomic_inc(shadowrayCounter);
+        // shadowrayBuffer[si] = directionIllumination(lights, lightCount, &seed, I, N, brdf, pixelIdx);
+        if (depth == 1)
+            pixels[pixelIdx] *= (float4)(ei, brdf.y, brdf.z, 0);
     }
-
-    pixels[pixelIdx] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
+    // pixels[pixelIdx] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
 }

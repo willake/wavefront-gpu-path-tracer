@@ -23,6 +23,8 @@ class Renderer : public TheApp
     float m_fps = 0;
     float m_rps = 0;
     bool m_inspectTraversal = false;
+    uint m_extensionRayCount = 0;
+    uint m_shadowRayCount = 0;
 
   public:
     // game flow methods

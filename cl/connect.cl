@@ -308,26 +308,22 @@ __kernel void connect(__global ShadowRay *rayBuffer, __global float4 *pixels, __
 
     ShadowRay ray = rayBuffer[index];
 
-    bool isOccluded = false;
     for (int i = 0; i < lightCount; i++)
     {
         if (isOccludedLight(&ray, &lights[i]))
         {
-            isOccluded = true;
+            return;
         }
     }
 
     if (isOccludedFloor(&ray))
     {
-        isOccluded = true;
+        return;
     }
     if (isOccludedTLAS(&ray, tlasNodes, blases, bvhes, meshInstances, bvhNodes, triBuffer, triIdxBuffer))
     {
-        isOccluded = true;
+        return;
     }
 
-    if (!isOccluded)
-    {
-        pixels[ray.pixelIdx] += (float4)(ray.E.x, ray.E.y, ray.E.z, 0);
-    }
+    pixels[ray.pixelIdx] += (float4)(ray.E.x, ray.E.y, ray.E.z, 0);
 }

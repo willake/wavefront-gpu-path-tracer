@@ -66,52 +66,57 @@ void Renderer::Tick(float deltaTime)
     kernelExtend->Run(SCRWIDTH * SCRHEIGHT);
     //// accumulatorBuffer->CopyToDevice(true);
     extensionCounter = 0;
-    extensionCounterBuffer->CopyToDevice();
+    extensionCounterBuffer->CopyToDevice(true);
     shadowrayCounter = 0;
-    shadowrayCounterBuffer->CopyToDevice();
+    shadowrayCounterBuffer->CopyToDevice(true);
     kernelShade->SetArguments(pixelBuffer, rayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
                               scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
                               scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer, scene.lightBuffer,
                               (int)scene.lightCount, extensionrayBuffer, shadowrayBuffer, extensionCounterBuffer,
-                              shadowrayCounterBuffer);
+                              shadowrayCounterBuffer, 0);
     kernelShade->Run(SCRWIDTH * SCRHEIGHT);
 
-    int pa = 0;
+    extensionCounterBuffer->CopyFromDevice(true);
+    shadowrayCounterBuffer->CopyFromDevice(true);
+    m_extensionRayCount = extensionCounter;
+    m_shadowRayCount = shadowrayCounter;
+
+    int depth = 1;
     // run extension rays and shadow rays
-    while (pa < 10 || extensionCounter > 0 || shadowrayCounter > 0)
+    while (depth < 5 && (extensionCounter > 0 || shadowrayCounter > 0))
     {
-        uint extensionCount = extensionCounter;
-        uint shadowCount = shadowrayCounter;
+        int extensionCount = extensionCounter;
+        int shadowCount = shadowrayCounter;
         extensionCounter = 0;
-        extensionCounterBuffer->CopyToDevice();
+        extensionCounterBuffer->CopyToDevice(true);
         shadowrayCounter = 0;
-        shadowrayCounterBuffer->CopyToDevice();
+        shadowrayCounterBuffer->CopyToDevice(true);
 
         if (extensionCount > 0)
         {
-            /*kernelExtend->SetArguments(extensionrayBuffer, scene.triBuffer, scene.triIdxBuffer, scene.bvhNodeBuffer,
-                                       scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer, scene.meshInsBuffer,
-                                       scene.lightBuffer, (int)scene.lightCount);
-            kernelExtend->Run(extensionCount);*/
+            /*          kernelExtend->SetArguments(extensionrayBuffer, scene.triBuffer, scene.triIdxBuffer,
+               scene.bvhNodeBuffer, scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer, scene.meshInsBuffer,
+                                                 scene.lightBuffer, (int)scene.lightCount);
+                      kernelExtend->Run(extensionCount);*/
         }
 
         if (shadowCount > 0)
         {
-            /*kernelConnect->SetArguments(shadowrayBuffer, pixelBuffer, scene.triBuffer, scene.triIdxBuffer,
-                                        scene.bvhNodeBuffer, scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer,
-                                        scene.meshInsBuffer, scene.lightBuffer, (int)scene.lightCount);
-            kernelConnect->Run(shadowCount);*/
+            // kernelConnect->SetArguments(shadowrayBuffer, pixelBuffer, scene.triBuffer, scene.triIdxBuffer,
+            //                             scene.bvhNodeBuffer, scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer,
+            //                             scene.meshInsBuffer, scene.lightBuffer, (int)scene.lightCount);
+            // kernelConnect->Run(shadowCount);
         }
 
-        /*kernelShade->SetArguments(pixelBuffer, rayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
+        kernelShade->SetArguments(pixelBuffer, rayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
                                   scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
                                   scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer,
                                   scene.lightBuffer, extensionrayBuffer, shadowrayBuffer, extensionCounterBuffer,
-                                  shadowrayCounterBuffer);
-        kernelShade->Run(extensionCount);*/
-        extensionCounterBuffer->CopyFromDevice();
-        shadowrayCounterBuffer->CopyFromDevice();
-        pa++;
+                                  shadowrayCounterBuffer, depth);
+        kernelShade->Run(extensionCount);
+        extensionCounterBuffer->CopyFromDevice(true);
+        shadowrayCounterBuffer->CopyFromDevice(true);
+        depth++;
     }
     pixelBuffer->CopyFromDevice(true);
     //   accumulatorBuffer->CopyFromDevice(true);
@@ -161,7 +166,9 @@ void Renderer::UI()
     ImGui::Text("Triangle count: %i", scene.GetTriangleCount());
     ImGui::Text("Frame: %5.2f ms (%.1ffps)", m_avg, m_fps);
     ImGui::Text("spp: %i", spp);
-    ImGui::Text("Energy: %fk", energy / 1000);
+    // ImGui::Text("Energy: %fk", energy / 1000);
+    ImGui::Text("Extension ray count: %i", m_extensionRayCount);
+    ImGui::Text("Shadow ray count: %i", m_shadowRayCount);
     ImGui::Text("RPS: %.1f Mrays/s", m_rps);
     ImGui::Text("Camera Pos: (%.2f, %.2f, %.2f)", camera.camPos.x, camera.camPos.y, camera.camPos.z);
     ImGui::Text("Camera Target: (%.2f, %.2f, %.2f)", camera.camTarget.x, camera.camTarget.y, camera.camTarget.z);
