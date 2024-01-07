@@ -19,16 +19,16 @@ void Renderer::Init()
 
     seeds = new uint[SCRWIDTH * SCRHEIGHT];
     pixels = new float4[SCRWIDTH * SCRHEIGHT];
-    rays = new Ray[SCRWIDTH * SCRHEIGHT];
-    rayBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(Ray), rays);
     // gpuaccumulator = new uint[SCRWIDTH * SCRHEIGHT];
     accumulatorBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(float4), accumulator);
     seedBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(uint), seeds);
     pixelBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(float4), pixels);
 
     // init extension rays
-    extensionrays = new Ray[SCRWIDTH * SCRHEIGHT];
-    extensionrayBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(Ray), extensionrays);
+    rays1 = new Ray[SCRWIDTH * SCRHEIGHT];
+    rayBuffer1 = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(Ray), rays1);
+    rays2 = new Ray[SCRWIDTH * SCRHEIGHT];
+    rayBuffer2 = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(Ray), rays2);
     extensionCounterBuffer = new Buffer(sizeof(uint), &extensionCounter);
 
     // init shadow rays
@@ -40,6 +40,23 @@ void Renderer::Init()
 void Renderer::ClearAccumulator()
 {
     memset(accumulator, 0, SCRWIDTH * SCRHEIGHT * 16);
+}
+
+Buffer *Renderer::GetPrimaryRayBuffer()
+{
+    if (useRays1AsPrimary) { return rayBuffer1; }
+    else { return rayBuffer2; }
+}
+
+Buffer *Renderer::GetExtensionRayBuffer()
+{
+    if (useRays1AsPrimary) { return rayBuffer2; }
+    else { return rayBuffer1; }
+}
+
+void Renderer::SwitchPrimaryRay()
+{
+    useRays1AsPrimary = !useRays1AsPrimary;
 }
 
 // -----------------------------------------------------------
@@ -54,25 +71,27 @@ void Renderer::Tick(float deltaTime)
 
     // GPGPU
     // primary ray execution
-    kernelGeneratePrimaryRays->SetArguments(rayBuffer, seedBuffer, pixelBuffer, SCRWIDTH, SCRHEIGHT, camera.camPos,
-                                            camera.topLeft, camera.topRight, camera.bottomLeft, spp);
-    rayBuffer->CopyToDevice(true);
+    Buffer *primaryRayBuffer = GetPrimaryRayBuffer();
+    Buffer *extensionRayBuffer = GetExtensionRayBuffer();
+    kernelGeneratePrimaryRays->SetArguments(primaryRayBuffer, seedBuffer, pixelBuffer, SCRWIDTH, SCRHEIGHT,
+                                            camera.camPos, camera.topLeft, camera.topRight, camera.bottomLeft, spp);
+    rayBuffer1->CopyToDevice(true);
     seedBuffer->CopyToDevice(true);
     pixelBuffer->CopyToDevice(true);
     kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
-    kernelExtend->SetArguments(rayBuffer, scene.triBuffer, scene.triIdxBuffer, scene.bvhNodeBuffer, scene.bvhBuffer,
-                               scene.blasBuffer, scene.tlasNodeBuffer, scene.meshInsBuffer, scene.lightBuffer,
-                               (int)scene.lightCount);
+    kernelExtend->SetArguments(primaryRayBuffer, scene.triBuffer, scene.triIdxBuffer, scene.bvhNodeBuffer,
+                               scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer, scene.meshInsBuffer,
+                               scene.lightBuffer, (int)scene.lightCount);
     kernelExtend->Run(SCRWIDTH * SCRHEIGHT);
     //// accumulatorBuffer->CopyToDevice(true);
     extensionCounter = 0;
     extensionCounterBuffer->CopyToDevice(true);
     shadowrayCounter = 0;
     shadowrayCounterBuffer->CopyToDevice(true);
-    kernelShade->SetArguments(pixelBuffer, rayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
+    kernelShade->SetArguments(pixelBuffer, primaryRayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
                               scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
                               scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer, scene.lightBuffer,
-                              (int)scene.lightCount, extensionrayBuffer, shadowrayBuffer, extensionCounterBuffer,
+                              (int)scene.lightCount, extensionRayBuffer, shadowrayBuffer, extensionCounterBuffer,
                               shadowrayCounterBuffer, 0);
     kernelShade->Run(SCRWIDTH * SCRHEIGHT);
 
@@ -80,6 +99,8 @@ void Renderer::Tick(float deltaTime)
     shadowrayCounterBuffer->CopyFromDevice(true);
     m_extensionRayCount = extensionCounter;
     m_shadowRayCount = shadowrayCounter;
+
+    SwitchPrimaryRay();
 
     int depth = 1;
     // run extension rays and shadow rays
@@ -92,26 +113,30 @@ void Renderer::Tick(float deltaTime)
         shadowrayCounter = 0;
         shadowrayCounterBuffer->CopyToDevice(true);
 
+        primaryRayBuffer = GetPrimaryRayBuffer();
+        extensionRayBuffer = GetExtensionRayBuffer();
+
         if (extensionCount > 0)
         {
-            /*          kernelExtend->SetArguments(extensionrayBuffer, scene.triBuffer, scene.triIdxBuffer,
-               scene.bvhNodeBuffer, scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer, scene.meshInsBuffer,
-                                                 scene.lightBuffer, (int)scene.lightCount);
-                      kernelExtend->Run(extensionCount);*/
+            kernelExtend->SetArguments(primaryRayBuffer, scene.triBuffer, scene.triIdxBuffer, scene.bvhNodeBuffer,
+                                       scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer, scene.meshInsBuffer,
+                                       scene.lightBuffer, (int)scene.lightCount);
+            kernelExtend->Run(extensionCount);
         }
 
         if (shadowCount > 0)
         {
             // kernelConnect->SetArguments(shadowrayBuffer, pixelBuffer, scene.triBuffer, scene.triIdxBuffer,
-            //                             scene.bvhNodeBuffer, scene.bvhBuffer, scene.blasBuffer, scene.tlasNodeBuffer,
-            //                             scene.meshInsBuffer, scene.lightBuffer, (int)scene.lightCount);
+            //                             scene.bvhNodeBuffer, scene.bvhBuffer, scene.blasBuffer,
+            //                             scene.tlasNodeBuffer, scene.meshInsBuffer, scene.lightBuffer,
+            //                             (int)scene.lightCount);
             // kernelConnect->Run(shadowCount);
         }
 
-        kernelShade->SetArguments(pixelBuffer, extensionrayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
+        kernelShade->SetArguments(pixelBuffer, primaryRayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
                                   scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
                                   scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer,
-                                  scene.lightBuffer, extensionrayBuffer, shadowrayBuffer, extensionCounterBuffer,
+                                  scene.lightBuffer, extensionRayBuffer, shadowrayBuffer, extensionCounterBuffer,
                                   shadowrayCounterBuffer, depth);
         kernelShade->Run(extensionCount);
         extensionCounterBuffer->CopyFromDevice(true);

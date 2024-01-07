@@ -399,7 +399,7 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
 
         // uint si = atomic_inc(shadowrayCounter);
         // shadowrayBuffer[si] = directionIllumination(lights, lightCount, &seed, I, N, brdf, pixelIdx);
-        if (depth == 1)
+        if (depth == 0)
             pixels[pixelIdx] *= (float4)(brdf.x, brdf.y, brdf.z, 0);
     }
     // pixels[pixelIdx] *= (float4)(albedo.x, albedo.y, albedo.z, 1);

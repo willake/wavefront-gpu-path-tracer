@@ -25,6 +25,9 @@ class Renderer : public TheApp
     bool m_inspectTraversal = false;
     uint m_extensionRayCount = 0;
     uint m_shadowRayCount = 0;
+    Buffer *GetPrimaryRayBuffer();
+    Buffer *GetExtensionRayBuffer();
+    void SwitchPrimaryRay();
 
   public:
     // game flow methods
@@ -73,13 +76,14 @@ class Renderer : public TheApp
     Kernel *kernelConnect;
 
     float4 *pixels;
-    Ray *rays;
-    Ray *extensionrays;
+    Ray *rays1;
+    Ray *rays2; // have 2 ray buffers for switching, preventing writing the same buffer
+    bool useRays1AsPrimary = true;
     ShadowRay *shadowrays;
     uint extensionCounter = 0;
     uint shadowrayCounter = 0;
-    Buffer *rayBuffer;
-    Buffer *extensionrayBuffer;
+    Buffer *rayBuffer1;
+    Buffer *rayBuffer2;
     Buffer *extensionCounterBuffer;
     Buffer *shadowrayBuffer;
     Buffer *shadowrayCounterBuffer;
