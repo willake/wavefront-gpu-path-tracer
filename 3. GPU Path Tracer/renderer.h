@@ -69,11 +69,11 @@ class Renderer : public TheApp
     float energy, anim_time = 0;
     int depthLimit = 5;
 
-    Kernel *kernelTestRayStructSize;
     Kernel *kernelGeneratePrimaryRays;
     Kernel *kernelExtend;
     Kernel *kernelShade;
     Kernel *kernelConnect;
+    Kernel *kernelFinalize;
 
     float4 *pixels;
     Ray *rays1;

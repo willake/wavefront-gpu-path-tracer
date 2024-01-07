@@ -11,11 +11,11 @@ void Renderer::Init()
     accumulator = (float4 *)MALLOC64(SCRWIDTH * SCRHEIGHT * 16);
     ClearAccumulator();
 
-    kernelTestRayStructSize = new Kernel("../cl/kernels.cl", "testRayStructSize");
-    kernelGeneratePrimaryRays = new Kernel("../cl/kernels.cl", "generatePrimaryRays");
+    kernelGeneratePrimaryRays = new Kernel("../cl/generate.cl", "generatePrimaryRays");
     kernelExtend = new Kernel("../cl/extend.cl", "extend");
     kernelShade = new Kernel("../cl/shade.cl", "shade");
     kernelConnect = new Kernel("../cl/connect.cl", "connect");
+    kernelFinalize = new Kernel("../cl/finalize.cl", "finalize");
 
     seeds = new uint[SCRWIDTH * SCRHEIGHT];
     pixels = new float4[SCRWIDTH * SCRHEIGHT];
