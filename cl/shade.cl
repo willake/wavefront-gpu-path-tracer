@@ -147,7 +147,7 @@ float3 transformPosition(float3 *V, float16 *T)
 float3 getLightNormal(Light *light)
 {
     float3 N = (float3)(0, -1, 0);
-    return transformVector(&N, &light->T);
+    return normalize(transformVector(&N, &light->T));
 }
 
 float3 getBLASNormal(TriEx *triExs, const int triIdx, const float2 barycentric, float16 T)
@@ -320,6 +320,10 @@ ShadowRay directionIllumination(Light *lights, uint lightCount, uint *seed, floa
 
         shadowRay.E = (float3)(light->colorx, light->colory, light->colorz) * solidAngle * brdf * ndotl * lightCount;
     }
+    else
+    {
+        shadowRay.E = 0;
+    }
     return shadowRay;
 }
 
@@ -340,7 +344,8 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     if (ray.objIdx == -1)
     {
         float3 skyColor = getSkyColor(&ray, skydomePixels, skydomeWidth, skydomeHeight);
-        pixels[pixelIdx] *= (float4)(skyColor.x, skyColor.y, skyColor.z, 1);
+        // pixels[pixelIdx] *= (float4)(skyColor.x, skyColor.y, skyColor.z, 1);
+        pixels[pixelIdx] *= (float4)(0);
         return;
     }
 
@@ -400,8 +405,5 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
 
         uint si = atomic_inc(shadowrayCounter);
         shadowrayBuffer[si] = directionIllumination(lights, lightCount, &seed, I, N, brdf, pixelIdx);
-        // if (depth == 0)
-        //     pixels[pixelIdx] *= (float4)(brdf.x, brdf.y, brdf.z, 0);
     }
-    // pixels[pixelIdx] *= (float4)(albedo.x, albedo.y, albedo.z, 1);
 }
