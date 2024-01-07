@@ -108,7 +108,7 @@ void Renderer::Tick(float deltaTime)
             // kernelConnect->Run(shadowCount);
         }
 
-        kernelShade->SetArguments(pixelBuffer, rayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
+        kernelShade->SetArguments(pixelBuffer, extensionrayBuffer, seedBuffer, scene.skydomeBuffer, scene.skydome.width,
                                   scene.skydome.height, scene.floorBuffer, scene.triExBuffer, scene.blasBuffer,
                                   scene.materialBuffer, scene.texturePixelBuffer, scene.textureBuffer,
                                   scene.lightBuffer, extensionrayBuffer, shadowrayBuffer, extensionCounterBuffer,
