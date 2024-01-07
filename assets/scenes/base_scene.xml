@@ -94,7 +94,7 @@
 		<!-- Material 0 -->
 		<material>
 			<id>0</id>
-			<reflectivity>0.0</reflectivity>
+			<reflectivity>1.0</reflectivity>
 			<refractivity>0.0</refractivity>
 			<absorption>
                 <x>0.0</x>

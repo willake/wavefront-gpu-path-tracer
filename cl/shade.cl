@@ -282,6 +282,18 @@ float3 getAlbedo(__global uint *floorPixels, __global BLAS *blases, __global uin
     }
 }
 
+inline float3 reflect(float3 *in, float3 *n)
+{
+    return *in - 2.0f * (*n) * dot((*n), (*in));
+}
+
+Ray handleMirror(Ray *ray, float3 *I, float3 *N, int pixelIdx)
+{
+    float3 R = reflect(&ray->D, N);
+    Ray reflectionRay = GenerateRay(*I + R * EPSILON, R, pixelIdx);
+    return reflectionRay;
+}
+
 float3 randomPointOnLight(Light *lights, uint lightCount, uint *seed, uint *lightIdx)
 {
     float r0 = RandomFloat(seed);
@@ -378,24 +390,34 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
         return;
     }
 
-    BLAS blas = blases[ray.objIdx - 2];
-    Material material = materials[blas.matIdx];
-
     float3 out_radiance = (float3)(0);
-    float reflectivity = material.reflectivity;
-    float refractivity = material.reflectivity;
+    float reflectivity = 0.0f;
+    float refractivity = 0.0f;
+    float3 absorption = (float3)(0);
+
+    if (ray.objIdx > 1)
+    {
+        BLAS blas = blases[ray.objIdx - 2];
+        Material material = materials[blas.matIdx];
+        reflectivity = material.reflectivity;
+        refractivity = material.reflectivity;
+        absorption = (float3)(material.absorptionx, material.absorptiony, material.absorptionz);
+    }
 
     float3 medium_scale = (float3)(1);
     if (ray.inside)
     {
-        float3 absorption = (float3)(material.absorptionx, material.absorptiony, material.absorptionz);
         medium_scale = exp(absorption * -ray.t);
     }
 
     float r = RandomFloat(&seed);
     if (r < reflectivity) // handle pure speculars
     {
-        // generate extend ray
+        // generate reflection ray
+        pixels[pixelIdx] *=
+            (float4)(albedo.x, albedo.y, albedo.z, 0) * (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0);
+        uint ei = atomic_inc(extensionrayCounter);
+        extensionrayBuffer[ei] = handleMirror(&ray, &I, &N, pixelIdx);
     }
     else if (r < reflectivity + refractivity) // handle dielectrics
     {
@@ -407,7 +429,7 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
         // compute diffuse
         pixels[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
                             (float4)(brdf.x, brdf.y, brdf.z, 0) * 2 * M_PI_F * dot(R, N);
-        // generate extend ray
+        // generate extension ray
         uint ei = atomic_inc(extensionrayCounter);
         extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, pixelIdx);
 
