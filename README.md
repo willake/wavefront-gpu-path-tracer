@@ -1,8 +1,8 @@
 # Hui GPU Path Tracer
 
 This renderer is based on a [cpu ray tracer](https://github.com/willake/cpu-ray-tracer) I made, which is extended from [template project](https://github.com/jbikker/tmpl8rt_UU) of [Dr. Jacco Bikker](https://github.com/jbikker). The following feature is developed:
-**Graphics related**
 
+**Graphics related**
 -   CPU Path Tracing
 -   GPU Path Tracing
 -   BVH(acceleration structure)
@@ -12,7 +12,8 @@ This renderer is based on a [cpu ray tracer](https://github.com/willake/cpu-ray-
 -   reflection / refraction
 -   NEE (Next Event Estimation)
 -   Anti-aliasing
-    **Engine related**
+
+**Engine related**
 -   .obj model loading
 -   material (reflection, refraction, texture)
 -   texture loading & mapping
