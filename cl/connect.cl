@@ -322,7 +322,5 @@ __kernel void connect(__global ShadowRay *rayBuffer, __global float4 *pixels, __
         return;
     }
 
-    return;
-
-    // pixels[ray.pixelIdx] += (float4)(ray.E.x, ray.E.y, ray.E.z, 0);
+    pixels[ray.pixelIdx] += (float4)(ray.E.x, ray.E.y, ray.E.z, 0);
 }
