@@ -188,7 +188,7 @@ void intersectBVH(Ray *ray, BVH *bvh, MeshInstance *meshIns, BVHNode *bvhNodes, 
     uint stackPtr = 0;
     while (1)
     {
-        ray->traversed++;
+        // ray->traversed++;
         if (node->triCount > 0)
         {
             for (uint i = 0; i < node->triCount; i++)
@@ -254,7 +254,6 @@ void intersectTLAS(Ray *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhes, Mesh
     uint stackPtr = 0;
     while (1)
     {
-        ray->traversed++;
         if (node->leftRight == 0) // isLeaf
         {
             // ray->traversed += 100;
@@ -308,6 +307,7 @@ __kernel void extend(__global Ray *rayBuffer, __global Tri *triBuffer, __global 
 
     Ray ray = rayBuffer[index];
 
+    ray.traversed++;
     for (int i = 0; i < lightCount; i++)
     {
         intersectLight(&ray, &lights[i]);

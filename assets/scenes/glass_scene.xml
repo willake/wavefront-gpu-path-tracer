@@ -90,7 +90,7 @@
 		<material>
 			<id>0</id>
 			<reflectivity>0.0</reflectivity>
-			<refractivity>1.0</refractivity>
+			<refractivity>0.0</refractivity>
 			<absorption>
                 <x>0.3</x>
                 <y>0.3</y>

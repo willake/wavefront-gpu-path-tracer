@@ -390,6 +390,9 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     float2 uv = hitInfo.uv;
     float3 albedo = getAlbedo(floorPixels, blases, texturePixels, textures, lights, ray.objIdx, uv);
     float3 brdf = albedo * M_1_PI_F;
+
+    pixels[pixelIdx] = (float4)(ray.traversed / 10.f, ray.traversed / 10.f, ray.traversed / 10.f, 0);
+    return;
     /* visualize triangle */
     // accumulator[index] = ray.triIdx * 10;
     // return;

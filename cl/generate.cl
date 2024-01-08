@@ -47,16 +47,15 @@ __kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds,
 
     uint seed = InitSeed(index + spp * 1799);
     float r = RandomFloat(&seed);
-    const float u = ((float)x + 0) * (1.0f / width);
-    const float v = ((float)y + 0) * (1.0f / height);
+    const float u = ((float)x + r) * (1.0f / width);
+    const float v = ((float)y + r) * (1.0f / height);
     const float3 P = topLeft + u * (topRight - topLeft) + v * (bottomLeft - topLeft);
 
     // // // initializing a ray
     Ray ray;
     const float3 dir = P - camPos;
-    const float distance = sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
     ray.O = camPos;
-    ray.D = dir / distance;
+    ray.D = normalize(dir);
     ray.rD = (float3)(1.0f / ray.D.x, 1.0f / ray.D.y, 1.0f / ray.D.z);
     ray.t = 1e34f;
     ray.barycentric = (float2)(0.0f, 0.0f);
