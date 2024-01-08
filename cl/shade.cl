@@ -305,16 +305,16 @@ Ray handleMirror(Ray *ray, float3 *I, float3 *N, int pixelIdx)
 Ray handleHandleDielectric(Ray *ray, uint *seed, float3 *I, float3 *N, int pixelIdx)
 {
     float3 R = reflect(&ray->D, N);
+    Ray r = GenerateRay(*I + R * EPSILON, R, pixelIdx, true);
     float n1 = ray->inside ? 1.2f : 1, n2 = ray->inside ? 1 : 1.2f;
     float eta = n1 / n2, cosi = dot(-ray->D, *N);
     float cost2 = 1.0f - eta * eta * (1 - cosi * cosi);
     float Fr = 1;
-    Ray r = GenerateRay(*I + R * EPSILON, R, pixelIdx, true);
     if (cost2 > 0)
     {
         float a = n1 - n2, b = n1 + n2, R0 = (a * a) / (b * b), c = 1 - cosi;
         Fr = R0 + (1 - R0) * (c * c * c * c * c);
-        float3 T = eta * ray->D + ((eta * cosi - sqrt(fabs(cost2))) * (*N));
+        float3 T = eta * ray->D + ((eta * cosi - native_sqrt(fabs(cost2))) * (*N));
         Ray t = GenerateRay(*I + T * EPSILON, T, pixelIdx, false);
         t.inside = !ray->inside;
         if (RandomFloat(seed) > Fr)
