@@ -103,7 +103,7 @@ class Texture
         uint pixel = pixels[index];
 
         // Sample color from the texture
-        float rgbScale = 1 / 255.0f;
+        float rgbScale = 1 / 256.0f;
         float r = ((pixel >> 16) & 0xFF) * rgbScale;
         float g = ((pixel >> 8) & 0xFF) * rgbScale;
         float b = (pixel & 0xFF) * rgbScale;

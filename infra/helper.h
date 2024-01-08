@@ -175,11 +175,11 @@ uint64_t NowInMicro()
 
 float3 RGB8toRGB32F(uint c)
 {
-    float s = 1 / 256.0f;
-    int r = (c >> 16) & 255;
-    int g = (c >> 8) & 255;
-    int b = c & 255;
-    return (float3)(r * s, g * s, b * s);
+    float rgbScale = 1 / 256.0f;
+    float r = ((c >> 16) & 0xFF) * rgbScale;
+    float g = ((c >> 8) & 0xFF) * rgbScale;
+    float b = (c & 0xFF) * rgbScale;
+    return float3(r, g, b);
 }
 
 const float Deg2Red = (PI * 2) / 360.0f;

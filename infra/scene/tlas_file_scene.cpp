@@ -381,14 +381,23 @@ void TLASFileScene::SetTime(float t)
 float3 TLASFileScene::GetSkyColor(const Ray &ray) const
 {
     // Convert ray direction to texture coordinates, assuming a spherical skydome
-    float phi = atan2(-ray.D.z, ray.D.x) + PI;
+    /*float phi = atan2(-ray.D.z, ray.D.x) + PI;
     float theta = acos(-ray.D.y);
     float u = phi * INV2PI;
     float v = theta * INVPI;
-
-    //// Sample the HDR skydome texture
     float3 color = skydome.Sample(u, v);
+    return color;*/
+    float phi = atan2(-ray.D.z, ray.D.x);
+    int width = skydome.width;
+    int height = skydome.height;
+    uint u = (uint)(width * (phi > 0 ? phi : (phi + 2 * PI)) * INV2PI - 0.5f);
+    uint v = (uint)(height * acos(ray.D.y) * INVPI - 0.5f);
 
+    int skyIdx = (u + v * width) % (width * height);
+
+    uint pixel = skydome.pixels[skyIdx];
+    float3 color = RGB8toRGB32F(pixel);
+    //// Sample the HDR skydome texture
     return color;
 }
 
