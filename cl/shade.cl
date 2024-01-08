@@ -1,4 +1,10 @@
 #define EPSILON 0.001f
+#define PI 3.14159265358979323846264f
+#define INVPI 0.31830988618379067153777f
+#define INV2PI 0.15915494309189533576888f
+#define TWOPI 6.28318530717958647692528f
+#define SQRT_PI_INV 0.56418958355f
+#define LARGE_FLOAT 1e34f
 // random numbers: seed using WangHash((threadidx+1)*17), then use RandomInt / RandomFloat
 uint WangHash(uint s)
 {
@@ -212,12 +218,30 @@ float3 getSkyColor(Ray *ray, uint *pixels, uint width, uint height)
     if (!pixels)
         return 0;
 
-    float phi = atan2(-ray->D.z, ray->D.x);
-    uint u = (uint)(width * (phi > 0 ? phi : (phi + 2 * M_PI_F)) * M_2_PI_F - 0.5f);
-    uint v = (uint)(height * acos(ray->D.y) * M_1_PI_F - 0.5f);
-    uint skyIdx = (u + v * width) % (width * height);
+    // float phi = atan2(-ray->D.z, ray->D.x);
+    // uint u = (uint)(width * (phi > 0 ? phi : (phi + 2 * M_PI_F)) * M_2_PI_F - 0.5f);
+    // uint v = (uint)(height * acos(ray->D.y) * M_1_PI_F - 0.5f);
+    // uint skyIdx = (u + v * width) % (width * height);
 
-    return RGB8toRGB32F(pixels[skyIdx]);
+    // return RGB8toRGB32F(pixels[skyIdx]);
+
+    float phi = atan2(-ray->D.z, ray->D.x) + PI;
+    float theta = acos(-ray->D.y);
+    float u = phi * INV2PI;
+    float v = theta * INVPI;
+
+    u = clamp(u, 0.0f, 1.0f);
+    v = 1 - clamp(v, 0.0f, 1.0f);
+
+    int x = (int)(u * width);
+    int y = (int)(v * height);
+
+    x = clamp(x, (int)0, (int)width - 1);
+    y = clamp(y, (int)0, (int)height - 1);
+
+    int index = x + y * width;
+
+    return RGB8toRGB32F(pixels[index]);
 }
 
 float3 sample(uint *pixels, uint startIdx, float2 uv, uint width, uint height)
