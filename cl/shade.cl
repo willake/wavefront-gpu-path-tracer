@@ -218,30 +218,12 @@ float3 getSkyColor(Ray *ray, uint *pixels, uint width, uint height)
     if (!pixels)
         return 0;
 
-    // float phi = atan2(-ray->D.z, ray->D.x);
-    // uint u = (uint)(width * (phi > 0 ? phi : (phi + 2 * M_PI_F)) * M_2_PI_F - 0.5f);
-    // uint v = (uint)(height * acos(ray->D.y) * M_1_PI_F - 0.5f);
-    // uint skyIdx = (u + v * width) % (width * height);
+    float phi = atan2(-ray->D.z, ray->D.x);
+    uint u = (uint)(width * (phi > 0 ? phi : (phi + 2 * PI)) * INV2PI - 0.5f);
+    uint v = (uint)(height * acos(ray->D.y) * INVPI - 0.5f);
+    uint skyIdx = (u + v * width) % (width * height);
 
-    // return RGB8toRGB32F(pixels[skyIdx]);
-
-    float phi = atan2(-ray->D.z, ray->D.x) + PI;
-    float theta = acos(-ray->D.y);
-    float u = phi * INV2PI;
-    float v = theta * INVPI;
-
-    u = clamp(u, 0.0f, 1.0f);
-    v = 1 - clamp(v, 0.0f, 1.0f);
-
-    int x = (int)(u * width);
-    int y = (int)(v * height);
-
-    x = clamp(x, (int)0, (int)width - 1);
-    y = clamp(y, (int)0, (int)height - 1);
-
-    int index = x + y * width;
-
-    return RGB8toRGB32F(pixels[index]);
+    return RGB8toRGB32F(pixels[skyIdx]);
 }
 
 float3 sample(uint *pixels, uint startIdx, float2 uv, uint width, uint height)
