@@ -63,7 +63,7 @@ Buffer *Renderer::GetExtensionRayBuffer()
     else { return rayBuffer1; }
 }
 
-void Renderer::SwitchPrimaryRay()
+void Renderer::SwitchPrimaryRayBuffer()
 {
     useRays1AsPrimary = !useRays1AsPrimary;
 }
@@ -111,7 +111,7 @@ void Renderer::Tick(float deltaTime)
     m_extensionRayCount = extensionCounter;
     m_shadowRayCount = shadowrayCounter;
 
-    SwitchPrimaryRay();
+    SwitchPrimaryRayBuffer();
 
     int depth = 1;
     // run extension rays and shadow rays
@@ -126,6 +126,8 @@ void Renderer::Tick(float deltaTime)
 
         primaryRayBuffer = GetPrimaryRayBuffer();
         extensionRayBuffer = GetExtensionRayBuffer();
+
+        SwitchPrimaryRayBuffer();
 
         if (extensionCount > 0)
         {

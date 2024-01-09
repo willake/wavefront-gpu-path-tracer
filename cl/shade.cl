@@ -1,4 +1,10 @@
 #define EPSILON 0.001f
+#define PI 3.14159265358979323846264f
+#define INVPI 0.31830988618379067153777f
+#define INV2PI 0.15915494309189533576888f
+#define TWOPI 6.28318530717958647692528f
+#define SQRT_PI_INV 0.56418958355f
+#define LARGE_FLOAT 1e34f
 // random numbers: seed using WangHash((threadidx+1)*17), then use RandomInt / RandomFloat
 uint WangHash(uint s)
 {
@@ -213,8 +219,8 @@ float3 getSkyColor(Ray *ray, uint *pixels, uint width, uint height)
         return 0;
 
     float phi = atan2(-ray->D.z, ray->D.x);
-    uint u = (uint)(width * (phi > 0 ? phi : (phi + 2 * M_PI_F)) * M_2_PI_F - 0.5f);
-    uint v = (uint)(height * acos(ray->D.y) * M_1_PI_F - 0.5f);
+    uint u = (uint)(width * (phi > 0 ? phi : (phi + 2 * PI)) * INV2PI - 0.5f);
+    uint v = (uint)(height * acos(ray->D.y) * INVPI - 0.5f);
     uint skyIdx = (u + v * width) % (width * height);
 
     return RGB8toRGB32F(pixels[skyIdx]);
@@ -299,16 +305,16 @@ Ray handleMirror(Ray *ray, float3 *I, float3 *N, int pixelIdx)
 Ray handleHandleDielectric(Ray *ray, uint *seed, float3 *I, float3 *N, int pixelIdx)
 {
     float3 R = reflect(&ray->D, N);
+    Ray r = GenerateRay(*I + R * EPSILON, R, pixelIdx, true);
     float n1 = ray->inside ? 1.2f : 1, n2 = ray->inside ? 1 : 1.2f;
     float eta = n1 / n2, cosi = dot(-ray->D, *N);
     float cost2 = 1.0f - eta * eta * (1 - cosi * cosi);
     float Fr = 1;
-    Ray r = GenerateRay(*I + R * EPSILON, R, pixelIdx, true);
     if (cost2 > 0)
     {
         float a = n1 - n2, b = n1 + n2, R0 = (a * a) / (b * b), c = 1 - cosi;
         Fr = R0 + (1 - R0) * (c * c * c * c * c);
-        float3 T = eta * ray->D + ((eta * cosi - sqrt(fabs(cost2))) * (*N));
+        float3 T = eta * ray->D + ((eta * cosi - native_sqrt(fabs(cost2))) * (*N));
         Ray t = GenerateRay(*I + T * EPSILON, T, pixelIdx, false);
         t.inside = !ray->inside;
         if (RandomFloat(seed) > Fr)
@@ -390,6 +396,10 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     float2 uv = hitInfo.uv;
     float3 albedo = getAlbedo(floorPixels, blases, texturePixels, textures, lights, ray.objIdx, uv);
     float3 brdf = albedo * M_1_PI_F;
+
+    /* visualize traverse count */
+    // pixels[pixelIdx] = (float4)(ray.traversed / 10.f, ray.traversed / 10.f, ray.traversed / 10.f, 0);
+    // return;
     /* visualize triangle */
     // accumulator[index] = ray.triIdx * 10;
     // return;

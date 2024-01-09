@@ -307,7 +307,6 @@ __kernel void extend(__global Ray *rayBuffer, __global Tri *triBuffer, __global 
     const int index = get_global_id(0);
 
     Ray ray = rayBuffer[index];
-
     for (int i = 0; i < lightCount; i++)
     {
         intersectLight(&ray, &lights[i]);

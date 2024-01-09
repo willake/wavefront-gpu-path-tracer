@@ -12,24 +12,6 @@
 	<!-- Light List -->
     <lights>
         <!-- Light 0 -->
-        <light>
-			<position>
-                <x>1.3</x>
-                <y>4.5</y>
-                <z>2.0</z>
-            </position>
-			<rotation>
-                <x>0.0</x>
-                <y>0.0</y>
-                <z>0.0</z>
-            </rotation>
-			<size>1</size>
-			<color>
-				<x>24</x>
-                <y>24</y>
-                <z>22</z>
-			</color>
-        </light>
 		<light>
 			<position>
                 <x>-3.3</x>
@@ -67,6 +49,34 @@
                 <z>0.0</z>
             </rotation>
         </object>
+		<object>
+            <mesh_idx>1</mesh_idx>
+            <material_idx>1</material_idx>
+            <position>
+                <x>1.5</x>
+                <y>1</y>
+                <z>2.8</z>
+            </position>
+            <rotation>
+                <x>0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </rotation>
+        </object>
+		<object>
+            <mesh_idx>1</mesh_idx>
+            <material_idx>1</material_idx>
+            <position>
+                <x>-1.5</x>
+                <y>1</y>
+                <z>2.8</z>
+            </position>
+            <rotation>
+                <x>0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </rotation>
+        </object>
 
         <!-- Add more objects as needed -->
     </objects>
@@ -77,9 +87,18 @@
 			<id>0</id>
             <model_location>../assets/cup.obj</model_location>
 			<scale>
-                <x>0.1</x>
-                <y>0.1</y>
-                <z>0.1</z>
+                <x>0.2</x>
+                <y>0.2</y>
+                <z>0.2</z>
+            </scale>
+        </mesh>
+		<mesh>
+			<id>1</id>
+            <model_location>../assets/wok.obj</model_location>
+			<scale>
+                <x>0.3</x>
+                <y>0.3</y>
+                <z>0.3</z>
             </scale>
         </mesh>
 
@@ -97,6 +116,17 @@
                 <z>0.3</z>
             </absorption>
 			<texture_location>../assets/textures/white.png</texture_location>
+		</material>
+		<material>
+			<id>1</id>
+			<reflectivity>0.0</reflectivity>
+			<refractivity>0.0</refractivity>
+			<absorption>
+                <x>0.3</x>
+                <y>0.3</y>
+                <z>0.3</z>
+            </absorption>
+			<texture_location>../assets/textures/Defuse_wok.png</texture_location>
 		</material>
 	</materials>
 </scene>
