@@ -28,7 +28,7 @@ class Renderer : public TheApp
     uint m_shadowRayCount = 0;
     Buffer *GetPrimaryRayBuffer();
     Buffer *GetExtensionRayBuffer();
-    void SwitchPrimaryRay();
+    void SwitchPrimaryRayBuffer();
 
   public:
     Renderer();
