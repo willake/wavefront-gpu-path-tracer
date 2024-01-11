@@ -168,6 +168,8 @@ void Renderer::Tick(float deltaTime)
         {
             accumulator[x + y * SCRWIDTH] += pixels[x + y * SCRWIDTH];
             float4 pixel = accumulator[x + y * SCRWIDTH] * scale;
+            pixel = float4(pow(pixel.x, 1.0f / 2.2f), pow(pixel.y, 1.0f / 2.2f), pow(pixel.z, 1.0f / 2.2f),
+                           0); // gamma correction
             screen->pixels[x + y * SCRWIDTH] = RGBF32_to_RGB8(&pixel);
         }
 
