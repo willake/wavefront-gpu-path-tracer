@@ -17,10 +17,11 @@ Renderer::Renderer()
 void Renderer::Init()
 {
     // create fp32 rgb pixel buffer to render to
-    accumulator = (float4 *)MALLOC64(SCRWIDTH * SCRHEIGHT * 16);
-    ClearAccumulator();
+    // accumulator = (float4 *)MALLOC64(SCRWIDTH * SCRHEIGHT * 16);
+    accumulator = new float4[SCRWIDTH * SCRHEIGHT];
 
     kernelGeneratePrimaryRays = new Kernel("../cl/generate.cl", "generatePrimaryRays");
+    kernelClearAccumulator = new Kernel("../cl/generate.cl", "clearAccumulator");
     kernelExtend = new Kernel("../cl/extend.cl", "extend");
     kernelShade = new Kernel("../cl/shade.cl", "shade");
     kernelConnect = new Kernel("../cl/connect.cl", "connect");
@@ -30,6 +31,9 @@ void Renderer::Init()
     pixels = new float4[SCRWIDTH * SCRHEIGHT];
     // gpuaccumulator = new uint[SCRWIDTH * SCRHEIGHT];
     accumulatorBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(float4), accumulator);
+    accumulatorBuffer->CopyToDevice(true);
+    screenPixelBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(uint), screen->pixels);
+    screenPixelBuffer->CopyToDevice(true);
     seedBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(uint), seeds);
     pixelBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(float4), pixels);
 
@@ -44,11 +48,16 @@ void Renderer::Init()
     shadowrays = new ShadowRay[SCRWIDTH * SCRHEIGHT];
     shadowrayBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(ShadowRay), shadowrays);
     shadowrayCounterBuffer = new Buffer(sizeof(uint), &shadowrayCounter);
+
+    ClearAccumulator();
 }
 
 void Renderer::ClearAccumulator()
 {
-    memset(accumulator, 0, SCRWIDTH * SCRHEIGHT * 16);
+    kernelClearAccumulator->SetArguments(accumulatorBuffer);
+    kernelClearAccumulator->Run(SCRWIDTH * SCRHEIGHT);
+    // memset(accumulator, 0, SCRWIDTH * SCRHEIGHT * 16);
+    // accumulatorBuffer->CopyToDevice(true);
 }
 
 Buffer *Renderer::GetPrimaryRayBuffer()
@@ -163,15 +172,19 @@ void Renderer::Tick(float deltaTime)
     //   accumulatorBuffer->CopyFromDevice(true);
 
     float scale = 1.0f / (spp + passes);
-    for (int y = 0; y < SCRHEIGHT; y++)
-        for (int x = 0; x < SCRWIDTH; x++)
-        {
-            accumulator[x + y * SCRWIDTH] += pixels[x + y * SCRWIDTH];
-            float4 pixel = accumulator[x + y * SCRWIDTH] * scale;
-            pixel = float4(pow(pixel.x, 1.0f / 2.2f), pow(pixel.y, 1.0f / 2.2f), pow(pixel.z, 1.0f / 2.2f),
-                           0); // gamma correction
-            screen->pixels[x + y * SCRWIDTH] = RGBF32_to_RGB8(&pixel);
-        }
+    kernelFinalize->SetArguments(screenPixelBuffer, accumulatorBuffer, pixelBuffer, scale);
+    kernelFinalize->Run(SCRWIDTH * SCRHEIGHT);
+    accumulatorBuffer->CopyFromDevice(true);
+    screenPixelBuffer->CopyFromDevice(true);
+    // for (int y = 0; y < SCRHEIGHT; y++)
+    //     for (int x = 0; x < SCRWIDTH; x++)
+    //     {
+    //         accumulator[x + y * SCRWIDTH] += pixels[x + y * SCRWIDTH];
+    //         float4 pixel = accumulator[x + y * SCRWIDTH] * scale;
+    //         pixel = float4(pow(pixel.x, 1.0f / 2.2f), pow(pixel.y, 1.0f / 2.2f), pow(pixel.z, 1.0f / 2.2f),
+    //                        0); // gamma correction
+    //         screen->pixels[x + y * SCRWIDTH] = RGBF32_to_RGB8(&pixel);
+    //     }
 
     //// performance report - running average - ms, MRays/s
     m_avg = (1 - m_alpha) * m_avg + m_alpha * t.elapsed() * 1000;

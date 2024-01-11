@@ -68,3 +68,9 @@ __kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds,
     seeds[index] = seed;
     pixels[index] = (float4)(1);
 }
+
+__kernel void clearAccumulator(__global float4 *accumulator)
+{
+    const int index = get_global_id(0);
+    accumulator[index] = (float4)(0);
+}
