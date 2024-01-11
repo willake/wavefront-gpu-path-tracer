@@ -26,6 +26,7 @@ void Renderer::Init()
     kernelShade = new Kernel("../cl/shade.cl", "shade");
     kernelConnect = new Kernel("../cl/connect.cl", "connect");
     kernelFinalize = new Kernel("../cl/finalize.cl", "finalize");
+    kernelDebugRenderTraversal = new Kernel("../cl/debug.cl", "renderTraversal");
 
     seeds = new uint[SCRWIDTH * SCRHEIGHT];
     pixels = new float4[SCRWIDTH * SCRHEIGHT];
@@ -102,77 +103,87 @@ void Renderer::Tick(float deltaTime)
                                sceneBuffer->tlasNodeBuffer, sceneBuffer->meshInsBuffer, sceneBuffer->lightBuffer,
                                (int)sceneBuffer->lightCount);
     kernelExtend->Run(SCRWIDTH * SCRHEIGHT);
-    //// accumulatorBuffer->CopyToDevice(true);
-    extensionCounter = 0;
-    extensionCounterBuffer->CopyToDevice(true);
-    shadowrayCounter = 0;
-    shadowrayCounterBuffer->CopyToDevice(true);
-    kernelShade->SetArguments(pixelBuffer, primaryRayBuffer, seedBuffer, sceneBuffer->skydomeBuffer,
-                              (int)sceneBuffer->skydomeTexture.width, (int)sceneBuffer->skydomeTexture.height,
-                              sceneBuffer->floorBuffer, sceneBuffer->triExBuffer, sceneBuffer->blasBuffer,
-                              sceneBuffer->materialBuffer, sceneBuffer->texturePixelBuffer, sceneBuffer->textureBuffer,
-                              sceneBuffer->lightBuffer, (int)sceneBuffer->lightCount, extensionRayBuffer,
-                              shadowrayBuffer, extensionCounterBuffer, shadowrayCounterBuffer, (int)0);
-    kernelShade->Run(SCRWIDTH * SCRHEIGHT);
 
-    extensionCounterBuffer->CopyFromDevice(true);
-    shadowrayCounterBuffer->CopyFromDevice(true);
-    m_extensionRayCount = extensionCounter;
-    m_shadowRayCount = shadowrayCounter;
-
-    SwitchPrimaryRayBuffer();
-
-    int depth = 1;
-    // run extension rays and shadow rays
-    while (depth < 7 && (extensionCounter > 0 || shadowrayCounter > 0))
+    if (m_inspectTraversal)
     {
-        int extensionCount = extensionCounter;
-        int shadowCount = shadowrayCounter;
+        kernelDebugRenderTraversal->SetArguments(pixelBuffer, primaryRayBuffer);
+        kernelDebugRenderTraversal->Run(SCRWIDTH * SCRHEIGHT);
+    }
+    else
+    {
         extensionCounter = 0;
         extensionCounterBuffer->CopyToDevice(true);
         shadowrayCounter = 0;
         shadowrayCounterBuffer->CopyToDevice(true);
-
-        primaryRayBuffer = GetPrimaryRayBuffer();
-        extensionRayBuffer = GetExtensionRayBuffer();
-
-        SwitchPrimaryRayBuffer();
-
-        if (extensionCount > 0)
-        {
-            kernelExtend->SetArguments(primaryRayBuffer, sceneBuffer->triBuffer, sceneBuffer->triIdxBuffer,
-                                       sceneBuffer->bvhNodeBuffer, sceneBuffer->bvhBuffer, sceneBuffer->blasBuffer,
-                                       sceneBuffer->tlasNodeBuffer, sceneBuffer->meshInsBuffer,
-                                       sceneBuffer->lightBuffer, (int)sceneBuffer->lightCount);
-            kernelExtend->Run(extensionCount);
-        }
-
-        if (shadowCount > 0)
-        {
-            kernelConnect->SetArguments(shadowrayBuffer, pixelBuffer, sceneBuffer->triBuffer, sceneBuffer->triIdxBuffer,
-                                        sceneBuffer->bvhNodeBuffer, sceneBuffer->bvhBuffer, sceneBuffer->blasBuffer,
-                                        sceneBuffer->tlasNodeBuffer, sceneBuffer->meshInsBuffer,
-                                        sceneBuffer->lightBuffer, (int)sceneBuffer->lightCount);
-            kernelConnect->Run(shadowCount);
-        }
-
         kernelShade->SetArguments(pixelBuffer, primaryRayBuffer, seedBuffer, sceneBuffer->skydomeBuffer,
                                   (int)sceneBuffer->skydomeTexture.width, (int)sceneBuffer->skydomeTexture.height,
                                   sceneBuffer->floorBuffer, sceneBuffer->triExBuffer, sceneBuffer->blasBuffer,
                                   sceneBuffer->materialBuffer, sceneBuffer->texturePixelBuffer,
                                   sceneBuffer->textureBuffer, sceneBuffer->lightBuffer, (int)sceneBuffer->lightCount,
                                   extensionRayBuffer, shadowrayBuffer, extensionCounterBuffer, shadowrayCounterBuffer,
-                                  (int)depth);
-        kernelShade->Run(extensionCount);
+                                  (int)0);
+        kernelShade->Run(SCRWIDTH * SCRHEIGHT);
+
         extensionCounterBuffer->CopyFromDevice(true);
         shadowrayCounterBuffer->CopyFromDevice(true);
-        depth++;
+        m_extensionRayCount = extensionCounter;
+        m_shadowRayCount = shadowrayCounter;
+
+        SwitchPrimaryRayBuffer();
+
+        int depth = 1;
+        // run extension rays and shadow rays
+        while (depth < 7 && (extensionCounter > 0 || shadowrayCounter > 0))
+        {
+            int extensionCount = extensionCounter;
+            int shadowCount = shadowrayCounter;
+            extensionCounter = 0;
+            extensionCounterBuffer->CopyToDevice(true);
+            shadowrayCounter = 0;
+            shadowrayCounterBuffer->CopyToDevice(true);
+
+            primaryRayBuffer = GetPrimaryRayBuffer();
+            extensionRayBuffer = GetExtensionRayBuffer();
+
+            SwitchPrimaryRayBuffer();
+
+            if (extensionCount > 0)
+            {
+                kernelExtend->SetArguments(primaryRayBuffer, sceneBuffer->triBuffer, sceneBuffer->triIdxBuffer,
+                                           sceneBuffer->bvhNodeBuffer, sceneBuffer->bvhBuffer, sceneBuffer->blasBuffer,
+                                           sceneBuffer->tlasNodeBuffer, sceneBuffer->meshInsBuffer,
+                                           sceneBuffer->lightBuffer, (int)sceneBuffer->lightCount);
+                kernelExtend->Run(extensionCount);
+            }
+
+            if (shadowCount > 0)
+            {
+                kernelConnect->SetArguments(shadowrayBuffer, pixelBuffer, sceneBuffer->triBuffer,
+                                            sceneBuffer->triIdxBuffer, sceneBuffer->bvhNodeBuffer,
+                                            sceneBuffer->bvhBuffer, sceneBuffer->blasBuffer,
+                                            sceneBuffer->tlasNodeBuffer, sceneBuffer->meshInsBuffer,
+                                            sceneBuffer->lightBuffer, (int)sceneBuffer->lightCount);
+                kernelConnect->Run(shadowCount);
+            }
+
+            kernelShade->SetArguments(pixelBuffer, primaryRayBuffer, seedBuffer, sceneBuffer->skydomeBuffer,
+                                      (int)sceneBuffer->skydomeTexture.width, (int)sceneBuffer->skydomeTexture.height,
+                                      sceneBuffer->floorBuffer, sceneBuffer->triExBuffer, sceneBuffer->blasBuffer,
+                                      sceneBuffer->materialBuffer, sceneBuffer->texturePixelBuffer,
+                                      sceneBuffer->textureBuffer, sceneBuffer->lightBuffer,
+                                      (int)sceneBuffer->lightCount, extensionRayBuffer, shadowrayBuffer,
+                                      extensionCounterBuffer, shadowrayCounterBuffer, (int)depth);
+            kernelShade->Run(extensionCount);
+            extensionCounterBuffer->CopyFromDevice(true);
+            shadowrayCounterBuffer->CopyFromDevice(true);
+            depth++;
+        }
     }
     pixelBuffer->CopyFromDevice(true);
     //   accumulatorBuffer->CopyFromDevice(true);
 
     float scale = 1.0f / (spp + passes);
-    kernelFinalize->SetArguments(screenPixelBuffer, accumulatorBuffer, pixelBuffer, scale);
+    kernelFinalize->SetArguments(screenPixelBuffer, accumulatorBuffer, pixelBuffer, scale, m_inspectTraversal);
     kernelFinalize->Run(SCRWIDTH * SCRHEIGHT);
     accumulatorBuffer->CopyFromDevice(true);
     screenPixelBuffer->CopyFromDevice(true);
@@ -202,7 +213,7 @@ void Renderer::UI()
 {
     // animation toggle
     bool changed = ImGui::Checkbox("Animate scene", &animating);
-    ImGui::Checkbox("Inspect Traversal", &m_inspectTraversal);
+    changed |= ImGui::Checkbox("Inspect Traversal", &m_inspectTraversal);
     changed |= ImGui::SliderInt("spp", &passes, 1, 4, "%i");
     ImGui::SliderFloat("Camera move speed", &camera.moveSpeed, 1.0f, 10.0f, "%.2f");
     ImGui::SliderFloat("Camera turn speed", &camera.turnSpeed, 1.0f, 10.0f, "%.2f");

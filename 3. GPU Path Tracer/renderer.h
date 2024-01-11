@@ -76,6 +76,7 @@ class Renderer : public TheApp
     Kernel *kernelConnect;
     Kernel *kernelFinalize;
     Kernel *kernelClearAccumulator;
+    Kernel *kernelDebugRenderTraversal; // debug
 
     float4 *pixels;
     Ray *rays1;
