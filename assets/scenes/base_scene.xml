@@ -2,11 +2,6 @@
 <scene>
     <!-- Scene Information -->
     <scene_name>wok scene</scene_name>
-	<light_position>
-		<x>0.0</x>
-		<y>4.5</y>
-		<z>2.0</z>
-	</light_position>
 	<plane_texture_location>../assets/textures/Stylized_Wood_basecolor.tga</plane_texture_location>
     <skydome_location>../assets/industrial_sunset_puresky_4k.hdr</skydome_location>
 	<!-- Light List -->

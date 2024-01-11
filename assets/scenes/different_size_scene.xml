@@ -1,20 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <scene>
     <!-- Scene Information -->
-    <scene_name>wok scene</scene_name>
-	<light_position>
-		<x>0.0</x>
-		<y>3</y>
-		<z>1.0</z>
-	</light_position>
+    <scene_name>different size scene</scene_name>
 	<plane_texture_location>../assets/textures/Stylized_Pavement_basecolor.png</plane_texture_location>
     <skydome_location>../assets/industrial_sunset_puresky_4k.hdr</skydome_location>
+	<lights>
+        <!-- Light 0 -->
+        <light>
+			<position>
+				<x>0.0</x>
+				<y>3</y>
+				<z>1.0</z>
+            </position>
+			<rotation>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </rotation>
+			<size>1</size>
+			<color>
+				<x>240</x>
+                <y>0</y>
+                <z>0</z>
+			</color>
+        </light>
+		<light>
+			<position>
+                <x>-3.3</x>
+                <y>0</y>
+                <z>2.8</z>
+            </position>
+			<rotation>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>90.0</z>
+            </rotation>
+			<size>1</size>
+			<color>
+				<x>0</x>
+                <y>0</y>
+                <z>220</z>
+			</color>
+        </light>
+        <!-- Add more lights as needed -->
+    </lights>
 
     <!-- Object List -->
     <objects>
         <!-- Object 0 -->
         <object>
-            <model_location>../assets/teapot.obj</model_location>
+            <mesh_idx>0</mesh_idx>
             <material_idx>0</material_idx>
             <position>
                 <x>0.0</x>
@@ -26,14 +61,9 @@
                 <y>0.0</y>
                 <z>0.0</z>
             </rotation>
-			<scale>
-                <x>1</x>
-                <y>1</y>
-                <z>1</z>
-            </scale>
         </object>
-		        <object>
-            <model_location>../assets/teapot.obj</model_location>
+		<object>
+            <mesh_idx>0</mesh_idx>
             <material_idx>0</material_idx>
             <position>
                 <x>-3</x>
@@ -45,14 +75,9 @@
                 <y>0.0</y>
                 <z>0.0</z>
             </rotation>
-			<scale>
-                <x>1</x>
-                <y>1</y>
-                <z>1</z>
-            </scale>
         </object>
 		<object>
-            <model_location>../assets/japanese_torii_gate.obj</model_location>
+            <mesh_idx>1</mesh_idx>
             <material_idx>1</material_idx>
             <position>
                 <x>0.0</x>
@@ -64,17 +89,37 @@
                 <y>0.0</y>
                 <z>0.0</z>
             </rotation>
+        </object>
+        <!-- Add more objects as needed -->
+    </objects>
+	<!-- Mesh List -->
+    <meshes>
+        <!-- Mesh 0 -->
+        <mesh>
+			<id>0</id>
+            <model_location>../assets/teapot.obj</model_location>
+			<scale>
+                <x>1</x>
+                <y>1</y>
+                <z>1</z>
+            </scale>
+        </mesh>
+		<mesh>
+			<id>1</id>
+            <model_location>../assets/japanese_torii_gate.obj</model_location>
 			<scale>
                 <x>2</x>
                 <y>2</y>
                 <z>2</z>
             </scale>
-        </object>
+        </mesh>
+
         <!-- Add more objects as needed -->
-    </objects>
+    </meshes>
 	<materials>
 		<!-- Material 0 -->
 		<material>
+			<id>0</id>
 			<reflectivity>1.0</reflectivity>
 			<refractivity>0.0</refractivity>
 			<absorption>
@@ -82,9 +127,10 @@
                 <y>0.0</y>
                 <z>0.0</z>
             </absorption>
-			<texture_location></texture_location>
+			<texture_location>../assets/textures/white.png</texture_location>
 		</material>
-		<material>
+				<material>
+			<id>1</id>
 			<reflectivity>0.0</reflectivity>
 			<refractivity>0.0</refractivity>
 			<absorption>
