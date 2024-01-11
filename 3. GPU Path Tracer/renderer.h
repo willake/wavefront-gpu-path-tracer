@@ -75,6 +75,7 @@ class Renderer : public TheApp
     Kernel *kernelShade;
     Kernel *kernelConnect;
     Kernel *kernelFinalize;
+    Kernel *kernelClearAccumulator;
 
     float4 *pixels;
     Ray *rays1;
@@ -91,6 +92,7 @@ class Renderer : public TheApp
     Buffer *accumulatorBuffer;
     Buffer *seedBuffer;
     Buffer *pixelBuffer; // final pixels for a tick
+    Buffer *screenPixelBuffer;
     SceneBuffer *sceneBuffer;
     string scenePath = "../assets/scenes/glass_scene.xml";
 };
