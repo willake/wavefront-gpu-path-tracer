@@ -182,5 +182,11 @@ float3 RGB8toRGB32F(uint c)
     return float3(r, g, b);
 }
 
+const float InvGamma = 1.0f / 2.2f;
+
+float4 GammaCorrection(float4 v)
+{
+    return float4(powf(v.x, InvGamma), powf(v.y, InvGamma), powf(v.z, InvGamma), 0);
+}
 const float Deg2Red = (PI * 2) / 360.0f;
 } // namespace Tmpl8

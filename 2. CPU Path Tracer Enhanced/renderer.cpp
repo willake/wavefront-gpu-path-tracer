@@ -157,6 +157,7 @@ void Renderer::ProcessTile(int tx, int ty, float &sum)
                 accumulator[x + y * SCRWIDTH] += float4(
                     Sample(camera.GetPrimaryRay((float)x + RandomFloat(seed), (float)y + RandomFloat(seed)), seed), 0);
             float4 pixel = accumulator[x + y * SCRWIDTH] * scale;
+            pixel = GammaCorrection(pixel); // Gamma correction, highly decrease frame rate
             sum += pixel.x + pixel.y + pixel.z;
             screen->pixels[x + y * SCRWIDTH] = RGBF32_to_RGB8(&pixel);
         }

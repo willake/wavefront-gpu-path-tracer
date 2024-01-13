@@ -1,3 +1,4 @@
+#define INVGAMMA 1.0f / 2.2f
 uint RGB32FtoRGB8(float4 c)
 {
     int r = (int)(min(c.x, 1.f) * 255);
@@ -17,8 +18,7 @@ float4 RGB8toRGB32F(uint c)
 
 float4 gammaCorrection(float4 v)
 {
-    float r = 1.0f / 2.2f; // gamma = 2.2
-    return (float4)(pow(v.x, r), pow(v.y, r), pow(v.z, r), 0);
+    return (float4)(pow(v.x, INVGAMMA), pow(v.y, INVGAMMA), pow(v.z, INVGAMMA), 0);
 }
 
 __kernel void finalize(__global uint *finalPixels, __global float4 *accumulator, __global float4 *pixels, float scale,

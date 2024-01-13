@@ -107,8 +107,8 @@ class Texture
         float r = ((pixel >> 16) & 0xFF) * rgbScale;
         float g = ((pixel >> 8) & 0xFF) * rgbScale;
         float b = (pixel & 0xFF) * rgbScale;
-        // return float3(r, g, b);
-        return float3(pow(r, 2.2), pow(g, 2.2), pow(b, 2.2)); // convert to liner-rgb
+        return float3(r, g, b);
+        // return float3(pow(r, 2.2), pow(g, 2.2), pow(b, 2.2)); // convert to liner-rgb
     }
 
   private:
