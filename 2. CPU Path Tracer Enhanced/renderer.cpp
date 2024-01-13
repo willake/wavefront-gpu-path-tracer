@@ -17,6 +17,21 @@ void Renderer::ClearAccumulator()
     memset(accumulator, 0, SCRWIDTH * SCRHEIGHT * 16);
 }
 
+float3 Renderer::CalculateMicrofacetBRDF(const Ray &ray, float3 I, float3 N, float3 &lightPos, float a, float k)
+{
+    float3 V = -ray.D;
+    float3 L = normalize(lightPos - I);
+    float3 H = normalize(V + L); // H = normalize(V + L);
+    float NdotH = dot(N, H), NdotV = dot(N, V), NdotL = dot(N, L), VdotH = dot(V, H);
+    float D = (a + 2) / (2 * PI) * powf(NdotH, a);
+    float G1 = 2 * NdotH * NdotV / VdotH;
+    float G2 = 2 * NdotH * NdotL / VdotH;
+    float G = min(1.0f, min(G1, G2));
+    float3 F = k + (1 - k) * powf(1 - dot(L, H), 5);
+
+    return F * G * D / 4.0f * NdotL * NdotV;
+}
+
 float3 Renderer::DirectIllumination(uint &seed, float3 I, float3 N, float3 brdf)
 {
     uint lightIdx;
