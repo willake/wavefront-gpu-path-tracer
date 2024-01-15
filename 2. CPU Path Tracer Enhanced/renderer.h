@@ -24,10 +24,10 @@ class Renderer : public TheApp
     float m_rps = 0;
     bool m_inspectTraversal = false;
     float3 GetEdgeDebugColor(float2 uv);
-    float3 DirectIllumination(uint &seed, float3 I, float3 N, float3 brdf);
+    float3 NEE(uint &seed, float3 I, float3 N, float3 brdf);
     float3 HandleMirror(const Ray &ray, uint &seed, const float3 &I, const float3 &N, const int depth);
     float3 HandleDielectric(const Ray &ray, uint &seed, const float3 &I, const float3 &N, const int depth);
-    float3 CalculateMicrofacetBRDF(const Ray &ray, float3 I, float3 N, float3 &lightPos, float a, float k);
+    float3 CalculateMicrofacetBRDF(float3 I, float3 V, float3 N, float3 L, float roughness, float3 k);
 
   public:
     // game flow methods

@@ -17,13 +17,11 @@ void Renderer::ClearAccumulator()
     memset(accumulator, 0, SCRWIDTH * SCRHEIGHT * 16);
 }
 
-float3 Renderer::CalculateMicrofacetBRDF(const Ray &ray, float3 I, float3 N, float3 &lightPos, float a, float k)
+float3 Renderer::CalculateMicrofacetBRDF(float3 I, float3 V, float3 N, float3 L, float roughness, float3 k)
 {
-    float3 V = -ray.D;
-    float3 L = normalize(lightPos - I);
     float3 H = normalize(V + L); // H = normalize(V + L);
     float NdotH = dot(N, H), NdotV = dot(N, V), NdotL = dot(N, L), VdotH = dot(V, H);
-    float D = (a + 2) / (2 * PI) * powf(NdotH, a);
+    float D = (roughness + 2) / (2 * PI) * powf(NdotH, roughness);
     float G1 = 2 * NdotH * NdotV / VdotH;
     float G2 = 2 * NdotH * NdotL / VdotH;
     float G = min(1.0f, min(G1, G2));
@@ -79,7 +77,7 @@ float3 Renderer::HandleDielectric(const Ray &ray, uint &seed, const float3 &I, c
         float3 T = eta * ray.D + ((eta * cosi - sqrtf(fabs(cost2))) * N);
         Ray t(I + T * EPSILON, T);
         t.inside = !ray.inside;
-        if (RandomFloat(seed) > Fr) return Sample(t, seed, depth + 1);
+        if (RandomFloat(seed) > Fr) return Sample(t, seed, depth + 1, true);
     }
     return Sample(r, seed, depth + 1, true);
 }
