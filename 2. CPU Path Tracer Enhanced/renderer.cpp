@@ -32,7 +32,7 @@ float3 Renderer::CalculateMicrofacetBRDF(const Ray &ray, float3 I, float3 N, flo
     return F * G * D / 4.0f * NdotL * NdotV;
 }
 
-float3 Renderer::DirectIllumination(uint &seed, float3 I, float3 N, float3 brdf)
+float3 Renderer::NEE(uint &seed, float3 I, float3 N, float3 brdf)
 {
     uint lightIdx;
     float3 randomLightPos = scene.RandomPointOnLight(seed, lightIdx);
@@ -117,10 +117,8 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth, bool lastSpecular)
     }
 
     // Shade
-    float3 out_radiance(0);
     float reflectivity = material->reflectivity;
     float refractivity = material->refractivity;
-    // float diffuseness = 1 - (reflectivity + refractivity);
 
     float3 medium_scale(1);
     if (ray.inside)
@@ -144,7 +142,7 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth, bool lastSpecular)
         float3 R = diffusereflection(N, seed);
         float3 brdf = albedo * INVPI;
         Ray r(I + R * EPSILON, R);
-        float3 Ld = DirectIllumination(seed, I, N, brdf);
+        float3 Ld = NEE(seed, I, N, brdf);
         return medium_scale * brdf * 2 * PI * dot(R, N) * Sample(r, seed, depth + 1) + Ld;
     }
 }
