@@ -45,8 +45,16 @@ class Camera
         if (enableDOF)
         {
             float3 fp = camPos + focalDistance * dir;
-            float3 randomPoint = UniformRandomPointDisk(seed);
-            float3 origin = camPos + randomPoint * aparture;
+
+            // must be a faster way...
+            float3 tmpUp(0, 1, 0);
+            float3 right = normalize(cross(tmpUp, dir));
+            float3 up = normalize(cross(dir, right));
+            right = normalize(cross(up, dir));
+
+            float2 randomDiscPoint = UniformRandomPointDisk(seed);
+
+            float3 origin = camPos + (-right * randomDiscPoint.x + up * randomDiscPoint.y) * aparture;
             return Ray(origin, normalize(fp - origin));
         }
         return Ray(camPos, dir);
