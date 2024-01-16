@@ -15,6 +15,7 @@ void Renderer::Init()
 void Renderer::ClearAccumulator()
 {
     memset(accumulator, 0, SCRWIDTH * SCRHEIGHT * 16);
+    spp = 1;
 }
 
 float3 Renderer::CalculateMicrofacetBRDF(float3 I, float3 V, float3 N, float3 L, float roughness, float3 k)
@@ -183,7 +184,9 @@ void Renderer::ProcessTile(int tx, int ty, float &sum)
         {
             for (int p = 0; p < passes; p++)
                 accumulator[x + y * SCRWIDTH] += float4(
-                    Sample(camera.GetPrimaryRay((float)x + RandomFloat(seed), (float)y + RandomFloat(seed)), seed), 0);
+                    Sample(camera.GetPrimaryRay((float)x + RandomFloat(seed), (float)y + RandomFloat(seed), seed),
+                           seed),
+                    0);
             float4 pixel = accumulator[x + y * SCRWIDTH] * scale;
             pixel = GammaCorrection(pixel); // Gamma correction, highly decrease frame rate
             sum += pixel.x + pixel.y + pixel.z;
@@ -243,6 +246,9 @@ void Renderer::UI()
     bool changed = ImGui::Checkbox("Animate scene", &animating);
     ImGui::Checkbox("Inspect Traversal", &m_inspectTraversal);
     changed |= ImGui::SliderInt("spp", &passes, 1, 4, "%i");
+    changed |= ImGui::Checkbox("DOF", &camera.enableDOF);
+    changed |= ImGui::SliderFloat("Focal distance", &camera.focalDistance, 1.0f, 10.0f, "%.2f");
+    changed |= ImGui::SliderFloat("Aparture size", &camera.aparture, 0.1f, 10.0f, "%.2f");
     ImGui::SliderFloat("Camera move speed", &camera.moveSpeed, 1.0f, 10.0f, "%.2f");
     ImGui::SliderFloat("Camera turn speed", &camera.turnSpeed, 1.0f, 10.0f, "%.2f");
     // camera position field
@@ -266,5 +272,5 @@ void Renderer::UI()
     ImGui::Text("Camera Pos: (%.2f, %.2f, %.2f)", camera.camPos.x, camera.camPos.y, camera.camPos.z);
     ImGui::Text("Camera Target: (%.2f, %.2f, %.2f)", camera.camTarget.x, camera.camTarget.y, camera.camTarget.z);
     // reset accumulator if changes have been made
-    if (changed) ClearAccumulator();
+    if (changed) { ClearAccumulator(); }
 }

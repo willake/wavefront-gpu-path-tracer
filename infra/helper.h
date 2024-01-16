@@ -221,6 +221,17 @@ float SurvivalProb(float3 color)
     return clamp(max(color.x, max(color.y, color.z)), 0.1, 0.9);
 }
 
+float2 UniformRandomPointDisk(uint &seed)
+{
+    float r0 = RandomFloat(seed);
+    float r1 = RandomFloat(seed);
+    float r = 0.01 * sqrt(r0);
+    float phi = 2 * PI * r1;
+    float x = r * cos(phi);
+    float y = r * sin(phi);
+    return float2(x, y);
+}
+
 float3 mix(float3 x, float3 y, float weight)
 {
     return x * (1.0f - weight) + y * weight;
