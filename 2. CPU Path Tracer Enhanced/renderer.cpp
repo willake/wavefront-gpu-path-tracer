@@ -15,6 +15,7 @@ void Renderer::Init()
 void Renderer::ClearAccumulator()
 {
     memset(accumulator, 0, SCRWIDTH * SCRHEIGHT * 16);
+    spp = 1;
 }
 
 float3 Renderer::CalculateMicrofacetBRDF(float3 I, float3 V, float3 N, float3 L, float roughness, float3 k)
@@ -183,7 +184,9 @@ void Renderer::ProcessTile(int tx, int ty, float &sum)
         {
             for (int p = 0; p < passes; p++)
                 accumulator[x + y * SCRWIDTH] += float4(
-                    Sample(camera.GetPrimaryRay((float)x + RandomFloat(seed), (float)y + RandomFloat(seed)), seed), 0);
+                    Sample(camera.GetPrimaryRay((float)x + RandomFloat(seed), (float)y + RandomFloat(seed), seed),
+                           seed),
+                    0);
             float4 pixel = accumulator[x + y * SCRWIDTH] * scale;
             pixel = GammaCorrection(pixel); // Gamma correction, highly decrease frame rate
             sum += pixel.x + pixel.y + pixel.z;

@@ -63,6 +63,7 @@ void Renderer::ClearAccumulator()
 {
     kernelClearAccumulator->SetArguments(accumulatorBuffer);
     kernelClearAccumulator->Run(SCRWIDTH * SCRHEIGHT);
+    spp = 1;
     // memset(accumulator, 0, SCRWIDTH * SCRHEIGHT * 16);
     // accumulatorBuffer->CopyToDevice(true);
 }

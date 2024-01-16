@@ -32,10 +32,20 @@ class Camera
         const float3 P = topLeft + u * (topRight - topLeft) + v * (bottomLeft - topLeft);
         float3 dir = normalize(P - camPos);
 
+        return Ray(camPos, dir);
+    }
+    Ray GetPrimaryRay(const float x, const float y, uint &seed)
+    {
+        // calculate pixel position on virtual screen plane
+        const float u = (float)x * (1.0f / SCRWIDTH);
+        const float v = (float)y * (1.0f / SCRHEIGHT);
+        const float3 P = topLeft + u * (topRight - topLeft) + v * (bottomLeft - topLeft);
+        float3 dir = normalize(P - camPos);
+
         if (enableDOF)
         {
             float3 fp = camPos + focalDistance * dir;
-            float3 randomPoint = UniformRandomPointDisk();
+            float3 randomPoint = UniformRandomPointDisk(seed);
             float3 origin = camPos + randomPoint * aparture;
             return Ray(origin, normalize(fp - origin));
         }

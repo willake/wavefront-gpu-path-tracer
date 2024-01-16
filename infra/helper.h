@@ -221,10 +221,10 @@ float SurvivalProb(float3 color)
     return clamp(max(color.x, max(color.y, color.z)), 0.1, 0.9);
 }
 
-float3 UniformRandomPointDisk()
+float3 UniformRandomPointDisk(uint &seed)
 {
-    float r0 = RandomFloat();
-    float r1 = RandomFloat();
+    float r0 = RandomFloat(seed);
+    float r1 = RandomFloat(seed);
     float r = 0.01 * sqrt(r0);
     float phi = 2 * PI * r1;
     float x = r * cos(phi);
