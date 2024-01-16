@@ -118,7 +118,7 @@ void Renderer::Tick(float deltaTime)
 
         int depth = 0;
         // run extension rays and shadow rays
-        while (depth < 7 && (extensionCounter > 0 || shadowrayCounter > 0))
+        while (extensionCounter > 0)
         {
             int extensionCount = extensionCounter;
 
@@ -162,6 +162,8 @@ void Renderer::Tick(float deltaTime)
                                             sceneBuffer->lightBuffer, (int)sceneBuffer->lightCount);
                 kernelConnect->Run(shadowrayCounter);
             }
+
+            printf("extension count: %d", extensionCounter);
 
             SwitchPrimaryRayBuffer();
             depth++;

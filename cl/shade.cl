@@ -113,6 +113,11 @@ typedef struct
     int matIdx;
 } HitInfo;
 
+inline float SurvivalProb(float4 color)
+{
+    return clamp(max(color.x, max(color.y, color.z)), 0.1f, 0.9f);
+}
+
 inline float3 cosineweighteddiffusereflection(const float3 *N, uint *seed)
 {
     // blog.demofox.org/2020/06/06/casual-shadertoy-path-tracing-2-image-improvement-and-glossy-reflections
@@ -339,8 +344,7 @@ float3 randomPointOnLight(Light *lights, uint lightCount, uint *seed, uint *ligh
     return corner1 + r2 * (corner2 - corner1) + r1 * (corner3 - corner1);
 }
 
-ShadowRay directionIllumination(Light *lights, uint lightCount, uint *seed, float3 I, float3 N, float3 brdf,
-                                int pixelIdx)
+ShadowRay NEE(Light *lights, uint lightCount, uint *seed, float3 I, float3 N, float3 brdf, int pixelIdx)
 {
     uint lightIdx;
     float3 randomLightPos = randomPointOnLight(lights, lightCount, seed, &lightIdx);
@@ -412,12 +416,12 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
         // TODO: remove this, but it is weird that N is missing when enter this if statement
         if (depth == 0 && dot(-ray.D, LN) > 0)
         {
-            pixels[pixelIdx] = (float4)(light->colorx, light->colory, light->colorz, 0);
+            pixels[pixelIdx] *= (float4)(light->colorx, light->colory, light->colorz, 0);
             return;
         }
         else if (ray.lastSpecular)
         {
-            pixels[pixelIdx] = (float4)(light->colorx, light->colory, light->colorz, 0);
+            pixels[pixelIdx] *= (float4)(light->colorx, light->colory, light->colorz, 0);
             return;
         }
         pixels[pixelIdx] = (float4)(0);
@@ -443,22 +447,32 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
         medium_scale = exp(absorption * -ray.t);
     }
 
+    uint si = atomic_inc(shadowrayCounter);
+    shadowrayBuffer[si] = NEE(lights, lightCount, &seed, I, N, brdf, pixelIdx);
+
+    float p = SurvivalProb(pixels[pixelIdx]);
+
+    if (depth > 1 && p < RandomFloat(&seed))
+        return;
+
     float r = RandomFloat(&seed);
     if (r < reflectivity) // handle pure speculars
     {
         // generate reflection ray
-        pixels[pixelIdx] *=
-            (float4)(albedo.x, albedo.y, albedo.z, 0) * (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0);
         uint ei = atomic_inc(extensionrayCounter);
         extensionrayBuffer[ei] = handleMirror(&ray, &I, &N, pixelIdx);
+
+        pixels[pixelIdx] *=
+            (float4)(albedo.x, albedo.y, albedo.z, 0) * (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) / p;
     }
     else if (r < reflectivity + refractivity) // handle dielectrics
     {
         // generate extend ray
-        pixels[pixelIdx] *=
-            (float4)(albedo.x, albedo.y, albedo.z, 0) * (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0);
         uint ei = atomic_inc(extensionrayCounter);
         extensionrayBuffer[ei] = handleHandleDielectric(&ray, &seed, &I, &N, pixelIdx);
+
+        pixels[pixelIdx] *=
+            (float4)(albedo.x, albedo.y, albedo.z, 0) * (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) / p;
     }
     else // diffuse surface
     {
@@ -468,11 +482,8 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
         uint ei = atomic_inc(extensionrayCounter);
         extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, pixelIdx, false);
 
-        uint si = atomic_inc(shadowrayCounter);
-        shadowrayBuffer[si] = directionIllumination(lights, lightCount, &seed, I, N, brdf, pixelIdx);
-
         // compute
         pixels[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
-                            (float4)(brdf.x, brdf.y, brdf.z, 0) * dot(R, N) / PDF;
+                            (float4)(brdf.x, brdf.y, brdf.z, 0) * dot(R, N) / PDF / p;
     }
 }
