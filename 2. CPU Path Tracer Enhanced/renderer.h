@@ -24,16 +24,16 @@ class Renderer : public TheApp
     float m_rps = 0;
     bool m_inspectTraversal = false;
     float3 GetEdgeDebugColor(float2 uv);
-    float3 NEE(uint &seed, float3 I, float3 N, float3 brdf);
-    float3 HandleMirror(const Ray &ray, uint &seed, const float3 &I, const float3 &N, const int depth);
-    float3 HandleDielectric(const Ray &ray, uint &seed, const float3 &I, const float3 &N, const int depth);
+    void NEE(uint &seed, const float3 &I, const float3 &N, float3 &brdf, float3 &E, float3 &T);
+    Ray HandleMirror(const Ray &ray, uint &seed, const float3 &I, const float3 &N);
+    Ray HandleDielectric(const Ray &ray, uint &seed, const float3 &I, const float3 &N);
     float3 CalculateMicrofacetBRDF(float3 I, float3 V, float3 N, float3 L, float roughness, float3 k);
 
   public:
     // game flow methods
     void Init();
     void ClearAccumulator();
-    float3 Sample(Ray &ray, uint &seed, int depth = 0, bool lastSpecular = false);
+    float3 Sample(Ray &ray, uint &seed);
     void ProcessTile(int tx, int ty, float &sum);
     void Tick(float deltaTime);
     void UI();

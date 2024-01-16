@@ -30,7 +30,7 @@ float3 Renderer::CalculateMicrofacetBRDF(float3 I, float3 V, float3 N, float3 L,
     return F * G * D / 4.0f * NdotL * NdotV;
 }
 
-float3 Renderer::NEE(uint &seed, float3 I, float3 N, float3 brdf)
+void Renderer::NEE(uint &seed, const float3 &I, const float3 &N, float3 &brdf, float3 &E, float3 &T)
 {
     uint lightIdx;
     float3 randomLightPos = scene.RandomPointOnLight(seed, lightIdx);
@@ -49,20 +49,19 @@ float3 Renderer::NEE(uint &seed, float3 I, float3 N, float3 brdf)
         if (!scene.IsOccluded(shadowRay))
         {
             float solidAngle = (nldotl * A) / (dist * dist);
-            return light.color * solidAngle * brdf * ndotl * scene.lightCount;
+            E += T * light.color * solidAngle * brdf * ndotl * scene.lightCount;
         }
     }
-    return float3(0);
 }
 
-float3 Renderer::HandleMirror(const Ray &ray, uint &seed, const float3 &I, const float3 &N, const int depth)
+Ray Renderer::HandleMirror(const Ray &ray, uint &seed, const float3 &I, const float3 &N)
 {
     float3 R = reflect(ray.D, N);
     Ray r(I + R * EPSILON, R);
-    return Sample(r, seed, depth + 1, true);
+    return r;
 }
 
-float3 Renderer::HandleDielectric(const Ray &ray, uint &seed, const float3 &I, const float3 &N, const int depth)
+Ray Renderer::HandleDielectric(const Ray &ray, uint &seed, const float3 &I, const float3 &N)
 {
     float3 R = reflect(ray.D, N);
     Ray r(I + R * EPSILON, R);
@@ -77,73 +76,90 @@ float3 Renderer::HandleDielectric(const Ray &ray, uint &seed, const float3 &I, c
         float3 T = eta * ray.D + ((eta * cosi - sqrtf(fabs(cost2))) * N);
         Ray t(I + T * EPSILON, T);
         t.inside = !ray.inside;
-        if (RandomFloat(seed) > Fr) return Sample(t, seed, depth + 1, true);
+        if (RandomFloat(seed) > Fr) return t;
     }
-    return Sample(r, seed, depth + 1, true);
+    return r;
 }
 
 // -----------------------------------------------------------
 // Evaluate light transport
 // -----------------------------------------------------------
-float3 Renderer::Sample(Ray &ray, uint &seed, int depth, bool lastSpecular)
+float3 Renderer::Sample(Ray &ray, uint &seed)
 {
-    scene.FindNearest(ray);
-    // if (ray.objIdx == -1) return float3(0);
-    if (ray.objIdx == -1) return scene.GetSkyColor(ray); // or a fancy sky color
-    if (depth >= depthLimit) return float3(0);
-    float3 I = ray.O + ray.t * ray.D;
-    HitInfo hitInfo = scene.GetHitInfo(ray, I);
-    float3 N = hitInfo.normal;
-    float2 uv = hitInfo.uv;
-    Material *material = hitInfo.material;
-    float3 albedo = material->isAlbedoOverridden ? scene.GetAlbedo(ray.objIdx, I) : material->GetAlbedo(uv);
-
-    /* visualize edges */    // return GetEdgeDebugColor(ray.barycentric);
-    /* visualize normal */   // return (N + 1) * 0.5f;
-    /* visualize distance */ // return 0.1f * float3( ray.t, ray.t, ray.t );
-    /* visualize albedo */   // return albedo;
-    // return float3(ray.barycentric.x, ray.barycentric.y, 0);
-    // if (m_inspectTraversal) return GetTraverseCountColor(ray.traversed, );
-
-    // Part of NEE
-    // return black if it is a light soucre
-    if (material->isLight)
+    float3 T = float3(1, 1, 1), E = float3(0, 0, 0);
+    int depth = 0;
+    bool lastSpecular = false;
+    while (true)
     {
-        if (depth == 0 && dot(-ray.D, N) > 0) { return scene.GetLightByObjIdx(ray.objIdx).color; }
-        else if (lastSpecular) return scene.GetLightByObjIdx(ray.objIdx).color;
-        else return float3(0);
-    }
-
-    // Shade
-    float reflectivity = material->reflectivity;
-    float refractivity = material->refractivity;
-
-    float3 medium_scale(1);
-    if (ray.inside)
-    {
-        float3 absorption = material->absorption;
-        medium_scale = expf(absorption * -ray.t);
-    }
-
-    // choose a type of transport
-    float r = RandomFloat(seed);
-    if (r < reflectivity) // handle pure speculars
-    {
-        return albedo * medium_scale * HandleMirror(ray, seed, I, N, depth);
-    }
-    else if (r < reflectivity + refractivity) // handle dielectrics
-    {
-        return albedo * medium_scale * HandleDielectric(ray, seed, I, N, depth);
-    }
-    else // diffuse surface
-    {
-        float3 R = cosineweighteddiffusereflection(N, seed);
+        scene.FindNearest(ray);
+        if (ray.objIdx == -1) // hit skybox
+        {
+            E += T * scene.GetSkyColor(ray);
+            break;
+        }
+        float3 I = ray.O + ray.t * ray.D;
+        HitInfo hitInfo = scene.GetHitInfo(ray, I);
+        float3 N = hitInfo.normal;
+        float2 uv = hitInfo.uv;
+        Material *material = hitInfo.material;
+        float3 albedo = material->isAlbedoOverridden ? scene.GetAlbedo(ray.objIdx, I) : material->GetAlbedo(uv);
         float3 brdf = albedo * INVPI;
-        float PDF = dot(N, R) / PI;
-        Ray r(I + R * EPSILON, R);
-        float3 Ld = NEE(seed, I, N, brdf);
-        return medium_scale * brdf * dot(R, N) * Sample(r, seed, depth + 1) / PDF + Ld;
+
+        // Part of NEE
+        // return black if it is a light soucre
+        if (material->isLight)
+        {
+            if (lastSpecular || (depth == 0 && dot(-ray.D, N) > 0))
+            {
+                E += T * scene.GetLightByObjIdx(ray.objIdx).color;
+            }
+            else E += T * float3(0);
+            break;
+        }
+
+        float reflectivity = material->reflectivity;
+        float refractivity = material->refractivity;
+
+        float3 medium_scale(1);
+        // beer's law
+        if (ray.inside)
+        {
+            float3 absorption = material->absorption;
+            medium_scale = expf(absorption * -ray.t);
+        }
+
+        // might modify E
+        NEE(seed, I, N, brdf, E, T);
+
+        float p = SurvivalProb(T);
+
+        if (depth > 1 && p < RandomFloat(seed)) break;
+
+        // choose a type of transport
+        float r = RandomFloat(seed);
+        if (r < reflectivity) // handle pure speculars
+        {
+            T *= albedo * medium_scale / p;
+            ray = HandleMirror(ray, seed, I, N);
+            lastSpecular = true;
+        }
+        else if (r < reflectivity + refractivity) // handle dielectrics
+        {
+            T *= albedo * medium_scale / p;
+            ray = HandleDielectric(ray, seed, I, N);
+            lastSpecular = true;
+        }
+        else // diffuse surface
+        {
+            float3 R = cosineweighteddiffusereflection(N, seed);
+            float PDF = dot(N, R) / PI;
+            ray = Ray(I + R * EPSILON, R);
+            T *= medium_scale * brdf * dot(R, N) / PDF / p;
+        }
+        depth++;
     }
+
+    return E;
 }
 
 float3 Renderer::GetEdgeDebugColor(float2 uv)

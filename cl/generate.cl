@@ -35,9 +35,9 @@ typedef struct __attribute__((aligned(128)))
     bool lastSpecular;  // 1 bytes
 } Ray;                  // total 82 bytes
 
-__kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds, __global float4 *pixels, int width,
-                                  int height, float3 camPos, float3 topLeft, float3 topRight, float3 bottomLeft,
-                                  int spp)
+__kernel void generatePrimaryRays(__global float4 *Ts, __global float4 *Es, __global Ray *rayBuffer,
+                                  __global uint *seeds, int width, int height, float3 camPos, float3 topLeft,
+                                  float3 topRight, float3 bottomLeft, int spp)
 {
     // get ray id
     const int index = get_global_id(0);
@@ -66,7 +66,8 @@ __kernel void generatePrimaryRays(__global Ray *rayBuffer, __global uint *seeds,
 
     rayBuffer[index] = ray;
     seeds[index] = seed;
-    pixels[index] = (float4)(1);
+    Ts[index] = (float4)(1);
+    Es[index] = (float4)(0);
 }
 
 __kernel void clearAccumulator(__global float4 *accumulator)

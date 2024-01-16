@@ -295,7 +295,7 @@ bool isOccludedTLAS(ShadowRay *ray, TLASNode *tlasNodes, BLAS *blases, BVH *bvhe
     return false;
 }
 
-__kernel void connect(__global ShadowRay *rayBuffer, __global float4 *pixels, __global Tri *triBuffer,
+__kernel void connect(__global float4 *Ts, __global float4 *Es, __global ShadowRay *rayBuffer, __global Tri *triBuffer,
                       __global uint *triIdxBuffer, __global BVHNode *bvhNodes, __global BVH *bvhes,
                       __global BLAS *blases, __global TLASNode *tlasNodes, __global MeshInstance *meshInstances,
                       __global Light *lights, uint lightCount)
@@ -322,5 +322,5 @@ __kernel void connect(__global ShadowRay *rayBuffer, __global float4 *pixels, __
         return;
     }
 
-    pixels[ray.pixelIdx] += (float4)(ray.E.x, ray.E.y, ray.E.z, 0);
+    Es[ray.pixelIdx] += Ts[ray.pixelIdx] * (float4)(ray.E.x, ray.E.y, ray.E.z, 0);
 }

@@ -21,18 +21,18 @@ float4 gammaCorrection(float4 v)
     return (float4)(pow(v.x, INVGAMMA), pow(v.y, INVGAMMA), pow(v.z, INVGAMMA), 0);
 }
 
-__kernel void finalize(__global uint *finalPixels, __global float4 *accumulator, __global float4 *pixels, float scale,
+__kernel void finalize(__global uint *finalPixels, __global float4 *accumulator, __global float4 *Es, float scale,
                        uint isDebugging)
 {
     const int index = get_global_id(0);
 
     if (isDebugging)
     {
-        finalPixels[index] = RGB32FtoRGB8(pixels[index]);
+        finalPixels[index] = RGB32FtoRGB8(Es[index]);
         return;
     }
 
-    accumulator[index] += pixels[index];
+    accumulator[index] += Es[index];
     float4 finalColor = accumulator[index] * scale;
     finalColor = gammaCorrection(finalColor);
     finalPixels[index] = RGB32FtoRGB8(finalColor);

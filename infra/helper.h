@@ -216,6 +216,11 @@ float GeometrySmith(float NdotV, float NdotL, float roughness)
     return G1_GGX_Schlick(NdotL, roughness) * G1_GGX_Schlick(NdotV, roughness);
 }
 
+float SurvivalProb(float3 color)
+{
+    return clamp(max(color.x, max(color.y, color.z)), 0.1, 0.9);
+}
+
 float3 mix(float3 x, float3 y, float weight)
 {
     return x * (1.0f - weight) + y * weight;
