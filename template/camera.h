@@ -34,7 +34,7 @@ class Camera
         float3 fp = camPos + focalDistance * dir;
 
         float3 randomPoint = UniformRandomPointDisk();
-        float3 origin = camPos + randomPoint;
+        float3 origin = camPos + randomPoint * aparture;
         return Ray(origin, normalize(fp - origin));
     }
     bool HandleInput(const float t)
@@ -112,6 +112,7 @@ class Camera
     float3 topLeft, topRight, bottomLeft;
     float targetDistance = 2;
     float focalDistance = 2;
+    float aparture = 1;
     float moveSpeed = 5;
     float turnSpeed = 5;
 };
