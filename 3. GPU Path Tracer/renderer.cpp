@@ -111,60 +111,24 @@ void Renderer::Tick(float deltaTime)
     }
     else
     {
-        extensionCounter = 0;
-        extensionCounterBuffer->CopyToDevice(true);
+        extensionCounter = SCRWIDTH * SCRHEIGHT;
         shadowrayCounter = 0;
+        extensionCounterBuffer->CopyToDevice(true);
         shadowrayCounterBuffer->CopyToDevice(true);
-        kernelShade->SetArguments(pixelBuffer, primaryRayBuffer, seedBuffer, sceneBuffer->skydomeBuffer,
-                                  (int)sceneBuffer->skydomeTexture.width, (int)sceneBuffer->skydomeTexture.height,
-                                  sceneBuffer->floorBuffer, sceneBuffer->triExBuffer, sceneBuffer->blasBuffer,
-                                  sceneBuffer->materialBuffer, sceneBuffer->texturePixelBuffer,
-                                  sceneBuffer->textureBuffer, sceneBuffer->lightBuffer, (int)sceneBuffer->lightCount,
-                                  extensionRayBuffer, shadowrayBuffer, extensionCounterBuffer, shadowrayCounterBuffer,
-                                  (int)0);
-        kernelShade->Run(SCRWIDTH * SCRHEIGHT);
 
-        extensionCounterBuffer->CopyFromDevice(true);
-        shadowrayCounterBuffer->CopyFromDevice(true);
-        m_extensionRayCount = extensionCounter;
-        m_shadowRayCount = shadowrayCounter;
-
-        SwitchPrimaryRayBuffer();
-
-        int depth = 1;
+        int depth = 0;
         // run extension rays and shadow rays
         while (depth < 7 && (extensionCounter > 0 || shadowrayCounter > 0))
         {
             int extensionCount = extensionCounter;
-            int shadowCount = shadowrayCounter;
+
             extensionCounter = 0;
-            extensionCounterBuffer->CopyToDevice(true);
             shadowrayCounter = 0;
+            extensionCounterBuffer->CopyToDevice(true);
             shadowrayCounterBuffer->CopyToDevice(true);
 
             primaryRayBuffer = GetPrimaryRayBuffer();
             extensionRayBuffer = GetExtensionRayBuffer();
-
-            SwitchPrimaryRayBuffer();
-
-            if (extensionCount > 0)
-            {
-                kernelExtend->SetArguments(primaryRayBuffer, sceneBuffer->triBuffer, sceneBuffer->triIdxBuffer,
-                                           sceneBuffer->bvhNodeBuffer, sceneBuffer->bvhBuffer, sceneBuffer->blasBuffer,
-                                           sceneBuffer->tlasNodeBuffer, sceneBuffer->meshInsBuffer,
-                                           sceneBuffer->lightBuffer, (int)sceneBuffer->lightCount);
-                kernelExtend->Run(extensionCount);
-            }
-
-            if (shadowCount > 0)
-            {
-                kernelConnect->SetArguments(shadowrayBuffer, pixelBuffer, sceneBuffer->triBuffer,
-                                            sceneBuffer->triIdxBuffer, sceneBuffer->bvhNodeBuffer,
-                                            sceneBuffer->bvhBuffer, sceneBuffer->blasBuffer,
-                                            sceneBuffer->tlasNodeBuffer, sceneBuffer->meshInsBuffer,
-                                            sceneBuffer->lightBuffer, (int)sceneBuffer->lightCount);
-                kernelConnect->Run(shadowCount);
-            }
 
             kernelShade->SetArguments(pixelBuffer, primaryRayBuffer, seedBuffer, sceneBuffer->skydomeBuffer,
                                       (int)sceneBuffer->skydomeTexture.width, (int)sceneBuffer->skydomeTexture.height,
@@ -174,8 +138,32 @@ void Renderer::Tick(float deltaTime)
                                       (int)sceneBuffer->lightCount, extensionRayBuffer, shadowrayBuffer,
                                       extensionCounterBuffer, shadowrayCounterBuffer, (int)depth);
             kernelShade->Run(extensionCount);
+
             extensionCounterBuffer->CopyFromDevice(true);
             shadowrayCounterBuffer->CopyFromDevice(true);
+            m_extensionRayCount = extensionCounter;
+            m_shadowRayCount = shadowrayCounter;
+
+            if (extensionCounter > 0)
+            {
+                kernelExtend->SetArguments(extensionRayBuffer, sceneBuffer->triBuffer, sceneBuffer->triIdxBuffer,
+                                           sceneBuffer->bvhNodeBuffer, sceneBuffer->bvhBuffer, sceneBuffer->blasBuffer,
+                                           sceneBuffer->tlasNodeBuffer, sceneBuffer->meshInsBuffer,
+                                           sceneBuffer->lightBuffer, (int)sceneBuffer->lightCount);
+                kernelExtend->Run(extensionCounter);
+            }
+
+            if (shadowrayCounter > 0)
+            {
+                kernelConnect->SetArguments(shadowrayBuffer, pixelBuffer, sceneBuffer->triBuffer,
+                                            sceneBuffer->triIdxBuffer, sceneBuffer->bvhNodeBuffer,
+                                            sceneBuffer->bvhBuffer, sceneBuffer->blasBuffer,
+                                            sceneBuffer->tlasNodeBuffer, sceneBuffer->meshInsBuffer,
+                                            sceneBuffer->lightBuffer, (int)sceneBuffer->lightCount);
+                kernelConnect->Run(shadowrayCounter);
+            }
+
+            SwitchPrimaryRayBuffer();
             depth++;
         }
     }

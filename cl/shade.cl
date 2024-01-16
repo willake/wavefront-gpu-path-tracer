@@ -314,7 +314,7 @@ Ray handleHandleDielectric(Ray *ray, uint *seed, float3 *I, float3 *N, int pixel
         float a = n1 - n2, b = n1 + n2, R0 = (a * a) / (b * b), c = 1 - cosi;
         Fr = R0 + (1 - R0) * (c * c * c * c * c);
         float3 T = eta * ray->D + ((eta * cosi - native_sqrt(fabs(cost2))) * (*N));
-        Ray t = GenerateRay(*I + T * EPSILON, T, pixelIdx, false);
+        Ray t = GenerateRay(*I + T * EPSILON, T, pixelIdx, true);
         t.inside = !ray->inside;
         if (RandomFloat(seed) > Fr)
             return t;
