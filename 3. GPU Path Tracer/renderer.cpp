@@ -31,7 +31,6 @@ void Renderer::Init()
     seeds = new uint[SCRWIDTH * SCRHEIGHT];
     Ts = new float4[SCRWIDTH * SCRHEIGHT];
     Es = new float4[SCRWIDTH * SCRHEIGHT];
-    // gpuaccumulator = new uint[SCRWIDTH * SCRHEIGHT];
     accumulatorBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(float4), accumulator);
     accumulatorBuffer->CopyToDevice(true);
     screenPixelBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(uint), screen->pixels);
@@ -163,8 +162,6 @@ void Renderer::Tick(float deltaTime)
             depth++;
         }
     }
-    EBuffer->CopyFromDevice(true);
-    //   accumulatorBuffer->CopyFromDevice(true);
 
     float scale = 1.0f / (spp + passes);
     kernelFinalize->SetArguments(screenPixelBuffer, accumulatorBuffer, EBuffer, scale, m_inspectTraversal);
