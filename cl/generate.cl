@@ -20,7 +20,7 @@ uint InitSeed(uint seedBase)
     return WangHash((seedBase + 1) * 17);
 }
 
-float3 UniformRandomPointDisk(uint *seed)
+float2 UniformRandomPointDisk(uint *seed)
 {
     float r0 = RandomFloat(seed);
     float r1 = RandomFloat(seed);
@@ -28,7 +28,7 @@ float3 UniformRandomPointDisk(uint *seed)
     float phi = 2 * PI * r1;
     float x = r * cos(phi);
     float y = r * sin(phi);
-    return (float3)(x, y, 0);
+    return (float2)(x, y);
 }
 
 // Define ray
@@ -67,16 +67,19 @@ __kernel void generatePrimaryRays(__global float4 *Ts, __global float4 *Es, __gl
     // // // initializing a ray
     Ray ray;
     const float3 dir = normalize(P - camPos);
-    float3 fp = camPos + focalDist * dir;
-
-    float3 randomPoint = UniformRandomPointDisk(&seed);
-    float3 origin = camPos + randomPoint * aparture;
 
     if (enableDOF)
     {
         float3 fp = camPos + focalDist * dir;
-        float3 randomPoint = UniformRandomPointDisk(&seed);
-        float3 origin = camPos + randomPoint * aparture;
+
+        // must be a faster way...
+        float3 tmpUp = (float3)(0, 1, 0);
+        float3 right = normalize(cross(tmpUp, dir));
+        float3 up = normalize(cross(dir, right));
+        right = normalize(cross(up, dir));
+
+        float2 randomDiscPoint = UniformRandomPointDisk(&seed);
+        float3 origin = camPos + (-right * randomDiscPoint.x + up * randomDiscPoint.y) * aparture;
         ray.O = origin;
         ray.D = normalize(fp - origin);
     }
