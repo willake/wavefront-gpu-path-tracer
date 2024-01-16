@@ -137,11 +137,12 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth, bool lastSpecular)
     }
     else // diffuse surface
     {
-        float3 R = diffusereflection(N, seed);
+        float3 R = cosineweighteddiffusereflection(N, seed);
         float3 brdf = albedo * INVPI;
+        float PDF = dot(N, R) / PI;
         Ray r(I + R * EPSILON, R);
         float3 Ld = NEE(seed, I, N, brdf);
-        return medium_scale * brdf * 2 * PI * dot(R, N) * Sample(r, seed, depth + 1) + Ld;
+        return medium_scale * brdf * dot(R, N) * Sample(r, seed, depth + 1) / PDF + Ld;
     }
 }
 
