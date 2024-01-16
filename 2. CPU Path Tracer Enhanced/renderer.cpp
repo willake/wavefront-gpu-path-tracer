@@ -266,5 +266,5 @@ void Renderer::UI()
     ImGui::Text("Camera Pos: (%.2f, %.2f, %.2f)", camera.camPos.x, camera.camPos.y, camera.camPos.z);
     ImGui::Text("Camera Target: (%.2f, %.2f, %.2f)", camera.camTarget.x, camera.camTarget.y, camera.camTarget.z);
     // reset accumulator if changes have been made
-    if (changed) ClearAccumulator();
+    if (changed) { ClearAccumulator(); }
 }
