@@ -31,11 +31,11 @@ inline float4 getTraverseCountColor(int traversed, int peak)
     return (float4)(r, g, b, 0);
 }
 
-__kernel void renderTraversal(__global float4 *pixels, __global Ray *rayBuffer)
+__kernel void renderTraversal(__global float4 *Es, __global Ray *rayBuffer)
 {
     const int index = get_global_id(0);
 
     Ray ray = rayBuffer[index];
 
-    pixels[index] = getTraverseCountColor(ray.traversed, 100);
+    Es[index] = getTraverseCountColor(ray.traversed, 100);
 }
