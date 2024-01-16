@@ -124,7 +124,7 @@ void Renderer::Tick(float deltaTime)
         // run extension rays and shadow rays
         while (extensionCounter > 0)
         {
-            int extensionCount = extensionCounter;
+            int rayCount = extensionCounter;
 
             extensionCounter = 0;
             shadowrayCounter = 0;
@@ -138,7 +138,7 @@ void Renderer::Tick(float deltaTime)
                                        sceneBuffer->bvhNodeBuffer, sceneBuffer->bvhBuffer, sceneBuffer->blasBuffer,
                                        sceneBuffer->tlasNodeBuffer, sceneBuffer->meshInsBuffer,
                                        sceneBuffer->lightBuffer, (int)sceneBuffer->lightCount);
-            kernelExtend->Run(extensionCount);
+            kernelExtend->Run(rayCount);
 
             kernelShade->SetArguments(TBuffer, EBuffer, primaryRayBuffer, seedBuffer, sceneBuffer->skydomeBuffer,
                                       (int)sceneBuffer->skydomeTexture.width, (int)sceneBuffer->skydomeTexture.height,
@@ -147,7 +147,7 @@ void Renderer::Tick(float deltaTime)
                                       sceneBuffer->textureBuffer, sceneBuffer->lightBuffer,
                                       (int)sceneBuffer->lightCount, extensionRayBuffer, shadowrayBuffer,
                                       extensionCounterBuffer, shadowrayCounterBuffer, (int)depth);
-            kernelShade->Run(extensionCount);
+            kernelShade->Run(rayCount);
 
             extensionCounterBuffer->CopyFromDevice(true);
             shadowrayCounterBuffer->CopyFromDevice(true);
