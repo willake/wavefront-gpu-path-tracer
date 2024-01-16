@@ -1,5 +1,7 @@
 #pragma once
 
+#include "helper.h"
+
 // default screen resolution
 #define SCRWIDTH 1024
 #define SCRHEIGHT 640
@@ -28,7 +30,12 @@ class Camera
         const float u = (float)x * (1.0f / SCRWIDTH);
         const float v = (float)y * (1.0f / SCRHEIGHT);
         const float3 P = topLeft + u * (topRight - topLeft) + v * (bottomLeft - topLeft);
-        return Ray(camPos, normalize(P - camPos));
+        float3 dir = normalize(P - camPos);
+        float3 fp = camPos + focalDistance * dir;
+
+        float3 randomPoint = UniformRandomPointDisk();
+        float3 origin = camPos + randomPoint;
+        return Ray(origin, normalize(fp - origin));
     }
     bool HandleInput(const float t)
     {
@@ -104,6 +111,7 @@ class Camera
     float3 camPos, camTarget;
     float3 topLeft, topRight, bottomLeft;
     float targetDistance = 2;
+    float focalDistance = 2;
     float moveSpeed = 5;
     float turnSpeed = 5;
 };
