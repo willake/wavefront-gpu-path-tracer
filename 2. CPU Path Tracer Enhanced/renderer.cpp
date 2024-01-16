@@ -17,7 +17,20 @@ void Renderer::ClearAccumulator()
     memset(accumulator, 0, SCRWIDTH * SCRHEIGHT * 16);
 }
 
-float3 Renderer::DirectIllumination(uint &seed, float3 I, float3 N, float3 brdf)
+float3 Renderer::CalculateMicrofacetBRDF(float3 I, float3 V, float3 N, float3 L, float roughness, float3 k)
+{
+    float3 H = normalize(V + L); // H = normalize(V + L);
+    float NdotH = dot(N, H), NdotV = dot(N, V), NdotL = dot(N, L), VdotH = dot(V, H);
+    float D = (roughness + 2) / (2 * PI) * powf(NdotH, roughness);
+    float G1 = 2 * NdotH * NdotV / VdotH;
+    float G2 = 2 * NdotH * NdotL / VdotH;
+    float G = min(1.0f, min(G1, G2));
+    float3 F = k + (1 - k) * powf(1 - dot(L, H), 5);
+
+    return F * G * D / 4.0f * NdotL * NdotV;
+}
+
+float3 Renderer::NEE(uint &seed, float3 I, float3 N, float3 brdf)
 {
     uint lightIdx;
     float3 randomLightPos = scene.RandomPointOnLight(seed, lightIdx);
@@ -64,7 +77,7 @@ float3 Renderer::HandleDielectric(const Ray &ray, uint &seed, const float3 &I, c
         float3 T = eta * ray.D + ((eta * cosi - sqrtf(fabs(cost2))) * N);
         Ray t(I + T * EPSILON, T);
         t.inside = !ray.inside;
-        if (RandomFloat(seed) > Fr) return Sample(t, seed, depth + 1);
+        if (RandomFloat(seed) > Fr) return Sample(t, seed, depth + 1, true);
     }
     return Sample(r, seed, depth + 1, true);
 }
@@ -102,10 +115,8 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth, bool lastSpecular)
     }
 
     // Shade
-    float3 out_radiance(0);
     float reflectivity = material->reflectivity;
     float refractivity = material->refractivity;
-    // float diffuseness = 1 - (reflectivity + refractivity);
 
     float3 medium_scale(1);
     if (ray.inside)
@@ -126,11 +137,12 @@ float3 Renderer::Sample(Ray &ray, uint &seed, int depth, bool lastSpecular)
     }
     else // diffuse surface
     {
-        float3 R = diffusereflection(N, seed);
+        float3 R = cosineweighteddiffusereflection(N, seed);
         float3 brdf = albedo * INVPI;
+        float PDF = dot(N, R) / PI;
         Ray r(I + R * EPSILON, R);
-        float3 Ld = DirectIllumination(seed, I, N, brdf);
-        return medium_scale * brdf * 2 * PI * dot(R, N) * Sample(r, seed, depth + 1) + Ld;
+        float3 Ld = NEE(seed, I, N, brdf);
+        return medium_scale * brdf * dot(R, N) * Sample(r, seed, depth + 1) / PDF + Ld;
     }
 }
 
@@ -157,6 +169,7 @@ void Renderer::ProcessTile(int tx, int ty, float &sum)
                 accumulator[x + y * SCRWIDTH] += float4(
                     Sample(camera.GetPrimaryRay((float)x + RandomFloat(seed), (float)y + RandomFloat(seed)), seed), 0);
             float4 pixel = accumulator[x + y * SCRWIDTH] * scale;
+            pixel = GammaCorrection(pixel); // Gamma correction, highly decrease frame rate
             sum += pixel.x + pixel.y + pixel.z;
             screen->pixels[x + y * SCRWIDTH] = RGBF32_to_RGB8(&pixel);
         }

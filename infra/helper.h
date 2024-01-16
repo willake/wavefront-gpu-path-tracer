@@ -182,5 +182,42 @@ float3 RGB8toRGB32F(uint c)
     return float3(r, g, b);
 }
 
+const float InvGamma = 1.0f / 2.2f;
+
+float4 GammaCorrection(float4 v)
+{
+    return float4(powf(v.x, InvGamma), powf(v.y, InvGamma), powf(v.z, InvGamma), 0);
+}
 const float Deg2Red = (PI * 2) / 360.0f;
+
+float3 FresnelSchlick(float cosTheta, float3 f0)
+{
+    return f0 + (1.0 - f0) * pow(1.0f - cosTheta, 5);
+}
+
+float DistributionGGX(float NdotH, float roughness)
+{
+    float alpha = roughness * roughness;
+    float alpha2 = alpha * alpha;
+    float NdotH2 = NdotH * NdotH;
+    float b = (NdotH2 * (alpha2 - 1.0f) + 1.0f);
+    return alpha2 * INVPI / (b * b);
+}
+
+float G1_GGX_Schlick(float NdotV, float roughness)
+{
+    float alpha = roughness * roughness;
+    float k = alpha / 2.0f;
+    return max(NdotV, 0.001f) / (NdotV * (1.0f - k) + k);
+}
+
+float GeometrySmith(float NdotV, float NdotL, float roughness)
+{
+    return G1_GGX_Schlick(NdotL, roughness) * G1_GGX_Schlick(NdotV, roughness);
+}
+
+float3 mix(float3 x, float3 y, float weight)
+{
+    return x * (1.0f - weight) + y * weight;
+}
 } // namespace Tmpl8

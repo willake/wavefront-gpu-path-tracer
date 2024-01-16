@@ -113,16 +113,15 @@ typedef struct
     int matIdx;
 } HitInfo;
 
-float3 diffusereflection(float3 *N, uint *seed)
+inline float3 cosineweighteddiffusereflection(const float3 *N, uint *seed)
 {
+    // blog.demofox.org/2020/06/06/casual-shadertoy-path-tracing-2-image-improvement-and-glossy-reflections
     float3 R;
     do
     {
         R = (float3)(RandomFloat(seed) * 2 - 1, RandomFloat(seed) * 2 - 1, RandomFloat(seed) * 2 - 1);
     } while (dot(R, R) > 1);
-    if (dot(R, *N) < 0)
-        R *= -1.0f;
-    return normalize(R);
+    return normalize(*N + normalize(R));
 }
 
 uint RGB32FtoRGB8(float3 c)
@@ -425,7 +424,6 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
         return;
     }
 
-    float3 out_radiance = (float3)(0);
     float reflectivity = 0.0f;
     float refractivity = 0.0f;
     float3 absorption = (float3)(0);
@@ -464,15 +462,17 @@ __kernel void shade(__global float4 *pixels, __global Ray *rayBuffer, __global u
     }
     else // diffuse surface
     {
-        float3 R = diffusereflection(&N, &seed);
-        // compute diffuse
-        pixels[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
-                            (float4)(brdf.x, brdf.y, brdf.z, 0) * 2 * M_PI_F * dot(R, N);
+        float3 R = cosineweighteddiffusereflection(&N, &seed);
+        float PDF = dot(N, R) / PI;
         // generate extension ray
         uint ei = atomic_inc(extensionrayCounter);
         extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, pixelIdx, false);
 
         uint si = atomic_inc(shadowrayCounter);
         shadowrayBuffer[si] = directionIllumination(lights, lightCount, &seed, I, N, brdf, pixelIdx);
+
+        // compute
+        pixels[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
+                            (float4)(brdf.x, brdf.y, brdf.z, 0) * dot(R, N) / PDF;
     }
 }

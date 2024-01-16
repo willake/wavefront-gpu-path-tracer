@@ -95,6 +95,6 @@ class Renderer : public TheApp
     Buffer *pixelBuffer; // final pixels for a tick
     Buffer *screenPixelBuffer;
     SceneBuffer *sceneBuffer;
-    string scenePath = "../assets/scenes/inside_scene.xml";
+    string scenePath = "../assets/scenes/glass_scene.xml";
 };
 } // namespace Tmpl8
