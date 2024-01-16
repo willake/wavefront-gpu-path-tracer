@@ -29,14 +29,18 @@ void Renderer::Init()
     kernelDebugRenderTraversal = new Kernel("../cl/debug.cl", "renderTraversal");
 
     seeds = new uint[SCRWIDTH * SCRHEIGHT];
-    pixels = new float4[SCRWIDTH * SCRHEIGHT];
+    Ts = new float4[SCRWIDTH * SCRHEIGHT];
+    Es = new float4[SCRWIDTH * SCRHEIGHT];
     // gpuaccumulator = new uint[SCRWIDTH * SCRHEIGHT];
     accumulatorBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(float4), accumulator);
     accumulatorBuffer->CopyToDevice(true);
     screenPixelBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(uint), screen->pixels);
     screenPixelBuffer->CopyToDevice(true);
     seedBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(uint), seeds);
-    pixelBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(float4), pixels);
+    TBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(float4), Ts);
+    EBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(float4), Es);
+    TBuffer->CopyToDevice();
+    EBuffer->CopyToDevice();
 
     // init extension rays
     rays1 = new Ray[SCRWIDTH * SCRHEIGHT];
@@ -92,11 +96,10 @@ void Renderer::Tick(float deltaTime)
     // primary ray execution
     Buffer *primaryRayBuffer = GetPrimaryRayBuffer();
     Buffer *extensionRayBuffer = GetExtensionRayBuffer();
-    kernelGeneratePrimaryRays->SetArguments(primaryRayBuffer, seedBuffer, pixelBuffer, SCRWIDTH, SCRHEIGHT,
+    kernelGeneratePrimaryRays->SetArguments(TBuffer, EBuffer, primaryRayBuffer, seedBuffer, SCRWIDTH, SCRHEIGHT,
                                             camera.camPos, camera.topLeft, camera.topRight, camera.bottomLeft, spp);
     rayBuffer1->CopyToDevice(true);
     seedBuffer->CopyToDevice(true);
-    pixelBuffer->CopyToDevice(true);
     kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
     kernelExtend->SetArguments(primaryRayBuffer, sceneBuffer->triBuffer, sceneBuffer->triIdxBuffer,
                                sceneBuffer->bvhNodeBuffer, sceneBuffer->bvhBuffer, sceneBuffer->blasBuffer,
@@ -106,7 +109,7 @@ void Renderer::Tick(float deltaTime)
 
     if (m_inspectTraversal)
     {
-        kernelDebugRenderTraversal->SetArguments(pixelBuffer, primaryRayBuffer);
+        kernelDebugRenderTraversal->SetArguments(EBuffer, primaryRayBuffer);
         kernelDebugRenderTraversal->Run(SCRWIDTH * SCRHEIGHT);
     }
     else
@@ -130,7 +133,7 @@ void Renderer::Tick(float deltaTime)
             primaryRayBuffer = GetPrimaryRayBuffer();
             extensionRayBuffer = GetExtensionRayBuffer();
 
-            kernelShade->SetArguments(pixelBuffer, primaryRayBuffer, seedBuffer, sceneBuffer->skydomeBuffer,
+            kernelShade->SetArguments(TBuffer, EBuffer, primaryRayBuffer, seedBuffer, sceneBuffer->skydomeBuffer,
                                       (int)sceneBuffer->skydomeTexture.width, (int)sceneBuffer->skydomeTexture.height,
                                       sceneBuffer->floorBuffer, sceneBuffer->triExBuffer, sceneBuffer->blasBuffer,
                                       sceneBuffer->materialBuffer, sceneBuffer->texturePixelBuffer,
@@ -155,7 +158,7 @@ void Renderer::Tick(float deltaTime)
 
             if (shadowrayCounter > 0)
             {
-                kernelConnect->SetArguments(shadowrayBuffer, pixelBuffer, sceneBuffer->triBuffer,
+                kernelConnect->SetArguments(TBuffer, EBuffer, shadowrayBuffer, sceneBuffer->triBuffer,
                                             sceneBuffer->triIdxBuffer, sceneBuffer->bvhNodeBuffer,
                                             sceneBuffer->bvhBuffer, sceneBuffer->blasBuffer,
                                             sceneBuffer->tlasNodeBuffer, sceneBuffer->meshInsBuffer,
@@ -163,17 +166,15 @@ void Renderer::Tick(float deltaTime)
                 kernelConnect->Run(shadowrayCounter);
             }
 
-            printf("extension count: %d", extensionCounter);
-
             SwitchPrimaryRayBuffer();
             depth++;
         }
     }
-    pixelBuffer->CopyFromDevice(true);
+    EBuffer->CopyFromDevice(true);
     //   accumulatorBuffer->CopyFromDevice(true);
 
     float scale = 1.0f / (spp + passes);
-    kernelFinalize->SetArguments(screenPixelBuffer, accumulatorBuffer, pixelBuffer, scale, m_inspectTraversal);
+    kernelFinalize->SetArguments(screenPixelBuffer, accumulatorBuffer, EBuffer, scale, m_inspectTraversal);
     kernelFinalize->Run(SCRWIDTH * SCRHEIGHT);
     accumulatorBuffer->CopyFromDevice(true);
     screenPixelBuffer->CopyFromDevice(true);

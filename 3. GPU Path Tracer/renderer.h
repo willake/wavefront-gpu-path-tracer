@@ -78,7 +78,8 @@ class Renderer : public TheApp
     Kernel *kernelClearAccumulator;
     Kernel *kernelDebugRenderTraversal; // debug
 
-    float4 *pixels;
+    float4 *Ts;
+    float4 *Es;
     Ray *rays1;
     Ray *rays2; // have 2 ray buffers for switching, preventing writing the same buffer
     bool useRays1AsPrimary = true;
@@ -92,8 +93,10 @@ class Renderer : public TheApp
     Buffer *shadowrayCounterBuffer;
     Buffer *accumulatorBuffer;
     Buffer *seedBuffer;
-    Buffer *pixelBuffer; // final pixels for a tick
     Buffer *screenPixelBuffer;
+    Buffer *TBuffer;
+    Buffer *EBuffer;
+
     SceneBuffer *sceneBuffer;
     string scenePath = "../assets/scenes/glass_scene.xml";
 };
