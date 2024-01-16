@@ -96,6 +96,7 @@ class Renderer : public TheApp
     Buffer *screenPixelBuffer;
     Buffer *TBuffer;
     Buffer *EBuffer;
+    Buffer *renderStateBuffer;
 
     SceneBuffer *sceneBuffer;
     string scenePath = "../assets/scenes/glass_scene.xml";

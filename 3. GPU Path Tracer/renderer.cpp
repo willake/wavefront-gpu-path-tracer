@@ -37,10 +37,11 @@ void Renderer::Init()
     screenPixelBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(uint), screen->pixels);
     screenPixelBuffer->CopyToDevice(true);
     seedBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(uint), seeds);
+    seedBuffer->CopyToDevice(true);
     TBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(float4), Ts);
     EBuffer = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(float4), Es);
-    TBuffer->CopyToDevice();
-    EBuffer->CopyToDevice();
+    TBuffer->CopyToDevice(true);
+    EBuffer->CopyToDevice(true);
 
     // init extension rays
     rays1 = new Ray[SCRWIDTH * SCRHEIGHT];
@@ -48,6 +49,8 @@ void Renderer::Init()
     rays2 = new Ray[SCRWIDTH * SCRHEIGHT];
     rayBuffer2 = new Buffer(SCRWIDTH * SCRHEIGHT * sizeof(Ray), rays2);
     extensionCounterBuffer = new Buffer(sizeof(uint), &extensionCounter);
+    rayBuffer1->CopyToDevice(true);
+    rayBuffer2->CopyToDevice(true);
 
     // init shadow rays
     shadowrays = new ShadowRay[SCRWIDTH * SCRHEIGHT];
@@ -98,8 +101,6 @@ void Renderer::Tick(float deltaTime)
     Buffer *extensionRayBuffer = GetExtensionRayBuffer();
     kernelGeneratePrimaryRays->SetArguments(TBuffer, EBuffer, primaryRayBuffer, seedBuffer, SCRWIDTH, SCRHEIGHT,
                                             camera.camPos, camera.topLeft, camera.topRight, camera.bottomLeft, spp);
-    rayBuffer1->CopyToDevice(true);
-    seedBuffer->CopyToDevice(true);
     kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
 
     if (m_inspectTraversal)
@@ -116,9 +117,6 @@ void Renderer::Tick(float deltaTime)
     else
     {
         extensionCounter = SCRWIDTH * SCRHEIGHT;
-        shadowrayCounter = 0;
-        extensionCounterBuffer->CopyToDevice(true);
-        shadowrayCounterBuffer->CopyToDevice(true);
 
         int depth = 0;
         // run extension rays and shadow rays
@@ -171,17 +169,7 @@ void Renderer::Tick(float deltaTime)
     float scale = 1.0f / (spp + passes);
     kernelFinalize->SetArguments(screenPixelBuffer, accumulatorBuffer, EBuffer, scale, m_inspectTraversal);
     kernelFinalize->Run(SCRWIDTH * SCRHEIGHT);
-    accumulatorBuffer->CopyFromDevice(true);
     screenPixelBuffer->CopyFromDevice(true);
-    // for (int y = 0; y < SCRHEIGHT; y++)
-    //     for (int x = 0; x < SCRWIDTH; x++)
-    //     {
-    //         accumulator[x + y * SCRWIDTH] += pixels[x + y * SCRWIDTH];
-    //         float4 pixel = accumulator[x + y * SCRWIDTH] * scale;
-    //         pixel = float4(pow(pixel.x, 1.0f / 2.2f), pow(pixel.y, 1.0f / 2.2f), pow(pixel.z, 1.0f / 2.2f),
-    //                        0); // gamma correction
-    //         screen->pixels[x + y * SCRWIDTH] = RGBF32_to_RGB8(&pixel);
-    //     }
 
     //// performance report - running average - ms, MRays/s
     m_avg = (1 - m_alpha) * m_avg + m_alpha * t.elapsed() * 1000;
