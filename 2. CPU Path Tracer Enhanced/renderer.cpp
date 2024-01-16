@@ -18,20 +18,31 @@ void Renderer::ClearAccumulator()
     spp = 1;
 }
 
-float3 Renderer::CalculateMicrofacetBRDF(float3 I, float3 V, float3 N, float3 L, float roughness, float3 k)
+float3 Renderer::CalculateMicrofacetBRDF(float3 L, float3 V, float3 N, float metallic, float roughness,
+                                         float3 baseColor, float reflectance)
 {
     float3 H = normalize(V + L); // H = normalize(V + L);
     float NdotH = dot(N, H), NdotV = dot(N, V), NdotL = dot(N, L), VdotH = dot(V, H);
-    float D = (roughness + 2) / (2 * PI) * powf(NdotH, roughness);
-    float G1 = 2 * NdotH * NdotV / VdotH;
-    float G2 = 2 * NdotH * NdotL / VdotH;
-    float G = min(1.0f, min(G1, G2));
-    float3 F = k + (1 - k) * powf(1 - dot(L, H), 5);
 
-    return F * G * D / 4.0f * NdotL * NdotV;
+    float3 f0 = float3(0.16 * (reflectance * reflectance));
+    f0 = mix(f0, baseColor, metallic);
+
+    float3 F = FresnelSchlick(VdotH, f0);
+    float D = DistributionGGX(NdotH, roughness);
+    float G = GeometrySmith(NdotV, NdotL, roughness);
+
+    float3 spec = F * G * D / 4.0f * NdotL * NdotV;
+
+    baseColor *= float3(1.0) - F;
+
+    baseColor *= (1.0 - metallic);
+
+    float3 diffuse = baseColor * INVPI;
+
+    return diffuse + spec;
 }
 
-void Renderer::NEE(uint &seed, const float3 &I, const float3 &N, float3 &brdf, float3 &E, float3 &T)
+void Renderer::NEE(uint &seed, const float3 &I, const float3 &V, const float3 &N, float3 &albedo, float3 &E, float3 &T)
 {
     uint lightIdx;
     float3 randomLightPos = scene.RandomPointOnLight(seed, lightIdx);
@@ -50,7 +61,8 @@ void Renderer::NEE(uint &seed, const float3 &I, const float3 &N, float3 &brdf, f
         if (!scene.IsOccluded(shadowRay))
         {
             float solidAngle = (nldotl * A) / (dist * dist);
-            E += T * light.color * solidAngle * brdf * ndotl * scene.lightCount;
+            float3 mBRDF = CalculateMicrofacetBRDF(L, V, N, 0.1f, 1, albedo, 0);
+            E += T * light.color * solidAngle * mBRDF * ndotl * scene.lightCount;
         }
     }
 }
@@ -130,7 +142,7 @@ float3 Renderer::Sample(Ray &ray, uint &seed)
         }
 
         // might modify E
-        NEE(seed, I, N, brdf, E, T);
+        NEE(seed, I, -ray.D, N, albedo, E, T);
 
         float p = SurvivalProb(T);
 
@@ -154,8 +166,9 @@ float3 Renderer::Sample(Ray &ray, uint &seed)
         {
             float3 R = cosineweighteddiffusereflection(N, seed);
             float PDF = dot(N, R) / PI;
+            float3 mBRDF = CalculateMicrofacetBRDF(R, -ray.D, N, 0.1f, 1, albedo, 0);
             ray = Ray(I + R * EPSILON, R);
-            T *= medium_scale * brdf * dot(R, N) / PDF / p;
+            T *= medium_scale * mBRDF * dot(R, N) / PDF / p;
         }
         depth++;
     }
