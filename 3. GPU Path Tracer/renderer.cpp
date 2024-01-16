@@ -99,7 +99,8 @@ void Renderer::Tick(float deltaTime)
     Buffer *primaryRayBuffer = GetPrimaryRayBuffer();
     Buffer *extensionRayBuffer = GetExtensionRayBuffer();
     kernelGeneratePrimaryRays->SetArguments(TBuffer, EBuffer, primaryRayBuffer, seedBuffer, SCRWIDTH, SCRHEIGHT,
-                                            camera.camPos, camera.topLeft, camera.topRight, camera.bottomLeft, spp);
+                                            camera.camPos, camera.topLeft, camera.topRight, camera.bottomLeft, spp,
+                                            camera.enableDOF, camera.focalDistance, camera.aparture);
     kernelGeneratePrimaryRays->Run(SCRWIDTH * SCRHEIGHT);
 
     if (m_inspectTraversal)
@@ -186,6 +187,9 @@ void Renderer::UI()
     bool changed = ImGui::Checkbox("Animate scene", &animating);
     changed |= ImGui::Checkbox("Inspect Traversal", &m_inspectTraversal);
     changed |= ImGui::SliderInt("spp", &passes, 1, 4, "%i");
+    changed |= ImGui::Checkbox("DOF", &camera.enableDOF);
+    changed |= ImGui::SliderFloat("Focal distance", &camera.focalDistance, 1.0f, 10.0f, "%.2f");
+    changed |= ImGui::SliderFloat("Aparture size", &camera.aparture, 0.1f, 10.0f, "%.2f");
     ImGui::SliderFloat("Camera move speed", &camera.moveSpeed, 1.0f, 10.0f, "%.2f");
     ImGui::SliderFloat("Camera turn speed", &camera.turnSpeed, 1.0f, 10.0f, "%.2f");
     // camera position field

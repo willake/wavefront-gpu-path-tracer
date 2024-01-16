@@ -31,11 +31,15 @@ class Camera
         const float v = (float)y * (1.0f / SCRHEIGHT);
         const float3 P = topLeft + u * (topRight - topLeft) + v * (bottomLeft - topLeft);
         float3 dir = normalize(P - camPos);
-        float3 fp = camPos + focalDistance * dir;
 
-        float3 randomPoint = UniformRandomPointDisk();
-        float3 origin = camPos + randomPoint * aparture;
-        return Ray(origin, normalize(fp - origin));
+        if (enableDOF)
+        {
+            float3 fp = camPos + focalDistance * dir;
+            float3 randomPoint = UniformRandomPointDisk();
+            float3 origin = camPos + randomPoint * aparture;
+            return Ray(origin, normalize(fp - origin));
+        }
+        return Ray(camPos, dir);
     }
     bool HandleInput(const float t)
     {
@@ -110,6 +114,7 @@ class Camera
     float aspect = (float)SCRWIDTH / (float)SCRHEIGHT;
     float3 camPos, camTarget;
     float3 topLeft, topRight, bottomLeft;
+    bool enableDOF = false;
     float targetDistance = 2;
     float focalDistance = 2;
     float aparture = 1;

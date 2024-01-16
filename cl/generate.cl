@@ -1,3 +1,4 @@
+#define PI 3.14159265358979323846264f
 // random numbers: seed using WangHash((threadidx+1)*17), then use RandomInt / RandomFloat
 uint WangHash(uint s)
 {
@@ -19,6 +20,17 @@ uint InitSeed(uint seedBase)
     return WangHash((seedBase + 1) * 17);
 }
 
+float3 UniformRandomPointDisk(uint *seed)
+{
+    float r0 = RandomFloat(seed);
+    float r1 = RandomFloat(seed);
+    float r = 0.01 * native_sqrt(r0);
+    float phi = 2 * PI * r1;
+    float x = r * cos(phi);
+    float y = r * sin(phi);
+    return (float3)(x, y, 0);
+}
+
 // Define ray
 // __attribute__((aligned(64)))
 typedef struct __attribute__((aligned(128)))
@@ -37,7 +49,8 @@ typedef struct __attribute__((aligned(128)))
 
 __kernel void generatePrimaryRays(__global float4 *Ts, __global float4 *Es, __global Ray *rayBuffer,
                                   __global uint *seeds, int width, int height, float3 camPos, float3 topLeft,
-                                  float3 topRight, float3 bottomLeft, int spp)
+                                  float3 topRight, float3 bottomLeft, int spp, uint enableDOF, float focalDist,
+                                  float aparture)
 {
     // get ray id
     const int index = get_global_id(0);
@@ -53,9 +66,25 @@ __kernel void generatePrimaryRays(__global float4 *Ts, __global float4 *Es, __gl
 
     // // // initializing a ray
     Ray ray;
-    const float3 dir = P - camPos;
-    ray.O = camPos;
-    ray.D = normalize(dir);
+    const float3 dir = normalize(P - camPos);
+    float3 fp = camPos + focalDist * dir;
+
+    float3 randomPoint = UniformRandomPointDisk(&seed);
+    float3 origin = camPos + randomPoint * aparture;
+
+    if (enableDOF)
+    {
+        float3 fp = camPos + focalDist * dir;
+        float3 randomPoint = UniformRandomPointDisk(&seed);
+        float3 origin = camPos + randomPoint * aparture;
+        ray.O = origin;
+        ray.D = normalize(fp - origin);
+    }
+    else
+    {
+        ray.O = camPos;
+        ray.D = dir;
+    }
     ray.rD = (float3)(1.0f / ray.D.x, 1.0f / ray.D.y, 1.0f / ray.D.z);
     ray.t = 1e34f;
     ray.barycentric = (float2)(0.0f, 0.0f);

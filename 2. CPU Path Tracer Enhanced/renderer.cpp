@@ -243,6 +243,7 @@ void Renderer::UI()
     bool changed = ImGui::Checkbox("Animate scene", &animating);
     ImGui::Checkbox("Inspect Traversal", &m_inspectTraversal);
     changed |= ImGui::SliderInt("spp", &passes, 1, 4, "%i");
+    changed |= ImGui::Checkbox("DOF", &camera.enableDOF);
     changed |= ImGui::SliderFloat("Focal distance", &camera.focalDistance, 1.0f, 10.0f, "%.2f");
     changed |= ImGui::SliderFloat("Aparture size", &camera.aparture, 0.1f, 10.0f, "%.2f");
     ImGui::SliderFloat("Camera move speed", &camera.moveSpeed, 1.0f, 10.0f, "%.2f");
