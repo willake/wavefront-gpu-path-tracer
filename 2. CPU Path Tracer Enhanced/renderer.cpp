@@ -133,7 +133,7 @@ float3 Renderer::Sample(Ray &ray, uint &seed)
 
         float p = SurvivalProb(T);
 
-        if (depth > 1 && p < RandomFloat()) break;
+        if (depth > 1 && p < RandomFloat(seed)) break;
 
         // choose a type of transport
         float r = RandomFloat(seed);

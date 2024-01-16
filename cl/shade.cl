@@ -452,7 +452,9 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
 
     float p = SurvivalProb(Ts[pixelIdx]);
 
-    if (depth > 7)
+    seeds[pixelIdx] = seed;
+
+    if (depth > 1 && p < RandomFloat(&seed))
         return;
 
     float r = RandomFloat(&seed);
@@ -463,7 +465,7 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
         extensionrayBuffer[ei] = handleMirror(&ray, &I, &N, pixelIdx);
 
         Ts[pixelIdx] *=
-            (float4)(albedo.x, albedo.y, albedo.z, 0) * (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0);
+            (float4)(albedo.x, albedo.y, albedo.z, 0) * (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) / p;
     }
     else if (r < reflectivity + refractivity) // handle dielectrics
     {
@@ -472,7 +474,7 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
         extensionrayBuffer[ei] = handleHandleDielectric(&ray, &seed, &I, &N, pixelIdx);
 
         Ts[pixelIdx] *=
-            (float4)(albedo.x, albedo.y, albedo.z, 0) * (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0);
+            (float4)(albedo.x, albedo.y, albedo.z, 0) * (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) / p;
     }
     else // diffuse surface
     {
@@ -484,6 +486,8 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
 
         // compute
         Ts[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
-                        (float4)(brdf.x, brdf.y, brdf.z, 0) * dot(R, N) / PDF;
+                        (float4)(brdf.x, brdf.y, brdf.z, 0) * dot(R, N) / PDF / p;
     }
+
+    seeds[pixelIdx] = seed;
 }
