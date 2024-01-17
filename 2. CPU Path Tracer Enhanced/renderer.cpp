@@ -18,31 +18,8 @@ void Renderer::ClearAccumulator()
     spp = 1;
 }
 
-float3 Renderer::CalculateMicrofacetBRDF(float3 L, float3 V, float3 N, float metallic, float roughness,
-                                         float3 baseColor, float reflectance)
-{
-    float3 H = normalize(V + L); // H = normalize(V + L);
-    float NdotH = dot(N, H), NdotV = dot(N, V), NdotL = dot(N, L), VdotH = dot(V, H);
-
-    float3 f0 = float3(0.16 * (reflectance * reflectance));
-    f0 = mix(f0, baseColor, metallic);
-
-    float3 F = FresnelSchlick(VdotH, f0);
-    float D = DistributionGGX(NdotH, roughness);
-    float G = GeometrySmith(NdotV, NdotL, roughness);
-
-    float3 spec = F * G * D / 4.0f * NdotL * NdotV;
-
-    baseColor *= float3(1.0) - F;
-
-    baseColor *= (1.0 - metallic);
-
-    float3 diffuse = baseColor * INVPI;
-
-    return diffuse + spec;
-}
-
-void Renderer::NEE(uint &seed, const float3 &I, const float3 &V, const float3 &N, float3 &albedo, float3 &E, float3 &T)
+void Renderer::NEE(uint &seed, const float3 &I, const float3 &V, const float3 &N, Material &material, float3 albedo,
+                   float3 &E, float3 &T)
 {
     uint lightIdx;
     float3 randomLightPos = scene.RandomPointOnLight(seed, lightIdx);
@@ -61,8 +38,8 @@ void Renderer::NEE(uint &seed, const float3 &I, const float3 &V, const float3 &N
         if (!scene.IsOccluded(shadowRay))
         {
             float solidAngle = (nldotl * A) / (dist * dist);
-            float3 mBRDF = CalculateMicrofacetBRDF(L, V, N, 0.1f, 1, albedo, 0);
-            E += T * light.color * solidAngle * mBRDF * ndotl * scene.lightCount;
+            float3 brdf = material.Evaluate(L, V, N, albedo);
+            E += T * light.color * solidAngle * brdf * scene.lightCount;
         }
     }
 }
@@ -107,6 +84,7 @@ float3 Renderer::Sample(Ray &ray, uint &seed)
         scene.FindNearest(ray);
         if (ray.objIdx == -1) // hit skybox
         {
+            // E += T * float3(0);
             E += T * scene.GetSkyColor(ray);
             break;
         }
@@ -116,7 +94,6 @@ float3 Renderer::Sample(Ray &ray, uint &seed)
         float2 uv = hitInfo.uv;
         Material *material = hitInfo.material;
         float3 albedo = material->isAlbedoOverridden ? scene.GetAlbedo(ray.objIdx, I) : material->GetAlbedo(uv);
-        float3 brdf = albedo * INVPI;
 
         // Part of NEE
         // return black if it is a light soucre
@@ -142,7 +119,7 @@ float3 Renderer::Sample(Ray &ray, uint &seed)
         }
 
         // might modify E
-        NEE(seed, I, -ray.D, N, albedo, E, T);
+        NEE(seed, I, -ray.D, N, *material, albedo, E, T);
 
         float p = SurvivalProb(T);
 
@@ -166,9 +143,9 @@ float3 Renderer::Sample(Ray &ray, uint &seed)
         {
             float3 R = cosineweighteddiffusereflection(N, seed);
             float PDF = dot(N, R) / PI;
-            float3 mBRDF = CalculateMicrofacetBRDF(R, -ray.D, N, 0.1f, 1, albedo, 0);
+            float3 brdf = material->Evaluate(R, N, -ray.D, albedo);
             ray = Ray(I + R * EPSILON, R);
-            T *= medium_scale * mBRDF * dot(R, N) / PDF / p;
+            T *= medium_scale * brdf / PDF / p;
         }
         depth++;
     }

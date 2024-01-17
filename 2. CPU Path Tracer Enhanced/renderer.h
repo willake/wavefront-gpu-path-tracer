@@ -24,11 +24,10 @@ class Renderer : public TheApp
     float m_rps = 0;
     bool m_inspectTraversal = false;
     float3 GetEdgeDebugColor(float2 uv);
-    void NEE(uint &seed, const float3 &I, const float3 &V, const float3 &N, float3 &albedo, float3 &E, float3 &T);
+    void NEE(uint &seed, const float3 &I, const float3 &V, const float3 &N, Material &material, float3 color, float3 &E,
+             float3 &T);
     Ray HandleMirror(const Ray &ray, uint &seed, const float3 &I, const float3 &N);
     Ray HandleDielectric(const Ray &ray, uint &seed, const float3 &I, const float3 &N);
-    float3 CalculateMicrofacetBRDF(float3 L, float3 V, float3 N, float metallic, float roughness, float3 baseColor,
-                                   float reflectance);
 
   public:
     // game flow methods
@@ -64,7 +63,7 @@ class Renderer : public TheApp
     // data members
     int2 mousePos;
     float4 *accumulator;
-    TLASFileScene scene = TLASFileScene("../assets/scenes/different_size_scene.xml");
+    TLASFileScene scene = TLASFileScene("../assets/scenes/base_scene.xml");
     Camera camera;
     int spp = 1, passes = 1;
     bool animating = false;
