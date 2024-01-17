@@ -1,6 +1,13 @@
 #pragma once
 namespace Tmpl8
 {
+struct SceneProperty
+{
+    GPUTexture skydomeTexture; // 16 bytes
+    GPUTexture floorTexture;   // 16 bytes
+    GPUMaterial floorMaterial; // 40 bytes
+    // 72 bytes
+};
 // contain all buffers of a scene
 class SceneBuffer
 {
@@ -16,10 +23,8 @@ class SceneBuffer
     uint totalPixelCount = 0;
 
     uint *skydomePixels;
-    GPUTexture skydomeTexture;
     Buffer *skydomeBuffer;
     uint *floorPixels;
-    GPUTexture floorTexture;
     Buffer *floorBuffer;
     Tri *triangles;
     Buffer *triBuffer;
@@ -45,5 +50,7 @@ class SceneBuffer
     Buffer *materialBuffer;
     Light *lights;
     Buffer *lightBuffer;
+    SceneProperty sceneProperty;
+    Buffer *scenePropertyBuffer;
 };
 } // namespace Tmpl8

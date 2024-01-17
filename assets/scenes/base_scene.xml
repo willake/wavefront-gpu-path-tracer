@@ -20,9 +20,9 @@
             </rotation>
 			<size>1</size>
 			<color>
-				<x>240</x>
-                <y>0</y>
-                <z>0</z>
+				<x>24</x>
+                <y>24</y>
+                <z>22</z>
 			</color>
         </light>
 		<light>
@@ -38,8 +38,8 @@
             </rotation>
 			<size>1</size>
 			<color>
-				<x>0</x>
-                <y>0</y>
+				<x>240</x>
+                <y>240</y>
                 <z>220</z>
 			</color>
         </light>
@@ -96,6 +96,7 @@
                 <y>0.0</y>
                 <z>0.0</z>
             </absorption>
+			<roughness>0.3f</roughness>
 			<texture_location>../assets/textures/urna.jpg</texture_location>
 		</material>
 	</materials>

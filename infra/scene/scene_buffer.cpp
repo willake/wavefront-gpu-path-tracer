@@ -4,9 +4,11 @@
 void SceneBuffer::CreateBuffers()
 {
     // skydome
-    skydomeBuffer = new Buffer(skydomeTexture.width * skydomeTexture.height * sizeof(uint), skydomePixels);
+    skydomeBuffer = new Buffer(sceneProperty.skydomeTexture.width * sceneProperty.skydomeTexture.height * sizeof(uint),
+                               skydomePixels);
     // floor
-    floorBuffer = new Buffer(floorTexture.width * floorTexture.height * sizeof(uint), floorPixels);
+    floorBuffer =
+        new Buffer(sceneProperty.floorTexture.width * sceneProperty.floorTexture.height * sizeof(uint), floorPixels);
     // materials
     materialBuffer = new Buffer(materialCount * sizeof(GPUMaterial), gpuMats);
     texturePixelBuffer = new Buffer(totalPixelCount * sizeof(uint), texturePixels);
@@ -21,6 +23,7 @@ void SceneBuffer::CreateBuffers()
     blasBuffer = new Buffer(objCount * sizeof(GPUBLAS), gpublases);
     tlasNodeBuffer = new Buffer(objCount * 2 * sizeof(TLASNode), tlasNodes);
     lightBuffer = new Buffer(lightCount * sizeof(Light), lights);
+    scenePropertyBuffer = new Buffer(sizeof(SceneProperty), &sceneProperty);
 }
 
 void SceneBuffer::CopyToDevice()
@@ -39,4 +42,5 @@ void SceneBuffer::CopyToDevice()
     blasBuffer->CopyToDevice(true);
     tlasNodeBuffer->CopyToDevice(true);
     lightBuffer->CopyToDevice(true);
+    scenePropertyBuffer->CopyToDevice(true);
 }

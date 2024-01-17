@@ -27,23 +27,26 @@ TLASFileScene::TLASFileScene(const string &filePath, SceneBuffer *sceneBuffer)
     // materials[1].isAlbedoOverridden = true;
     // primitiveMaterials[1].textureDiffuse = std::make_unique<Texture>(sceneData.planeTextureLocation);
     primitiveMaterials[1].textureDiffuse = Texture(sceneData.planeTextureLocation);
+    primitiveMaterials[1].roughness = 0.7f;
+    primitiveMaterials[1].metalness = 0.01f;
+
     objIdUsed = 2;
 
     floor = Plane(1, float3(0, 1, 0), 1, primitiveMaterials[1].textureDiffuse.width / 100);
 
+    sceneName = sceneData.name;
+    skydome = Texture(sceneData.skydomeLocation);
+
     if (sceneBuffer)
     {
         sceneBuffer->floorPixels = primitiveMaterials[1].textureDiffuse.pixels;
-        sceneBuffer->floorTexture =
+        sceneBuffer->sceneProperty.floorTexture =
             GPUTexture(primitiveMaterials[1].textureDiffuse.width, primitiveMaterials[1].textureDiffuse.height);
-    }
+        sceneBuffer->sceneProperty.floorMaterial.roughness = primitiveMaterials[1].roughness;
+        sceneBuffer->sceneProperty.floorMaterial.metalness = primitiveMaterials[1].metalness;
 
-    sceneName = sceneData.name;
-    skydome = Texture(sceneData.skydomeLocation);
-    if (sceneBuffer)
-    {
         sceneBuffer->skydomePixels = skydome.pixels;
-        sceneBuffer->skydomeTexture = GPUTexture(skydome.width, skydome.height);
+        sceneBuffer->sceneProperty.skydomeTexture = GPUTexture(skydome.width, skydome.height);
     }
     // create lights
     lightCount = sceneData.lights.size();
@@ -91,11 +94,15 @@ TLASFileScene::TLASFileScene(const string &filePath, SceneBuffer *sceneBuffer)
         materials[i].reflectivity = sceneData.materials[i].reflectivity;
         materials[i].refractivity = sceneData.materials[i].refractivity;
         materials[i].absorption = sceneData.materials[i].absorption;
+        materials[i].roughness = sceneData.materials[i].roughness;
+        materials[i].metalness = sceneData.materials[i].metalness;
 
         gpuMats[i] = GPUMaterial();
         gpuMats[i].reflectivity = sceneData.materials[i].reflectivity;
         gpuMats[i].refractivity = sceneData.materials[i].refractivity;
         gpuMats[i].absorption = sceneData.materials[i].absorption;
+        gpuMats[i].roughness = sceneData.materials[i].roughness;
+        gpuMats[i].metalness = sceneData.materials[i].metalness;
 
         if (!sceneData.materials[i].textureLocation.empty())
             materials[i].textureDiffuse = Texture(sceneData.materials[i].textureLocation);
@@ -357,7 +364,16 @@ SceneData TLASFileScene::LoadSceneFile(const string &filePath)
         MaterialData material;
         material.reflectivity = std::stof(matNode->first_node("reflectivity")->value());
         material.refractivity = std::stof(matNode->first_node("refractivity")->value());
-
+        auto roughnessNode = matNode->first_node("roughness");
+        auto metalnessNode = matNode->first_node("metalness");
+        if (roughnessNode)
+            material.roughness = std::stof(roughnessNode->value());
+        else
+            material.roughness = 0.5f;
+        if (metalnessNode)
+            material.metalness = std::stof(metalnessNode->value());
+        else
+            material.metalness = 0.01f;
         for (rapidxml::xml_node<> *absNode = matNode->first_node("absorption")->first_node(); absNode;
              absNode = absNode->next_sibling())
         {

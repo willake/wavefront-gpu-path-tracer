@@ -3,7 +3,7 @@
     <!-- Scene Information -->
     <scene_name>different size scene</scene_name>
 	<plane_texture_location>../assets/textures/Stylized_Pavement_basecolor.png</plane_texture_location>
-    <skydome_location>../assets/industrial_sunset_puresky_4k.hdr</skydome_location>
+    <skydome_location>../assets/clouds_anime_6k.jpg</skydome_location>
 	<lights>
         <!-- Light 0 -->
         <light>
@@ -31,7 +31,7 @@
     <objects>
         <!-- Object 0 -->
         <object>
-            <mesh_idx>0</mesh_idx>
+            <mesh_idx>2</mesh_idx>
             <material_idx>0</material_idx>
             <position>
                 <x>0.0</x>
@@ -95,7 +95,15 @@
                 <z>2</z>
             </scale>
         </mesh>
-
+        <mesh>
+			<id>3</id>
+            <model_location>../assets/sphere.obj</model_location>
+			<scale>
+                <x>0.5</x>
+                <y>0.5</y>
+                <z>0.5</z>
+            </scale>
+        </mesh>
         <!-- Add more objects as needed -->
     </meshes>
 	<materials>

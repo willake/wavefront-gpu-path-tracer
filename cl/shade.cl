@@ -81,12 +81,14 @@ typedef struct
     float aabbMaxx, aabbMaxy, aabbMaxz; // 12 bytes
 } BLAS;
 
-typedef struct __attribute__((aligned(32)))
+typedef struct
 {
     float albedox, albedoy, albedoz;             // 12 bytes
     float absorptionx, absorptiony, absorptionz; // 12 bytes
     float reflectivity;                          // 4 bytes
     float refractivity;                          // 4 bytes
+    float roughness;                             // 4 bytes
+    float metalness;                             // 4 bytes
 } Material;                                      // 32 bytes
 
 typedef struct __attribute__((aligned(16)))
@@ -113,7 +115,64 @@ typedef struct
     int matIdx;
 } HitInfo;
 
-inline float SurvivalProb(float4 color)
+typedef struct
+{
+    Texture skydomeTexture; // 16 bytes
+    Texture floorTexture;   // 16 bytes
+    Material floorMaterial; // 40 bytes
+    // 72 bytes
+} SceneProperty;
+
+float3 fresnelSchlick(float cosTheta, float3 f0)
+{
+    return f0 + (1.0f - f0) * pow(1.0f - cosTheta, 5);
+}
+
+float distributionGGX(float NdotH, float roughness)
+{
+    float alpha = roughness * roughness;
+    float alpha2 = alpha * alpha;
+    float NdotH2 = NdotH * NdotH;
+    float b = (NdotH2 * (alpha2 - 1.0f) + 1.0f);
+    return alpha2 * INVPI / (b * b);
+}
+
+float G1_GGX_Schlick(float NdotV, float roughness)
+{
+    float alpha = roughness * roughness;
+    float k = alpha / 2.0f;
+    return max(NdotV, 0.001f) / (NdotV * (1.0f - k) + k);
+}
+
+float geometrySmith(float NdotV, float NdotL, float roughness)
+{
+    return G1_GGX_Schlick(NdotL, roughness) * G1_GGX_Schlick(NdotV, roughness);
+}
+
+float3 evaluateMircofacetBRDF(float3 L, float3 N, float3 V, float3 baseColor, Material *material)
+{
+    float3 H = normalize(V + L); // H = normalize(V + L);
+    float NdotH = dot(N, H), NdotV = dot(N, V), NdotL = dot(N, L), VdotH = dot(V, H);
+
+    float3 f0 = (float3)(0.04f);
+    f0 = mix(f0, baseColor, material->metalness);
+
+    float3 F = fresnelSchlick(VdotH, f0);
+    float D = distributionGGX(NdotH, material->roughness);
+    float G = geometrySmith(NdotV, NdotL, material->roughness);
+
+    float3 spec = F * G * D / 4.0f * max(0.00001f, NdotL) * max(0.00001f, NdotV);
+
+    baseColor *= (float3)(1.0) - F;
+
+    baseColor *= (1.0f - material->metalness);
+
+    float3 diffuse = baseColor * INVPI;
+
+    return diffuse + spec;
+}
+
+inline float survivalProb(float4 color)
 {
     return clamp(max(color.x, max(color.y, color.z)), 0.1f, 0.9f);
 }
@@ -274,8 +333,9 @@ HitInfo getHitInfo(const Ray *ray, TriEx *triExs, BLAS *blases, Light *lights, c
     return hitInfo;
 }
 
-float3 getAlbedo(__global uint *floorPixels, __global BLAS *blases, __global uint *texturePixels,
-                 __global Texture *textures, __global Light *lights, int objIdx, float2 uv)
+float3 getAlbedo(__global uint *floorPixels, __global SceneProperty *sceneProperty, __global BLAS *blases,
+                 __global uint *texturePixels, __global Texture *textures, __global Light *lights, int objIdx,
+                 float2 uv)
 {
     if (objIdx >= 900)
     {
@@ -284,7 +344,7 @@ float3 getAlbedo(__global uint *floorPixels, __global BLAS *blases, __global uin
     }
     else if (objIdx == 1)
     {
-        return sample(floorPixels, 0, uv, 512, 512);
+        return sample(floorPixels, 0, uv, sceneProperty->floorTexture.width, sceneProperty->floorTexture.height);
     }
     else
     {
@@ -344,7 +404,8 @@ float3 randomPointOnLight(Light *lights, uint lightCount, uint *seed, uint *ligh
     return corner1 + r2 * (corner2 - corner1) + r1 * (corner3 - corner1);
 }
 
-ShadowRay NEE(Light *lights, uint lightCount, uint *seed, float3 I, float3 N, float3 brdf, int pixelIdx)
+ShadowRay NEE(Light *lights, uint lightCount, uint *seed, float3 V, float3 I, float3 N, float3 albedo,
+              Material *material, int pixelIdx)
 {
     uint lightIdx;
     float3 randomLightPos = randomPointOnLight(lights, lightCount, seed, &lightIdx);
@@ -361,6 +422,7 @@ ShadowRay NEE(Light *lights, uint lightCount, uint *seed, float3 I, float3 N, fl
     if (ndotl > 0 && nldotl > 0)
     {
         float solidAngle = (nldotl * A) / (dist * dist);
+        float3 brdf = evaluateMircofacetBRDF(L, N, V, albedo, material);
 
         shadowRay.E = (float3)(light->colorx, light->colory, light->colorz) * solidAngle * brdf * ndotl * lightCount;
     }
@@ -372,7 +434,7 @@ ShadowRay NEE(Light *lights, uint lightCount, uint *seed, float3 I, float3 N, fl
 }
 
 __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayBuffer, __global uint *seeds,
-                    __global uint *skydomePixels, uint skydomeWidth, uint skydomeHeight, __global uint *floorPixels,
+                    __global uint *skydomePixels, __global uint *floorPixels, __global SceneProperty *sceneProperty,
                     __global TriEx *triExs, __global BLAS *blases, __global Material *materials,
                     __global uint *texturePixels, __global Texture *textures, __global Light *lights, uint lightCount,
                     __global Ray *extensionrayBuffer, __global ShadowRay *shadowrayBuffer,
@@ -387,7 +449,8 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
 
     if (ray.objIdx == -1)
     {
-        float3 skyColor = getSkyColor(&ray, skydomePixels, skydomeWidth, skydomeHeight);
+        float3 skyColor =
+            getSkyColor(&ray, skydomePixels, sceneProperty->skydomeTexture.width, sceneProperty->skydomeTexture.height);
         Es[pixelIdx] += Ts[pixelIdx] * (float4)(skyColor.x, skyColor.y, skyColor.z, 1);
         // pixels[pixelIdx] *= (float4)(0);
         return;
@@ -397,8 +460,7 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
     HitInfo hitInfo = getHitInfo(&ray, triExs, blases, lights, I);
     float3 N = hitInfo.normal;
     float2 uv = hitInfo.uv;
-    float3 albedo = getAlbedo(floorPixels, blases, texturePixels, textures, lights, ray.objIdx, uv);
-    float3 brdf = albedo * M_1_PI_F;
+    float3 albedo = getAlbedo(floorPixels, sceneProperty, blases, texturePixels, textures, lights, ray.objIdx, uv);
 
     /* visualize triangle */
     // accumulator[index] = ray.triIdx * 10;
@@ -432,10 +494,16 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
     float refractivity = 0.0f;
     float3 absorption = (float3)(0);
 
-    if (ray.objIdx > 1)
+    Material material;
+
+    if (ray.objIdx == 1)
+    {
+        material = sceneProperty->floorMaterial;
+    }
+    else if (ray.objIdx > 1)
     {
         BLAS blas = blases[ray.objIdx - 2];
-        Material material = materials[blas.matIdx];
+        material = materials[blas.matIdx];
         reflectivity = material.reflectivity;
         refractivity = material.refractivity;
         absorption = (float3)(material.absorptionx, material.absorptiony, material.absorptionz);
@@ -448,9 +516,9 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
     }
 
     uint si = atomic_inc(shadowrayCounter);
-    shadowrayBuffer[si] = NEE(lights, lightCount, &seed, I, N, brdf, pixelIdx);
+    shadowrayBuffer[si] = NEE(lights, lightCount, &seed, -ray.D, I, N, albedo, &material, pixelIdx);
 
-    float p = SurvivalProb(Ts[pixelIdx]);
+    float p = survivalProb(Ts[pixelIdx]);
 
     seeds[pixelIdx] = seed;
 
@@ -483,6 +551,7 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
         // generate extension ray
         uint ei = atomic_inc(extensionrayCounter);
         extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, pixelIdx, false);
+        float3 brdf = evaluateMircofacetBRDF(R, N, -ray.D, albedo, &material);
 
         // compute
         Ts[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
