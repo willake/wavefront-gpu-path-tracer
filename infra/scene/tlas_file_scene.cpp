@@ -29,23 +29,24 @@ TLASFileScene::TLASFileScene(const string &filePath, SceneBuffer *sceneBuffer)
     primitiveMaterials[1].textureDiffuse = Texture(sceneData.planeTextureLocation);
     primitiveMaterials[1].roughness = 0.7f;
     primitiveMaterials[1].metalness = 0.01f;
+
     objIdUsed = 2;
 
     floor = Plane(1, float3(0, 1, 0), 1, primitiveMaterials[1].textureDiffuse.width / 100);
 
+    sceneName = sceneData.name;
+    skydome = Texture(sceneData.skydomeLocation);
+
     if (sceneBuffer)
     {
         sceneBuffer->floorPixels = primitiveMaterials[1].textureDiffuse.pixels;
-        sceneBuffer->floorTexture =
+        sceneBuffer->sceneProperty.floorTexture =
             GPUTexture(primitiveMaterials[1].textureDiffuse.width, primitiveMaterials[1].textureDiffuse.height);
-    }
+        sceneBuffer->sceneProperty.floorMaterial.roughness = primitiveMaterials[1].roughness;
+        sceneBuffer->sceneProperty.floorMaterial.metalness = primitiveMaterials[1].metalness;
 
-    sceneName = sceneData.name;
-    skydome = Texture(sceneData.skydomeLocation);
-    if (sceneBuffer)
-    {
         sceneBuffer->skydomePixels = skydome.pixels;
-        sceneBuffer->skydomeTexture = GPUTexture(skydome.width, skydome.height);
+        sceneBuffer->sceneProperty.skydomeTexture = GPUTexture(skydome.width, skydome.height);
     }
     // create lights
     lightCount = sceneData.lights.size();
