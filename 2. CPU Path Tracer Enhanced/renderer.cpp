@@ -39,7 +39,7 @@ void Renderer::NEE(uint &seed, const float3 &I, const float3 &V, const float3 &N
         {
             float solidAngle = (nldotl * A) / (dist * dist);
             float3 brdf = material.Evaluate(L, V, N, albedo);
-            E += T * light.color * solidAngle * brdf * scene.lightCount;
+            E += T * light.color * solidAngle * brdf * ndotl * scene.lightCount;
         }
     }
 }
@@ -145,7 +145,7 @@ float3 Renderer::Sample(Ray &ray, uint &seed)
             float PDF = dot(N, R) / PI;
             float3 brdf = material->Evaluate(R, N, -ray.D, albedo);
             ray = Ray(I + R * EPSILON, R);
-            T *= medium_scale * brdf / PDF / p;
+            T *= medium_scale * brdf * dot(R, N) / PDF / p;
         }
         depth++;
     }

@@ -3,14 +3,16 @@
 
 namespace Tmpl8
 {
-__declspec(align(32)) struct GPUMaterial
+struct GPUMaterial
 {
     GPUMaterial(){};
     float3 albedo = float3(1.0f);     // 12 bytes
     float3 absorption = float3(0.0f); // 12 bytes
     float reflectivity = 0.0f;        // 4 bytes
     float refractivity = 0.0f;        // 4 bytes
-                                      // 32 bytes in total
+    float roughness = 0.2f;           // 4 bytes
+    float metalness = 0.01f;          // 4 bytes
+                                      // 40 bytes in total
 };
 struct Material
 {
@@ -21,9 +23,6 @@ struct Material
         albedo = float3(1.0f);
         isAlbedoOverridden = albedoOverridden;
         absorption = float3(0);
-        roughness = 0.6f;
-        metalness = 0.5f;
-        transmittance = 0;
     }
 
     float3 GetAlbedo(float2 uv)
@@ -53,7 +52,7 @@ struct Material
 
         baseColor *= (1.0 - metalness);
 
-        float3 diffuse = baseColor * INVPI * NdotL;
+        float3 diffuse = baseColor * INVPI;
 
         return diffuse + spec;
     }
@@ -62,9 +61,9 @@ struct Material
     bool isLight = false;
     float3 albedo = float3(1.0f);
     bool isAlbedoOverridden = false;
-    float roughness;
-    float metalness;
-    float transmittance;
+    float roughness = 0;
+    float metalness = 0;
+    float transmittance = 0;
     float3 absorption = float3(0.0f);
     Texture textureDiffuse;
     float reflectivity = 0.0f;

@@ -25,6 +25,8 @@ struct MaterialData
 {
     float reflectivity;
     float refractivity;
+    float roughness;
+    float metalness;
     float3 absorption;
     std::string textureLocation;
 };
