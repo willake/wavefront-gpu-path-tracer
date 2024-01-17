@@ -31,7 +31,7 @@
     <objects>
         <!-- Object 0 -->
         <object>
-            <mesh_idx>2</mesh_idx>
+            <mesh_idx>1</mesh_idx>
             <material_idx>0</material_idx>
             <position>
                 <x>0.0</x>
@@ -45,11 +45,11 @@
             </rotation>
         </object>
 		<object>
-            <mesh_idx>0</mesh_idx>
-            <material_idx>0</material_idx>
+            <mesh_idx>1</mesh_idx>
+            <material_idx>2</material_idx>
             <position>
                 <x>-3</x>
-                <y>-0.5</y>
+                <y>1</y>
                 <z>4.0</z>
             </position>
             <rotation>
@@ -59,7 +59,7 @@
             </rotation>
         </object>
 		<object>
-            <mesh_idx>1</mesh_idx>
+            <mesh_idx>0</mesh_idx>
             <material_idx>1</material_idx>
             <position>
                 <x>0.0</x>
@@ -77,15 +77,6 @@
 	<!-- Mesh List -->
     <meshes>
         <!-- Mesh 0 -->
-        <mesh>
-			<id>0</id>
-            <model_location>../assets/teapot.obj</model_location>
-			<scale>
-                <x>1</x>
-                <y>1</y>
-                <z>1</z>
-            </scale>
-        </mesh>
 		<mesh>
 			<id>1</id>
             <model_location>../assets/japanese_torii_gate.obj</model_location>
@@ -119,7 +110,7 @@
             </absorption>
 			<texture_location>../assets/textures/white.png</texture_location>
 		</material>
-				<material>
+		<material>
 			<id>1</id>
 			<reflectivity>0.0</reflectivity>
 			<refractivity>0.0</refractivity>
@@ -129,6 +120,17 @@
                 <z>0.0</z>
             </absorption>
 			<texture_location>../assets/textures/T_Trim_01_BaseColor.png</texture_location>
+		</material>
+		<material>
+			<id>2</id>
+			<reflectivity>0.0</reflectivity>
+			<refractivity>1.0</refractivity>
+			<absorption>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </absorption>
+			<texture_location>../assets/textures/white.png</texture_location>
 		</material>
 	</materials>
 </scene>
