@@ -118,8 +118,9 @@ float3 Renderer::Sample(Ray &ray, uint &seed)
             medium_scale = expf(absorption * -ray.t);
         }
 
+        float r = RandomFloat(seed);
         // might modify E
-        NEE(seed, I, -ray.D, N, *material, albedo, E, T);
+        if (r > reflectivity + refractivity) { NEE(seed, I, -ray.D, N, *material, albedo, E, T); }
 
         float p = SurvivalProb(T);
 
