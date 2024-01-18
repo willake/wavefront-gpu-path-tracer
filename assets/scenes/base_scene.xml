@@ -18,11 +18,11 @@
                 <y>0.0</y>
                 <z>0.0</z>
             </rotation>
-			<size>1</size>
+			<size>2</size>
 			<color>
-				<x>24</x>
-                <y>24</y>
-                <z>22</z>
+				<x>12</x>
+                <y>12</y>
+                <z>11</z>
 			</color>
         </light>
 		<light>
@@ -38,9 +38,9 @@
             </rotation>
 			<size>1</size>
 			<color>
-				<x>240</x>
-                <y>240</y>
-                <z>220</z>
+				<x>12</x>
+                <y>12</y>
+                <z>11</z>
 			</color>
         </light>
         <!-- Add more lights as needed -->
@@ -61,12 +61,22 @@
                 <y>0.0</y>
                 <z>180.0</z>
             </rotation>
-			<scale>
-                <x>0.005</x>
-                <y>0.005</y>
-                <z>0.005</z>
-            </scale>
         </object>
+		<object>
+            <mesh_idx>1</mesh_idx>
+            <material_idx>1</material_idx>
+            <position>
+                <x>0.0</x>
+                <y>2</y>
+                <z>2.0</z>
+            </position>
+            <rotation>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </rotation>
+        </object>
+
 
         <!-- Add more objects as needed -->
     </objects>
@@ -80,6 +90,15 @@
                 <x>0.005</x>
                 <y>0.005</y>
                 <z>0.005</z>
+            </scale>
+        </mesh>
+		<mesh>
+			<id>0</id>
+            <model_location>../assets/sphere.obj</model_location>
+			<scale>
+                <x>0.5</x>
+                <y>0.5</y>
+                <z>0.5</z>
             </scale>
         </mesh>
 
@@ -98,6 +117,17 @@
             </absorption>
 			<roughness>0.3f</roughness>
 			<texture_location>../assets/textures/urna.jpg</texture_location>
+		</material>
+		<material>
+			<id>1</id>
+			<reflectivity>0.0</reflectivity>
+			<refractivity>1.0</refractivity>
+			<absorption>
+                <x>0.3</x>
+                <y>0.3</y>
+                <z>0.3</z>
+            </absorption>
+			<texture_location>../assets/textures/white.png</texture_location>
 		</material>
 	</materials>
 </scene>
