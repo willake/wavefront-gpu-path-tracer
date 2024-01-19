@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scene>
+    <!-- Scene Information -->
+    <scene_name>wok scene</scene_name>
+	<plane_texture_location>../assets/textures/Stylized_Pavement_basecolor.png</plane_texture_location>
+    <skydome_location>../assets/galaxy_1.png</skydome_location>
+	<!-- Light List -->
+    <lights>
+        <!-- Light 0 -->
+        <light>
+			<position>
+                <x>0</x>
+                <y>4</y>
+                <z>5</z>
+            </position>
+			<rotation>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </rotation>
+			<size>1</size>
+			<color>
+				<x>24</x>
+                <y>24</y>
+                <z>20</z>
+			</color>
+        </light>
+        <!-- Add more lights as needed -->
+    </lights>
+    <!-- Object List -->
+    <objects>
+        <!-- Object 1 -->
+        <object>
+            <mesh_idx>0</mesh_idx>
+            <material_idx>0</material_idx>
+            <position>
+                <x>0.0</x>
+                <y>-1</y>
+                <z>5</z>
+            </position>
+            <rotation>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </rotation>
+        </object>
+
+        <!-- Add more objects as needed -->
+    </objects>
+	<!-- Mesh List -->
+    <meshes>
+        <!-- Mesh 0 -->
+        <mesh>
+            <model_location>../assets/hollow-knight.obj</model_location>
+			<scale>
+                <x>0.4</x>
+                <y>0.4</y>
+                <z>0.4</z>
+         </scale>
+		 </mesh>
+        <!-- Add more objects as needed -->
+    </meshes>
+	<materials>
+		<!-- Material 0 -->
+		<material>
+			<reflectivity>0.0</reflectivity>
+			<refractivity>0.0</refractivity>
+			<absorption>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </absorption>
+			<roughness>0.8f</roughness>
+			<texture_location>../assets/textures/hollow-knight.png</texture_location>
+		</material>
+	</materials>
+</scene>

@@ -451,8 +451,8 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
     {
         float3 skyColor =
             getSkyColor(&ray, skydomePixels, sceneProperty->skydomeTexture.width, sceneProperty->skydomeTexture.height);
-        // Es[pixelIdx] += Ts[pixelIdx] * (float4)(skyColor.x, skyColor.y, skyColor.z, 1);
-        Es[pixelIdx] += Ts[pixelIdx] * 0;
+        Es[pixelIdx] += Ts[pixelIdx] * (float4)(skyColor.x, skyColor.y, skyColor.z, 1);
+        // Es[pixelIdx] += Ts[pixelIdx] * 0;
         return;
     }
 

@@ -99,6 +99,6 @@ class Renderer : public TheApp
     Buffer *renderStateBuffer;
 
     SceneBuffer *sceneBuffer;
-    string scenePath = "../assets/scenes/base_scene.xml";
+    string scenePath = "../assets/scenes/hollow_knight_scene.xml";
 };
 } // namespace Tmpl8
