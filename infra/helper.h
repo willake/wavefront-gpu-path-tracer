@@ -173,29 +173,35 @@ uint64_t NowInMicro()
         .count();
 }
 
-float3 RGB8toRGB32F(uint c)
+inline float4 RGB8toRGB32F(uint *c)
 {
     float rgbScale = 1 / 256.0f;
-    float r = ((c >> 16) & 0xFF) * rgbScale;
-    float g = ((c >> 8) & 0xFF) * rgbScale;
-    float b = (c & 0xFF) * rgbScale;
-    return float3(r, g, b);
+    float r = ((*c >> 16) & 0xFF) * rgbScale;
+    float g = ((*c >> 8) & 0xFF) * rgbScale;
+    float b = (*c & 0xFF) * rgbScale;
+    return float4(r, g, b, 0);
 }
 
 const float InvGamma = 1.0f / 2.2f;
 
-float4 GammaCorrection(float4 v)
+inline float4 GammaCorrection(float4 v)
 {
     return float4(powf(v.x, InvGamma), powf(v.y, InvGamma), powf(v.z, InvGamma), 0);
 }
+
+inline float3 InversedGammaCorrection(float3 v)
+{
+    return float3(pow(v.x, 2.2), pow(v.y, 2.2), pow(v.z, 2.2));
+}
+
 const float Deg2Red = (PI * 2) / 360.0f;
 
-float3 FresnelSchlick(float cosTheta, float3 f0)
+inline float3 FresnelSchlick(float cosTheta, float3 f0)
 {
     return f0 + (1.0 - f0) * pow(1.0f - cosTheta, 5);
 }
 
-float DistributionGGX(float NdotH, float roughness)
+inline float DistributionGGX(float NdotH, float roughness)
 {
     float alpha = roughness * roughness;
     float alpha2 = alpha * alpha;
@@ -204,24 +210,24 @@ float DistributionGGX(float NdotH, float roughness)
     return alpha2 * INVPI / (b * b);
 }
 
-float G1_GGX_Schlick(float NdotV, float roughness)
+inline float G1_GGX_Schlick(float NdotV, float roughness)
 {
     float alpha = roughness * roughness;
     float k = alpha / 2.0f;
     return max(NdotV, 0.001f) / (NdotV * (1.0f - k) + k);
 }
 
-float GeometrySmith(float NdotV, float NdotL, float roughness)
+inline float GeometrySmith(float NdotV, float NdotL, float roughness)
 {
     return G1_GGX_Schlick(NdotL, roughness) * G1_GGX_Schlick(NdotV, roughness);
 }
 
-float SurvivalProb(float3 color)
+inline float SurvivalProb(float3 color)
 {
     return clamp(max(color.x, max(color.y, color.z)), 0.1, 0.9);
 }
 
-float2 UniformRandomPointDisk(uint &seed)
+inline float2 UniformRandomPointDisk(uint &seed)
 {
     float r0 = RandomFloat(seed);
     float r1 = RandomFloat(seed);
@@ -232,7 +238,7 @@ float2 UniformRandomPointDisk(uint &seed)
     return float2(x, y);
 }
 
-float3 mix(float3 x, float3 y, float weight)
+inline float3 mix(float3 x, float3 y, float weight)
 {
     return x * (1.0f - weight) + y * weight;
 }

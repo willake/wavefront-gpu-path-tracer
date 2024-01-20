@@ -412,7 +412,7 @@ float3 TLASFileScene::GetSkyColor(const Ray &ray) const
     int skyIdx = (u + v * width) % (width * height);
 
     uint pixel = skydome.pixels[skyIdx];
-    float3 color = RGB8toRGB32F(pixel);
+    float3 color = RGB8toRGB32F(&pixel);
     //// Sample the HDR skydome texture
     return color;
 }
