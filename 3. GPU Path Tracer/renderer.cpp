@@ -183,6 +183,7 @@ void Renderer::Tick(float deltaTime)
 // -----------------------------------------------------------
 void Renderer::UI()
 {
+    if (m_disableUI) uiUpdated = false;
     // animation toggle
     bool changed = ImGui::Checkbox("Animate scene", &animating);
     changed |= ImGui::Checkbox("Inspect Traversal", &m_inspectTraversal);
@@ -214,6 +215,7 @@ void Renderer::UI()
     ImGui::Text("RPS: %.1f Mrays/s", m_rps);
     ImGui::Text("Camera Pos: (%.2f, %.2f, %.2f)", camera.camPos.x, camera.camPos.y, camera.camPos.z);
     ImGui::Text("Camera Target: (%.2f, %.2f, %.2f)", camera.camTarget.x, camera.camTarget.y, camera.camTarget.z);
+    if (ImGui::Button("Close UI")) { m_disableUI = true; }
     // reset accumulator if changes have been made
     if (changed) ClearAccumulator();
 }
