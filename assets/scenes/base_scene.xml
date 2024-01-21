@@ -3,7 +3,7 @@
     <!-- Scene Information -->
     <scene_name>wok scene</scene_name>
 	<plane_texture_location>../assets/textures/Stylized_Wood_basecolor.tga</plane_texture_location>
-    <skydome_location>../assets/galaxy_3.jpg</skydome_location>
+    <skydome_location>../assets/harties_4k.hdr</skydome_location>
 	<!-- Light List -->
     <lights>
         <!-- Light 0 -->
@@ -27,13 +27,13 @@
         </light>
 		<light>
 			<position>
-                <x>-3.3</x>
+                <x>3.3</x>
                 <y>0</y>
                 <z>2</z>
             </position>
 			<rotation>
                 <x>0.0</x>
-                <y>-30.0</y>
+                <y>120.0</y>
                 <z>90.0</z>
             </rotation>
 			<size>1</size>
@@ -62,28 +62,26 @@
                 <z>180.0</z>
             </rotation>
         </object>
-		<object>
-            <mesh_idx>1</mesh_idx>
+        <object>
+			<mesh_idx>2</mesh_idx>
             <material_idx>1</material_idx>
             <position>
-                <x>2</x>
+                <x>1.5</x>
                 <y>2</y>
-                <z>2.4</z>
+                <z>1</z>
             </position>
             <rotation>
-                <x>-90.0</x>
+                <x>0</x>
                 <y>0.0</y>
-                <z>180.0</z>
+                <z>0.0</z>
             </rotation>
         </object>
-
         <!-- Add more objects as needed -->
     </objects>
 	<!-- Mesh List -->
     <meshes>
         <!-- Mesh 0 -->
         <mesh>
-			<id>0</id>
             <model_location>../assets/urna.obj</model_location>
 			<scale>
                 <x>0.005</x>
@@ -92,7 +90,6 @@
             </scale>
         </mesh>
 		<mesh>
-			<id>0</id>
             <model_location>../assets/sphere.obj</model_location>
 			<scale>
                 <x>0.5</x>
@@ -100,13 +97,19 @@
                 <z>0.5</z>
             </scale>
         </mesh>
-
+        <mesh>
+            <model_location>../assets/cup.obj</model_location>
+			<scale>
+                <x>0.2</x>
+                <y>0.2</y>
+                <z>0.2</z>
+            </scale>
+        </mesh>
         <!-- Add more objects as needed -->
     </meshes>
 	<materials>
 		<!-- Material 0 -->
 		<material>
-			<id>0</id>
 			<reflectivity>0.0</reflectivity>
 			<refractivity>0.0</refractivity>
 			<absorption>
@@ -118,7 +121,6 @@
 			<texture_location>../assets/textures/urna.jpg</texture_location>
 		</material>
 		<material>
-			<id>1</id>
 			<reflectivity>0.0</reflectivity>
 			<refractivity>1.0</refractivity>
 			<absorption>

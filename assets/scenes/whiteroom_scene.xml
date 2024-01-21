@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <scene>
     <!-- Scene Information -->
-    <scene_name>wok scene</scene_name>
+    <scene_name>whiteroom scene</scene_name>
 	<plane_texture_location>../assets/textures/Stylized_Wood_basecolor.tga</plane_texture_location>
     <skydome_location>../assets/galaxy_3.jpg</skydome_location>
 	<!-- Light List -->

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <scene>
     <!-- Scene Information -->
-    <scene_name>wok scene</scene_name>
+    <scene_name>hollow knight scene</scene_name>
 	<plane_texture_location>../assets/textures/Stylized_Pavement_basecolor.png</plane_texture_location>
-    <skydome_location>../assets/galaxy_3.jpg</skydome_location>
+    <skydome_location>../assets/galaxy_1.png</skydome_location>
 	<!-- Light List -->
     <lights>
         <!-- Light 0 -->
@@ -20,9 +20,9 @@
             </rotation>
 			<size>1</size>
 			<color>
-				<x>36</x>
-                <y>36</y>
-                <z>33</z>
+				<x>24</x>
+                <y>24</y>
+                <z>22</z>
 			</color>
         </light>
 		<light>
@@ -38,9 +38,9 @@
             </rotation>
 			<size>1</size>
 			<color>
-				<x>36</x>
-                <y>36</y>
-                <z>33</z>
+				<x>24</x>
+                <y>24</y>
+                <z>22</z>
 			</color>
         </light>
 		<light>
@@ -56,9 +56,9 @@
             </rotation>
 			<size>1</size>
 			<color>
-				<x>36</x>
-                <y>36</y>
-                <z>33</z>
+				<x>24</x>
+                <y>24</y>
+                <z>22</z>
 			</color>
         </light>
         <!-- Add more lights as needed -->
@@ -80,7 +80,20 @@
                 <z>0.0</z>
             </rotation>
         </object>
-
+		<object>
+            <mesh_idx>1</mesh_idx>
+            <material_idx>1</material_idx>
+            <position>
+                <x>5</x>
+                <y>1</y>
+                <z>9</z>
+            </position>
+            <rotation>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </rotation>
+        </object>
         <!-- Add more objects as needed -->
     </objects>
 	<!-- Mesh List -->
@@ -94,6 +107,15 @@
                 <z>0.4</z>
          </scale>
 		 </mesh>
+		<mesh>
+			<id>0</id>
+            <model_location>../assets/sphere.obj</model_location>
+			<scale>
+                <x>0.5</x>
+                <y>0.5</y>
+                <z>0.5</z>
+            </scale>
+        </mesh>
         <!-- Add more objects as needed -->
     </meshes>
 	<materials>
@@ -108,6 +130,17 @@
             </absorption>
 			<roughness>0.8f</roughness>
 			<texture_location>../assets/textures/hollow-knight.png</texture_location>
+		</material>
+		<material>
+			<id>1</id>
+			<reflectivity>1.0</reflectivity>
+			<refractivity>0.0</refractivity>
+			<absorption>
+                <x>0.3</x>
+                <y>0.3</y>
+                <z>0.3</z>
+            </absorption>
+			<texture_location>../assets/textures/white.png</texture_location>
 		</material>
 	</materials>
 </scene>
