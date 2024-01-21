@@ -16,7 +16,7 @@ This renderer is based on a [cpu ray tracer](https://github.com/willake/cpu-ray-
 -   anti-aliasing
 -   microfacet BRDF
 -   gamma correction
--   
+  
 **Engine related**
 -   .obj model loading
 -   material (reflection, refraction, texture)
