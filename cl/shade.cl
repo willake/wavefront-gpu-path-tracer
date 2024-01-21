@@ -405,16 +405,17 @@ float3 randomPointOnLight(Light *lights, uint lightCount, uint *seed, uint *ligh
     return corner1 + r2 * (corner2 - corner1) + r1 * (corner3 - corner1);
 }
 
-ShadowRay NEE(Light *lights, uint lightCount, uint *seed, float3 V, float3 I, float3 N, float3 albedo,
+ShadowRay NEE(Light *lights, uint lightCount, uint *seed, float3 V, float3 I, float3 N, float4 T, float3 albedo,
               Material *material, int pixelIdx)
 {
     uint lightIdx;
     float3 randomLightPos = randomPointOnLight(lights, lightCount, seed, &lightIdx);
     Light *light = &lights[lightIdx];
+
     // lighting related information
     float3 L = randomLightPos - I;
     float dist = length(L);
-    L = normalize(L);
+    L *= 1 / dist;
     float ndotl = dot(N, L);
     float nldotl = dot(getLightNormal(light), -L);
     float A = light->size * light->size;
@@ -423,9 +424,10 @@ ShadowRay NEE(Light *lights, uint lightCount, uint *seed, float3 V, float3 I, fl
     if (ndotl > 0 && nldotl > 0)
     {
         float solidAngle = (nldotl * A) / (dist * dist);
-        // float3 brdf = evaluateMircofacetBRDF(L, N, V, albedo, material);
-        float3 brdf = albedo * INVPI;
-        shadowRay.E = (float3)(light->colorx, light->colory, light->colorz) * solidAngle * brdf * ndotl * lightCount;
+        float3 brdf = evaluateMircofacetBRDF(L, N, V, albedo, material);
+        // float3 brdf = albedo * INVPI;
+        shadowRay.E = (float3)(T.x, T.y, T.z) * (float3)(light->colorx, light->colory, light->colorz) * solidAngle *
+                      brdf * ndotl * lightCount;
     }
     else
     {
@@ -458,7 +460,7 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
     }
 
     float3 I = ray.O + ray.D * ray.t;
-    HitInfo hitInfo = getHitInfo(&ray, triExs, blases, lights, I);
+    HitInfo hitInfo = getHitInfo(&ray, sceneProperty, triExs, blases, lights, I);
     float3 N = hitInfo.normal;
     float2 uv = hitInfo.uv;
     float3 albedo = getAlbedo(floorPixels, sceneProperty, blases, texturePixels, textures, lights, ray.objIdx, uv);
@@ -471,8 +473,6 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
     /* visualize visualize triangle edges */ // float3 color = getEdgeColor(ray.barycentric);
     /* debug */                              // accumulator[index] = RGB32FtoRGB8(color); return;
 
-    Es[pixelIdx] += Ts[pixelIdx] * (float4)(albedo.x, albedo.y, albedo.z, 0);
-    return;
     // objIdx >= 900 is a light
     if (ray.objIdx >= 900)
     {
@@ -523,7 +523,7 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
     if (r > reflectivity + refractivity)
     {
         uint si = atomic_inc(shadowrayCounter);
-        shadowrayBuffer[si] = NEE(lights, lightCount, &seed, -ray.D, I, N, albedo, &material, pixelIdx);
+        shadowrayBuffer[si] = NEE(lights, lightCount, &seed, -ray.D, I, N, Ts[pixelIdx], albedo, &material, pixelIdx);
     }
     float p = survivalProb(Ts[pixelIdx]);
 
@@ -557,9 +557,9 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
         // generate extension ray
         uint ei = atomic_inc(extensionrayCounter);
         extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, pixelIdx, false);
-        // float3 brdf = evaluateMircofacetBRDF(R, N, -ray.D, albedo, &material);
-        float3 brdf = albedo * INVPI;
-        // compute
+        float3 brdf = evaluateMircofacetBRDF(R, N, -ray.D, albedo, &material);
+        // float3 brdf = albedo * INVPI;
+        //  compute
         Ts[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
                         (float4)(brdf.x, brdf.y, brdf.z, 0) * dot(R, N) / PDF / p;
     }

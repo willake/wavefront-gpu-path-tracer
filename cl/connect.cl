@@ -322,5 +322,6 @@ __kernel void connect(__global float4 *Ts, __global float4 *Es, __global ShadowR
         return;
     }
 
-    Es[ray.pixelIdx] += Ts[ray.pixelIdx] * (float4)(ray.E.x, ray.E.y, ray.E.z, 0);
+    Es[ray.pixelIdx] += (float4)(ray.E.x, ray.E.y, ray.E.z, 0);
+    // Es[ray.pixelIdx] += Ts[ray.pixelIdx];
 }

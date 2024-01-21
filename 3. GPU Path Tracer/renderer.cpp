@@ -119,12 +119,14 @@ void Renderer::Tick(float deltaTime)
     {
         extensionCounter = SCRWIDTH * SCRHEIGHT;
 
+        m_extensionRayCount = 0;
+        m_shadowRayCount = 0;
+
         int depth = 0;
         // run extension rays and shadow rays
         while (extensionCounter > 0)
         {
             int rayCount = extensionCounter;
-
             extensionCounter = 0;
             shadowrayCounter = 0;
             extensionCounterBuffer->CopyToDevice(true);
@@ -149,8 +151,8 @@ void Renderer::Tick(float deltaTime)
 
             extensionCounterBuffer->CopyFromDevice(true);
             shadowrayCounterBuffer->CopyFromDevice(true);
-            m_extensionRayCount = extensionCounter;
-            m_shadowRayCount = shadowrayCounter;
+            m_extensionRayCount = max(m_extensionRayCount, extensionCounter);
+            m_shadowRayCount = max(m_shadowRayCount, shadowrayCounter);
 
             kernelConnect->SetArguments(TBuffer, EBuffer, shadowrayBuffer, sceneBuffer->triBuffer,
                                         sceneBuffer->triIdxBuffer, sceneBuffer->bvhNodeBuffer, sceneBuffer->bvhBuffer,
