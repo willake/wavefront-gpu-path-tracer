@@ -46,6 +46,9 @@ class Texture
                 for (int i = 0; i < s; i++)
                 {
                     pixels[i] = (data[i * n + 0] << 16) + (data[i * n + 1] << 8) + data[i * n + 2];
+                    float4 color = RGB8toRGB32F(&pixels[i]);
+                    color = InversedGammaCorrection(color);
+                    pixels[i] = RGBF32_to_RGB8(&color);
                 }
             }
         }

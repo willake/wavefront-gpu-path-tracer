@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scene>
+    <!-- Scene Information -->
+    <scene_name>gamma correction comparison scene</scene_name>
+	<plane_texture_location>../assets/textures/Stylized_Pavement_basecolor.png</plane_texture_location>
+    <skydome_location>../assets/clouds_anime_6k.jpg</skydome_location>
+	<lights>
+        <!-- Light 0 -->
+        <light>
+			<position>
+				<x>0.0</x>
+				<y>3</y>
+				<z>1.0</z>
+            </position>
+			<rotation>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </rotation>
+			<size>1</size>
+			<color>
+				<x>12</x>
+                <y>12</y>
+                <z>11</z>
+			</color>
+        </light>
+        <!-- Add more lights as needed -->
+    </lights>
+
+    <!-- Object List -->
+    <objects>
+        <!-- Object 0 -->
+        <object>
+            <mesh_idx>1</mesh_idx>
+            <material_idx>0</material_idx>
+            <position>
+                <x>0.0</x>
+                <y>-0.5</y>
+                <z>1.0</z>
+            </position>
+            <rotation>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </rotation>
+        </object>
+		<object>
+            <mesh_idx>1</mesh_idx>
+            <material_idx>2</material_idx>
+            <position>
+                <x>-3</x>
+                <y>1</y>
+                <z>4.0</z>
+            </position>
+            <rotation>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </rotation>
+        </object>
+		<object>
+            <mesh_idx>0</mesh_idx>
+            <material_idx>1</material_idx>
+            <position>
+                <x>0.0</x>
+                <y>-1</y>
+                <z>3.0</z>
+            </position>
+            <rotation>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </rotation>
+        </object>
+        <!-- Add more objects as needed -->
+    </objects>
+	<!-- Mesh List -->
+    <meshes>
+        <!-- Mesh 0 -->
+		<mesh>
+            <model_location>../assets/japanese_torii_gate.obj</model_location>
+			<scale>
+                <x>2</x>
+                <y>2</y>
+                <z>2</z>
+            </scale>
+        </mesh>
+        <mesh>
+            <model_location>../assets/sphere.obj</model_location>
+			<scale>
+                <x>0.5</x>
+                <y>0.5</y>
+                <z>0.5</z>
+            </scale>
+        </mesh>
+        <!-- Add more objects as needed -->
+    </meshes>
+	<materials>
+		<!-- Material 0 -->
+		<material>
+			<reflectivity>1.0</reflectivity>
+			<refractivity>0.0</refractivity>
+			<absorption>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </absorption>
+			<texture_location>../assets/textures/white.png</texture_location>
+		</material>
+		<material>
+			<reflectivity>0.0</reflectivity>
+			<refractivity>0.0</refractivity>
+			<absorption>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </absorption>
+			<texture_location>../assets/textures/japanese_torii_gate.png</texture_location>
+		</material>
+		<material>
+			<reflectivity>0.0</reflectivity>
+			<refractivity>1.0</refractivity>
+			<absorption>
+                <x>0.3</x>
+                <y>0.3</y>
+                <z>0.3</z>
+            </absorption>
+			<texture_location>../assets/textures/white.png</texture_location>
+		</material>
+	</materials>
+</scene>

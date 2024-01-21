@@ -119,12 +119,14 @@ void Renderer::Tick(float deltaTime)
     {
         extensionCounter = SCRWIDTH * SCRHEIGHT;
 
+        m_extensionRayCount = 0;
+        m_shadowRayCount = 0;
+
         int depth = 0;
         // run extension rays and shadow rays
         while (extensionCounter > 0)
         {
             int rayCount = extensionCounter;
-
             extensionCounter = 0;
             shadowrayCounter = 0;
             extensionCounterBuffer->CopyToDevice(true);
@@ -149,8 +151,8 @@ void Renderer::Tick(float deltaTime)
 
             extensionCounterBuffer->CopyFromDevice(true);
             shadowrayCounterBuffer->CopyFromDevice(true);
-            m_extensionRayCount = extensionCounter;
-            m_shadowRayCount = shadowrayCounter;
+            m_extensionRayCount = max(m_extensionRayCount, extensionCounter);
+            m_shadowRayCount = max(m_shadowRayCount, shadowrayCounter);
 
             kernelConnect->SetArguments(TBuffer, EBuffer, shadowrayBuffer, sceneBuffer->triBuffer,
                                         sceneBuffer->triIdxBuffer, sceneBuffer->bvhNodeBuffer, sceneBuffer->bvhBuffer,
@@ -183,6 +185,7 @@ void Renderer::Tick(float deltaTime)
 // -----------------------------------------------------------
 void Renderer::UI()
 {
+    if (m_disableUI) uiUpdated = false;
     // animation toggle
     bool changed = ImGui::Checkbox("Animate scene", &animating);
     changed |= ImGui::Checkbox("Inspect Traversal", &m_inspectTraversal);
@@ -214,6 +217,7 @@ void Renderer::UI()
     ImGui::Text("RPS: %.1f Mrays/s", m_rps);
     ImGui::Text("Camera Pos: (%.2f, %.2f, %.2f)", camera.camPos.x, camera.camPos.y, camera.camPos.z);
     ImGui::Text("Camera Target: (%.2f, %.2f, %.2f)", camera.camTarget.x, camera.camTarget.y, camera.camTarget.z);
+    if (ImGui::Button("Close UI")) { m_disableUI = true; }
     // reset accumulator if changes have been made
     if (changed) ClearAccumulator();
 }

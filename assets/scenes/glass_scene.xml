@@ -2,11 +2,6 @@
 <scene>
     <!-- Scene Information -->
     <scene_name>glass scene</scene_name>
-	<light_position>
-		<x>0.0</x>
-		<y>4.5</y>
-		<z>2.0</z>
-	</light_position>
 	<plane_texture_location>../assets/textures/Stylized_Wood_basecolor.tga</plane_texture_location>
     <skydome_location>../assets/industrial_sunset_puresky_4k.hdr</skydome_location>
 	<!-- Light List -->
@@ -84,7 +79,6 @@
     <meshes>
         <!-- Mesh 0 -->
         <mesh>
-			<id>0</id>
             <model_location>../assets/cup.obj</model_location>
 			<scale>
                 <x>0.2</x>
@@ -93,7 +87,6 @@
             </scale>
         </mesh>
 		<mesh>
-			<id>1</id>
             <model_location>../assets/wok.obj</model_location>
 			<scale>
                 <x>0.3</x>
@@ -107,7 +100,6 @@
 	<materials>
 		<!-- Material 0 -->
 		<material>
-			<id>0</id>
 			<reflectivity>0.0</reflectivity>
 			<refractivity>1.0</refractivity>
 			<absorption>
@@ -118,7 +110,6 @@
 			<texture_location>../assets/textures/white.png</texture_location>
 		</material>
 		<material>
-			<id>1</id>
 			<reflectivity>0.0</reflectivity>
 			<refractivity>0.0</refractivity>
 			<absorption>

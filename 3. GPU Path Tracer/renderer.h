@@ -26,6 +26,7 @@ class Renderer : public TheApp
     bool m_inspectTraversal = false;
     uint m_extensionRayCount = 0;
     uint m_shadowRayCount = 0;
+    bool m_disableUI = false;
     Buffer *GetPrimaryRayBuffer();
     Buffer *GetExtensionRayBuffer();
     void SwitchPrimaryRayBuffer();

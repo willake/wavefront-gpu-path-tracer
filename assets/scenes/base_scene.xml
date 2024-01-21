@@ -3,13 +3,13 @@
     <!-- Scene Information -->
     <scene_name>wok scene</scene_name>
 	<plane_texture_location>../assets/textures/Stylized_Wood_basecolor.tga</plane_texture_location>
-    <skydome_location>../assets/industrial_sunset_puresky_4k.hdr</skydome_location>
+    <skydome_location>../assets/harties_4k.hdr</skydome_location>
 	<!-- Light List -->
     <lights>
         <!-- Light 0 -->
         <light>
 			<position>
-                <x>1.3</x>
+                <x>0</x>
                 <y>4.5</y>
                 <z>2.0</z>
             </position>
@@ -18,29 +18,29 @@
                 <y>0.0</y>
                 <z>0.0</z>
             </rotation>
-			<size>2</size>
+			<size>1</size>
 			<color>
-				<x>12</x>
-                <y>12</y>
-                <z>11</z>
+				<x>24</x>
+                <y>24</y>
+                <z>22</z>
 			</color>
         </light>
 		<light>
 			<position>
-                <x>-3.3</x>
+                <x>3.3</x>
                 <y>0</y>
-                <z>2.8</z>
+                <z>2</z>
             </position>
 			<rotation>
                 <x>0.0</x>
-                <y>0.0</y>
+                <y>120.0</y>
                 <z>90.0</z>
             </rotation>
 			<size>1</size>
 			<color>
-				<x>12</x>
-                <y>12</y>
-                <z>11</z>
+				<x>48</x>
+                <y>48</y>
+                <z>44</z>
 			</color>
         </light>
         <!-- Add more lights as needed -->
@@ -62,29 +62,26 @@
                 <z>180.0</z>
             </rotation>
         </object>
-		<object>
-            <mesh_idx>1</mesh_idx>
+        <object>
+			<mesh_idx>2</mesh_idx>
             <material_idx>1</material_idx>
             <position>
-                <x>0.0</x>
+                <x>1.5</x>
                 <y>2</y>
-                <z>2.0</z>
+                <z>1</z>
             </position>
             <rotation>
-                <x>0.0</x>
+                <x>0</x>
                 <y>0.0</y>
                 <z>0.0</z>
             </rotation>
         </object>
-
-
         <!-- Add more objects as needed -->
     </objects>
 	<!-- Mesh List -->
     <meshes>
         <!-- Mesh 0 -->
         <mesh>
-			<id>0</id>
             <model_location>../assets/urna.obj</model_location>
 			<scale>
                 <x>0.005</x>
@@ -93,7 +90,6 @@
             </scale>
         </mesh>
 		<mesh>
-			<id>0</id>
             <model_location>../assets/sphere.obj</model_location>
 			<scale>
                 <x>0.5</x>
@@ -101,13 +97,19 @@
                 <z>0.5</z>
             </scale>
         </mesh>
-
+        <mesh>
+            <model_location>../assets/cup.obj</model_location>
+			<scale>
+                <x>0.2</x>
+                <y>0.2</y>
+                <z>0.2</z>
+            </scale>
+        </mesh>
         <!-- Add more objects as needed -->
     </meshes>
 	<materials>
 		<!-- Material 0 -->
 		<material>
-			<id>0</id>
 			<reflectivity>0.0</reflectivity>
 			<refractivity>0.0</refractivity>
 			<absorption>
@@ -115,11 +117,10 @@
                 <y>0.0</y>
                 <z>0.0</z>
             </absorption>
-			<roughness>0.3f</roughness>
+			<roughness>0.3</roughness>
 			<texture_location>../assets/textures/urna.jpg</texture_location>
 		</material>
 		<material>
-			<id>1</id>
 			<reflectivity>0.0</reflectivity>
 			<refractivity>1.0</refractivity>
 			<absorption>
