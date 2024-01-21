@@ -38,7 +38,8 @@ void Renderer::NEE(uint &seed, const float3 &I, const float3 &V, const float3 &N
         if (!scene.IsOccluded(shadowRay))
         {
             float solidAngle = (nldotl * A) / (dist * dist);
-            float3 brdf = material.Evaluate(L, V, N, albedo);
+            // float3 brdf = material.Evaluate(L, V, N, albedo);
+            float3 brdf = albedo * INVPI;
             E += T * light.color * solidAngle * brdf * ndotl * scene.lightCount;
         }
     }
@@ -95,6 +96,8 @@ float3 Renderer::Sample(Ray &ray, uint &seed)
         Material *material = hitInfo.material;
         float3 albedo = material->isAlbedoOverridden ? scene.GetAlbedo(ray.objIdx, I) : material->GetAlbedo(uv);
 
+        E += T * albedo;
+        break;
         // Part of NEE
         // return black if it is a light soucre
         if (material->isLight)
@@ -127,7 +130,6 @@ float3 Renderer::Sample(Ray &ray, uint &seed)
         if (depth > 1 && p < RandomFloat(seed)) break;
 
         // choose a type of transport
-        float r = RandomFloat(seed);
         if (r < reflectivity) // handle pure speculars
         {
             T *= albedo * medium_scale / p;
@@ -144,7 +146,8 @@ float3 Renderer::Sample(Ray &ray, uint &seed)
         {
             float3 R = cosineweighteddiffusereflection(N, seed);
             float PDF = dot(N, R) / PI;
-            float3 brdf = material->Evaluate(R, N, -ray.D, albedo);
+            // float3 brdf = material->Evaluate(R, N, -ray.D, albedo);
+            float3 brdf = albedo * INVPI;
             ray = Ray(I + R * EPSILON, R);
             T *= medium_scale * brdf * dot(R, N) / PDF / p;
         }

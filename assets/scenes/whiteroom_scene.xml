@@ -3,7 +3,7 @@
     <!-- Scene Information -->
     <scene_name>wok scene</scene_name>
 	<plane_texture_location>../assets/textures/Stylized_Wood_basecolor.tga</plane_texture_location>
-    <skydome_location>../assets/industrial_sunset_puresky_4k.hdr</skydome_location>
+    <skydome_location>../assets/galaxy_3.jpg</skydome_location>
 	<!-- Light List -->
     <lights>
         <!-- Light 0 -->
@@ -23,6 +23,24 @@
 				<x>24</x>
                 <y>24</y>
                 <z>20</z>
+			</color>
+        </light>
+		<light>
+			<position>
+                <x>0</x>
+                <y>5</y>
+                <z>11</z>
+            </position>
+			<rotation>
+                <x>0.0</x>
+                <y>0.0</y>
+                <z>0.0</z>
+            </rotation>
+			<size>1</size>
+			<color>
+				<x>36</x>
+                <y>36</y>
+                <z>33</z>
 			</color>
         </light>
         <!-- Add more lights as needed -->

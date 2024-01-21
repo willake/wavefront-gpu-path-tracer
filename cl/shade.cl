@@ -123,12 +123,12 @@ typedef struct
     // 72 bytes
 } SceneProperty;
 
-float3 fresnelSchlick(float cosTheta, float3 f0)
+inline float3 fresnelSchlick(float cosTheta, float3 f0)
 {
     return f0 + (1.0f - f0) * pow(1.0f - cosTheta, 5);
 }
 
-float distributionGGX(float NdotH, float roughness)
+inline float distributionGGX(float NdotH, float roughness)
 {
     float alpha = roughness * roughness;
     float alpha2 = alpha * alpha;
@@ -137,14 +137,14 @@ float distributionGGX(float NdotH, float roughness)
     return alpha2 * INVPI / (b * b);
 }
 
-float G1_GGX_Schlick(float NdotV, float roughness)
+inline float G1_GGX_Schlick(float NdotV, float roughness)
 {
     float alpha = roughness * roughness;
     float k = alpha / 2.0f;
     return max(NdotV, 0.001f) / (NdotV * (1.0f - k) + k);
 }
 
-float geometrySmith(float NdotV, float NdotL, float roughness)
+inline float geometrySmith(float NdotV, float NdotL, float roughness)
 {
     return G1_GGX_Schlick(NdotL, roughness) * G1_GGX_Schlick(NdotV, roughness);
 }
@@ -245,12 +245,12 @@ float3 getFloorNormal()
 {
     return (float3)(0, 1, 0);
 }
-float2 getFloorUV(const float3 I)
+float2 getFloorUV(const float3 I, const float textureOffset)
 {
     float u = I.x;
     float v = I.z;
 
-    const float invto = 1.0f / 5.12f;
+    const float invto = 1.0f / textureOffset;
 
     u *= invto;
     v *= invto;
@@ -306,7 +306,8 @@ float3 sample(uint *pixels, uint startIdx, float2 uv, uint width, uint height)
     return RGB8toRGB32F(pixels[startIdx + index]);
 }
 
-HitInfo getHitInfo(const Ray *ray, TriEx *triExs, BLAS *blases, Light *lights, const float3 I)
+HitInfo getHitInfo(const Ray *ray, SceneProperty *sceneProperty, TriEx *triExs, BLAS *blases, Light *lights,
+                   const float3 I)
 {
     HitInfo hitInfo;
     if (ray->objIdx >= 900)
@@ -317,7 +318,7 @@ HitInfo getHitInfo(const Ray *ray, TriEx *triExs, BLAS *blases, Light *lights, c
     if (ray->objIdx == 1)
     {
         hitInfo.normal = getFloorNormal();
-        hitInfo.uv = getFloorUV(I);
+        hitInfo.uv = getFloorUV(I, sceneProperty->floorTexture.width / 100.0f);
     }
     else
     {
@@ -422,8 +423,8 @@ ShadowRay NEE(Light *lights, uint lightCount, uint *seed, float3 V, float3 I, fl
     if (ndotl > 0 && nldotl > 0)
     {
         float solidAngle = (nldotl * A) / (dist * dist);
-        float3 brdf = evaluateMircofacetBRDF(L, N, V, albedo, material);
-
+        // float3 brdf = evaluateMircofacetBRDF(L, N, V, albedo, material);
+        float3 brdf = albedo * INVPI;
         shadowRay.E = (float3)(light->colorx, light->colory, light->colorz) * solidAngle * brdf * ndotl * lightCount;
     }
     else
@@ -470,6 +471,8 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
     /* visualize visualize triangle edges */ // float3 color = getEdgeColor(ray.barycentric);
     /* debug */                              // accumulator[index] = RGB32FtoRGB8(color); return;
 
+    Es[pixelIdx] += Ts[pixelIdx] * (float4)(albedo.x, albedo.y, albedo.z, 0);
+    return;
     // objIdx >= 900 is a light
     if (ray.objIdx >= 900)
     {
@@ -554,8 +557,8 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
         // generate extension ray
         uint ei = atomic_inc(extensionrayCounter);
         extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, pixelIdx, false);
-        float3 brdf = evaluateMircofacetBRDF(R, N, -ray.D, albedo, &material);
-
+        // float3 brdf = evaluateMircofacetBRDF(R, N, -ray.D, albedo, &material);
+        float3 brdf = albedo * INVPI;
         // compute
         Ts[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
                         (float4)(brdf.x, brdf.y, brdf.z, 0) * dot(R, N) / PDF / p;

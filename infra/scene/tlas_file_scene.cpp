@@ -32,7 +32,7 @@ TLASFileScene::TLASFileScene(const string &filePath, SceneBuffer *sceneBuffer)
 
     objIdUsed = 2;
 
-    floor = Plane(1, float3(0, 1, 0), 1, primitiveMaterials[1].textureDiffuse.width / 100);
+    floor = Plane(1, float3(0, 1, 0), 1, primitiveMaterials[1].textureDiffuse.width / 100.0f);
 
     sceneName = sceneData.name;
     skydome = Texture(sceneData.skydomeLocation);
