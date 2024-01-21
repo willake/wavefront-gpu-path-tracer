@@ -3,7 +3,7 @@
     <!-- Scene Information -->
     <scene_name>gamma correction comparison scene</scene_name>
 	<plane_texture_location>../assets/textures/Stylized_Pavement_basecolor.png</plane_texture_location>
-    <skydome_location>../assets/galaxy_3.jpg</skydome_location>
+    <skydome_location>../assets/clouds_anime_6k.jpg</skydome_location>
 	<lights>
         <!-- Light 0 -->
         <light>
@@ -121,9 +121,9 @@
 			<reflectivity>0.0</reflectivity>
 			<refractivity>1.0</refractivity>
 			<absorption>
-                <x>0.0</x>
-                <y>0.0</y>
-                <z>0.0</z>
+                <x>0.3</x>
+                <y>0.3</y>
+                <z>0.3</z>
             </absorption>
 			<texture_location>../assets/textures/white.png</texture_location>
 		</material>

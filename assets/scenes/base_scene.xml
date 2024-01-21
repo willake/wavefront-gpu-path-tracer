@@ -117,7 +117,7 @@
                 <y>0.0</y>
                 <z>0.0</z>
             </absorption>
-			<roughness>0.6</roughness>
+			<roughness>0.3</roughness>
 			<texture_location>../assets/textures/urna.jpg</texture_location>
 		</material>
 		<material>

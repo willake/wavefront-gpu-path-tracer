@@ -465,14 +465,6 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
     float2 uv = hitInfo.uv;
     float3 albedo = getAlbedo(floorPixels, sceneProperty, blases, texturePixels, textures, lights, ray.objIdx, uv);
 
-    /* visualize triangle */
-    // accumulator[index] = ray.triIdx * 10;
-    // return;
-    /* visualize normal */                   // float3 color = (N + 1) * 0.5f;
-    /* visualize uv */                       // float3 color = (float3)(uv.x, uv.y, 0);
-    /* visualize visualize triangle edges */ // float3 color = getEdgeColor(ray.barycentric);
-    /* debug */                              // accumulator[index] = RGB32FtoRGB8(color); return;
-
     // objIdx >= 900 is a light
     if (ray.objIdx >= 900)
     {
@@ -559,7 +551,7 @@ __kernel void shade(__global float4 *Ts, __global float4 *Es, __global Ray *rayB
         extensionrayBuffer[ei] = GenerateRay(I + R * EPSILON, R, pixelIdx, false);
         float3 brdf = evaluateMircofacetBRDF(R, N, -ray.D, albedo, &material);
         // float3 brdf = albedo * INVPI;
-        //  compute
+        //   compute
         Ts[pixelIdx] *= (float4)(medium_scale.x, medium_scale.y, medium_scale.z, 0) *
                         (float4)(brdf.x, brdf.y, brdf.z, 0) * dot(R, N) / PDF / p;
     }

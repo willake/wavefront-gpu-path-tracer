@@ -145,6 +145,11 @@ float3 Renderer::Sample(Ray &ray, uint &seed)
         {
             float3 R = cosineweighteddiffusereflection(N, seed);
             float PDF = dot(N, R) / PI;
+            if (ray.objIdx == 2)
+            {
+                printf("he");
+                printf("he");
+            }
             float3 brdf = material->Evaluate(R, N, -ray.D, albedo);
             // float3 brdf = albedo * INVPI;
             ray = Ray(I + R * EPSILON, R);
