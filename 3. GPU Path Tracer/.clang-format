@@ -1,0 +1,6 @@
+BasedOnStyle: Microsoft  
+IndentWidth: 4
+ColumnLimit: 120
+SortIncludes: Never
+AllowShortBlocksOnASingleLine: Always
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse

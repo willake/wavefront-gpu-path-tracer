@@ -1,81 +1,106 @@
 #pragma once
 
 #include "base_scene.h"
-#include "blas_bvh.h"
-#include "blas_grid.h"
-#include "blas_kdtree.h"
-#include "tlas_bvh.h"
-#include "tlas_grid.h"
-#include "tlas_kdtree.h"
+#include "bvh.h"
+#include "blas.h"
+#include "tlas.h"
 #include "rapidxml.hpp"
+#include "scene_buffer.h"
 
 #define TLAS_USE_BVH
-//#define TLAS_USE_Grid
-//#define TLAS_USE_KDTree
 
 namespace Tmpl8
 {
-	struct MaterialData {
-		float reflectivity;
-		float refractivity;
-		float3 absorption;
-		std::string textureLocation;
-	};
-	struct ObjectData {
-		std::string modelLocation;
-		int materialIdx;
-		float3 position;
-		float3 rotation;
-		float3 scale;
-	};
 
-	// Define a structure to hold scene information
-	struct SceneData {
-		std::string name;
-		float3 lightPos;
-		std::string planeTextureLocation;
-		std::string skydomeLocation;
-		std::vector<ObjectData> objects;
-		std::vector<MaterialData> materials;
-	};
+struct LightData
+{
+    float3 position;
+    float3 rotation;
+    float3 color;
+    float size;
+    // TODO: type
+};
 
+struct MaterialData
+{
+    float reflectivity;
+    float refractivity;
+    float roughness;
+    float metalness;
+    float3 absorption;
+    std::string textureLocation;
+};
 
-	class TLASFileScene : BaseScene
-	{
-	public:
-		TLASFileScene(const string& filePath);
-		SceneData LoadSceneFile(const string& filePath);
-		void SetTime(float t);
-		float3 GetSkyColor(const Ray& ray) const;
-		float3 GetLightPos() const;
-		float3 GetLightColor() const;
-		void FindNearest(Ray& ray);
-		bool IsOccluded(const Ray& ray);
-		float3 GetAlbedo(int objIdx, float3 I) const;
-		HitInfo GetHitInfo(const Ray& ray, const float3 I);
-		int GetTriangleCount() const;
-		std::chrono::microseconds GetBuildTime() const;
-		uint GetMaxTreeDepth() const;
-	public:
-		float animTime = 0;
-#ifdef TLAS_USE_BVH
-		TLASBVH tlas;
-#endif
-#ifdef TLAS_USE_Grid
-		TLASGrid tlas;
-#endif
-#ifdef TLAS_USE_KDTree
-		TLASKDTree tlas;
-#endif
-		string sceneName;
-		Texture skydome;
-		Plane floor;
-		Quad light;
-		int objIdUsed = 2;
-		int objCount = 0;
-		int materialCount = 0;
-		Material errorMaterial;
-		Material primitiveMaterials[3];
-		std::vector<Material*> materials;
-	};
-}
+struct ObjectData
+{
+    int meshIdx;
+    int materialIdx;
+    float3 position;
+    float3 rotation;
+};
+
+struct MeshData
+{
+    std::string modelLocation;
+    float3 scale;
+};
+
+// Define a structure to hold scene information
+struct SceneData
+{
+    std::string name;
+    std::string planeTextureLocation;
+    std::string skydomeLocation;
+    std::vector<LightData> lights;
+    std::vector<ObjectData> objects;
+    std::vector<MeshData> meshes;
+    std::vector<MaterialData> materials;
+};
+
+class TLASFileScene : BaseScene
+{
+  protected:
+    float3 RandomPointOnLight(const float r0, const float r1, uint &lightIdxx) const;
+
+  public:
+    TLASFileScene(const string &filePath, SceneBuffer *sceneBuffer = nullptr);
+    SceneData LoadSceneFile(const string &filePath);
+    void SetTime(float t);
+    float3 GetSkyColor(const Ray &ray) const;
+    Light GetLightByLightIdx(int lightIdx);
+    Light GetLightByObjIdx(int objIdx);
+    float3 GetLightPos() const;
+    float3 GetLightColor() const;
+    float3 RandomPointOnLight(uint &seed, uint &lightIdx) const;
+    void FindNearest(Ray &ray);
+    bool IsOccluded(const Ray &ray);
+    float3 GetAlbedo(int objIdx, float3 I) const;
+    HitInfo GetHitInfo(const Ray &ray, const float3 I);
+    int GetTriangleCount() const;
+    std::chrono::microseconds GetBuildTime() const;
+    uint GetMaxTreeDepth() const;
+
+  public:
+    float animTime = 0;
+    TLAS tlas;
+    string sceneName;
+    Texture skydome;
+    Plane floor;
+    Quad *lightQuads;
+    Light *lights;
+    int objIdUsed = 2;
+    uint objCount = 0;
+    uint materialCount = 0;
+    uint meshCount = 0;
+    uint lightCount = 0;
+    uint totalTriangleCount = 0;
+    uint totalBVHNodeCount = 0;
+    uint totalPixelCount = 0;
+    Material errorMaterial;
+    Material primitiveMaterials[3];
+    std::vector<Mesh> meshes;
+    BVH *bvhs;
+    BLAS *blases;
+    Material *materials;
+};
+} // namespace Tmpl8
