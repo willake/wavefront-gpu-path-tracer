@@ -2,7 +2,7 @@
 
 <img src="./assets/readme/base-scene.JPG" width="600" height="400" alt="Overview"/>
 
-This renderer is based on a [cpu ray tracer](https://github.com/willake/cpu-ray-tracer) I made, which is extended from [template project](https://github.com/jbikker/tmpl8rt_UU) of [Dr. Jacco Bikker](https://github.com/jbikker). Depends on the features enabled, the GPU version can outperform the CPU version 3x - 10x. Apart from the orignal features implemented in the template, the following feature is further developed:
+This renderer is based on a [cpu ray tracer](https://github.com/willake/cpu-ray-tracer) I made. The implementation is based on the paper [Megakernels considered harmful: wavefront path tracing on GPUs](https://dl.acm.org/doi/10.1145/2492045.2492060#sec-cit) by Samuli Laine, Tero Karras, and Timo Aila. Depends on the features enabled, the GPU version can outperform the CPU version 3x - 10x. Apart from the orignal features implemented in the template, the following feature is further developed:
 
 **Graphics related**
 -   CPU Path Tracing
