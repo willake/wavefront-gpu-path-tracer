@@ -187,13 +187,23 @@ A scene template looks like the following
 ```
 
 ## Asset References
+Sepcial thanks to these amazing free skyboxes and models online
 [Urn for the Piłsudski Mound](https://sketchfab.com/3d-models/urn-for-the-pisudski-mound-6097301be2f143128e23d5788a11b0be)
+
 [Torii - Japanese Gate](https://sketchfab.com/3d-models/torii-japanese-gate-32f0cae137064c4da4c8136bc0ff2f2d)
+
 [Wok](https://sketchfab.com/3d-models/wok-3b9d2c1e35884be3909a144d93dda6a0)
+
 [Painting by Stanisław Ignacy Witkiewicz](https://sketchfab.com/3d-models/painting-by-stanisaw-ignacy-witkiewicz-db75039f5eef44b5a865af7f41677758)
+
 [Hollow Knight](https://sketchfab.com/3d-models/hollow-knight-5a76d93e39984f829abd6f406562265b)
+
 [Game Table](https://sketchfab.com/3d-models/game-table-a1c2dabcff0f4463a81fb4543a79e4bc)
+
 [Studio Room](https://sketchfab.com/3d-models/studio-room-c02efe2e7a10404895c2b49e3ca1d11a)
+
 [Path At The Hill During Sunny Day](https://hdri-haven.com/hdri/path-at-the-hill-during-sunny-day#google_vignette)
+
 [Milky Way Skybox HDRI panorama](https://sketchfab.com/3d-models/milky-way-skybox-hdri-panorama-b57711d6a450410ca612c4a36f08ce21)
+
 [Sky Pano - Milkyway](https://sketchfab.com/3d-models/sky-pano-milkyway-0016725c047a4ea18cd0b5e5ef2fe441)
