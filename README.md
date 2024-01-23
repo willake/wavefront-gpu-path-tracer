@@ -188,6 +188,7 @@ A scene template looks like the following
 
 ## Asset References
 Sepcial thanks to these amazing free skyboxes and models online
+
 [Urn for the Piłsudski Mound](https://sketchfab.com/3d-models/urn-for-the-pisudski-mound-6097301be2f143128e23d5788a11b0be)
 
 [Torii - Japanese Gate](https://sketchfab.com/3d-models/torii-japanese-gate-32f0cae137064c4da4c8136bc0ff2f2d)
