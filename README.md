@@ -1,4 +1,4 @@
-# Hui Wavefront GPU Path Tracer
+# Wavefront GPU Path Tracer
 
 <img src="./assets/readme/base-scene.JPG" width="600" height="400" alt="Overview"/>
 
