@@ -100,6 +100,6 @@ class Renderer : public TheApp
     Buffer *renderStateBuffer;
 
     SceneBuffer *sceneBuffer;
-    string scenePath = "../assets/scenes/base_scene.xml";
+    string scenePath = "../assets/scenes/carriage_scene.xml";
 };
 } // namespace Tmpl8
