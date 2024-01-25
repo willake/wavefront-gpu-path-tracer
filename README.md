@@ -1,6 +1,6 @@
 # Wavefront GPU Path Tracer
 
-<img src="./assets/readme/base-scene.JPG" width="600" height="400" alt="Overview"/>
+<img src="./assets/readme/real-time.gif" width="600" height="400" alt="real-time"/>
 
 This renderer is based on a [cpu ray tracer](https://github.com/willake/cpu-ray-tracer) I made. The implementation is based on the paper [Megakernels considered harmful: wavefront path tracing on GPUs](https://dl.acm.org/doi/10.1145/2492045.2492060#sec-cit) by Samuli Laine, Tero Karras, and Timo Aila. Depends on the features enabled, the GPU version can outperform the CPU version 3x - 10x. Apart from the orignal features implemented in the template, the following feature is further developed:
 
@@ -23,6 +23,8 @@ This renderer is based on a [cpu ray tracer](https://github.com/willake/cpu-ray-
 -   texture loading & mapping
 -   scene file loading
 
+<img src="./assets/readme/dof.gif" width="600" height="400" alt="dof"/>
+
 ## IDE
 
 Visual Studio 2022
@@ -32,7 +34,6 @@ Visual Studio 2022
 ![Hollow Knight](./assets/readme/hollow-knight.JPG)
 ![Microfacet](./assets/readme/microfacet.JPG)
 ![Bright](./assets/readme/gamma-correction.JPG)
-![Depth of Field](./assets/readme/depth-of-field.JPG)
 ## How to run
 
 Open `tmpl_2022-rt.sln` with Visual Studio. Select a project (either CPUPathTracer or GPUPathTracer). Build.
@@ -208,3 +209,5 @@ Sepcial thanks to these amazing free skyboxes and models online
 [Milky Way Skybox HDRI panorama](https://sketchfab.com/3d-models/milky-way-skybox-hdri-panorama-b57711d6a450410ca612c4a36f08ce21)
 
 [Sky Pano - Milkyway](https://sketchfab.com/3d-models/sky-pano-milkyway-0016725c047a4ea18cd0b5e5ef2fe441)
+
+[Wooden Stylised Carriage](https://sketchfab.com/3d-models/wooden-stylised-carriage-ccac9ded5666488c9355d2ed3575fae9)
