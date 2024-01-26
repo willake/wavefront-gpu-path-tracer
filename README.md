@@ -41,7 +41,7 @@ Open `tmpl_2022-rt.sln` with Visual Studio. Select a project (either CPUPathTrac
 ### Inspect traversal
 
 Toggle `Inspect Traversal` checkbox in the panel will turn into traversal debug mode.
-<img src="./assets/readme/traversal-inspector.gif" width="600" height="400" alt="path tracer"/>
+![Traversal Inspector](./assets/readme/traversal-inspector.gif)
 
 ## How to configure
 
