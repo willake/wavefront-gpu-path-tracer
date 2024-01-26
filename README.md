@@ -1,6 +1,6 @@
 # Wavefront GPU Path Tracer
 
-<img src="./assets/readme/real-time.gif" width="600" height="400" alt="real-time"/>
+![Real Time](./assets/readme/real-time.gif)
 
 This renderer is based on a [cpu ray tracer](https://github.com/willake/cpu-ray-tracer) I made. The implementation is based on the paper [Megakernels considered harmful: wavefront path tracing on GPUs](https://dl.acm.org/doi/10.1145/2492045.2492060#sec-cit) by Samuli Laine, Tero Karras, and Timo Aila. Depends on the features enabled, the GPU version can outperform the CPU version 3x - 10x. Apart from the orignal features implemented in the template, the following feature is further developed:
 
@@ -23,7 +23,7 @@ This renderer is based on a [cpu ray tracer](https://github.com/willake/cpu-ray-
 -   texture loading & mapping
 -   scene file loading
 
-<img src="./assets/readme/dof.gif" width="600" height="400" alt="dof"/>
+![DOF](./assets/readme/dof.gif)
 
 ## IDE
 
